@@ -1482,15 +1482,20 @@ async function syncToSupabase() {
 function parseSupabaseData(r) {
   if(!r || !r.data) return null;
   let obj = r.data;
+  // Handle double-escaped strings from Make (string wrapped in string)
   if(typeof obj === 'string') {
-    try { obj = JSON.parse(obj); } catch(e) { return null; }
+    try { obj = JSON.parse(obj); } catch(e) {}
+    // If still a string (double-escaped), parse again
+    if(typeof obj === 'string') {
+      try { obj = JSON.parse(obj); } catch(e) { return null; }
+    }
   }
   if(typeof obj !== 'object' || Array.isArray(obj)) return null;
   // Always use Supabase row id as the authoritative id
   obj.id = r.id;
   // Ensure required fields exist
   if(!Array.isArray(obj.subtasks)) obj.subtasks = [];
-  if(!obj.title) obj.title = '(ingen titel)';
+  if(!obj.title) obj.title = obj.subject || '(ingen titel)';
   if(!obj.prio)  obj.prio  = 'mid';
   if(!obj.cat)   obj.cat   = 'Generelt';
   if(!obj.color) obj.color = '#9099a8';
