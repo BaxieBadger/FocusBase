@@ -468,6 +468,54 @@ select { cursor:pointer; }
 .color-dot:hover { transform:scale(1.15); }
 .color-dot.selected { border-color:var(--text); transform:scale(1.1); }
 
+/* ── AGENDA ── */
+.agenda-section { margin-bottom:20px; }
+.agenda-date-header {
+  font-size:11px; font-weight:600; color:var(--text-muted);
+  text-transform:uppercase; letter-spacing:1px;
+  padding:8px 0 6px; border-bottom:2px solid var(--border);
+  margin-bottom:8px; display:flex; align-items:center; gap:8px;
+}
+.agenda-date-header.today-header { color:var(--accent); border-bottom-color:var(--accent); }
+.agenda-item {
+  display:flex; align-items:flex-start; gap:10px;
+  padding:8px 10px; border-radius:var(--radius);
+  background:var(--surface); border:1px solid var(--border);
+  margin-bottom:5px; transition:border-color 0.15s; cursor:default;
+}
+.agenda-item:hover { border-color:var(--border2); }
+.agenda-item.done-item { opacity:0.5; }
+.agenda-color-bar { width:3px; border-radius:2px; align-self:stretch; flex-shrink:0; min-height:20px; }
+.agenda-check {
+  width:16px; height:16px; border:1.5px solid var(--border2);
+  border-radius:4px; cursor:pointer; display:flex; align-items:center;
+  justify-content:center; flex-shrink:0; margin-top:1px;
+  transition:all 0.15s; font-size:9px;
+}
+.agenda-check:hover { border-color:var(--accent2); }
+.agenda-check.done { background:var(--accent2); border-color:var(--accent2); color:#fff; }
+.agenda-body { flex:1; }
+.agenda-title { font-size:12px; font-weight:500; margin-bottom:2px; }
+.agenda-title.done { text-decoration:line-through; color:var(--text-muted); }
+.agenda-sub { font-size:10px; color:var(--text-muted); }
+.agenda-time { font-size:10px; color:var(--accent); font-weight:500; white-space:nowrap; }
+.agenda-type {
+  font-size:9px; font-weight:600; padding:2px 6px; border-radius:10px;
+  text-transform:uppercase; letter-spacing:0.3px; white-space:nowrap;
+}
+.agenda-type.deadline { background:var(--danger-light); color:var(--danger); }
+.agenda-type.subtask  { background:var(--accent-light);  color:var(--accent); }
+
+/* Template preview in modal */
+.template-preview {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:var(--radius); padding:10px 12px;
+  font-size:11px; color:var(--text-muted); line-height:1.8;
+  display:none;
+}
+.template-preview.visible { display:block; }
+.template-preview strong { color:var(--text); font-size:11px; display:block; margin-bottom:4px; }
+
 /* Utility */
 .flex { display:flex; } .gap8 { gap:8px; } .ml-auto { margin-left:auto; }
 .mt8 { margin-top:8px; } .mt16 { margin-top:16px; }
@@ -540,14 +588,22 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
           <div class="s-val" id="stat-some">0</div>
         </div>
       </div>
-      <div class="dash-cols">
+      <div style="display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start;">
+        <!-- AGENDA -->
         <div class="card">
-          <div class="card-header">◫ Projekter med deadline snart</div>
-          <div class="card-body" id="dash-projects"></div>
+          <div class="card-header">📅 Agenda – næste 7 dage</div>
+          <div class="card-body" id="dash-agenda" style="padding:14px 16px;"></div>
         </div>
-        <div class="card">
-          <div class="card-header">◈ SoMe · Afventer</div>
-          <div class="card-body" id="dash-some"></div>
+        <!-- RIGHT COLUMN -->
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div class="card">
+            <div class="card-header">◫ Projekter med deadline snart</div>
+            <div class="card-body" id="dash-projects"></div>
+          </div>
+          <div class="card">
+            <div class="card-header">◈ SoMe · Afventer</div>
+            <div class="card-body" id="dash-some"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -663,7 +719,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
         </div>
         <div class="field">
           <label>Kategori</label>
-          <select id="p-cat">
+          <select id="p-cat" onchange="showTemplatePreview()">
             <option>Generelt</option>
             <option>SoMe</option>
             <option>Presse</option>
@@ -672,6 +728,10 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
             <option>Admin</option>
           </select>
         </div>
+      </div>
+      <div class="template-preview" id="template-preview">
+        <strong>Delopgaver tilføjes automatisk:</strong>
+        <span id="template-preview-list"></span>
       </div>
       <div class="field">
         <label>Endegyldig deadline</label>
@@ -902,6 +962,119 @@ function selectColor(el) {
   state.selectedColor = el.dataset.color;
 }
 
+// ── TEMPLATES ──
+const TEMPLATES = {
+  'SoMe': [
+    { title: 'Skriv tekst', skippable: false },
+    { title: 'Skaf billeder', skippable: true },
+    { title: 'Send til godkendelse', skippable: false },
+    { title: 'Planlæg publicering', skippable: false },
+    { title: 'Opfølgning', skippable: false },
+    { title: 'Evaluering', skippable: false },
+  ],
+  'Presse': [
+    { title: 'Indsaml info', skippable: false },
+    { title: 'Vælg medier', skippable: false, note: 'TJEKLISTE:' },
+    { title: 'Skriv citat-udkast', skippable: false },
+    { title: 'Juster citat', skippable: false },
+    { title: 'Skriv tekst', skippable: false },
+    { title: 'Skaf billeder', skippable: true },
+    { title: 'Send til godkendelse', skippable: false },
+    { title: 'Gør klar til afsendelse', skippable: false },
+    { title: 'Send', skippable: false },
+    { title: 'Evaluering – samle artikellinks', skippable: false, note: 'Links:' },
+  ],
+};
+
+function showTemplatePreview() {
+  const cat = document.getElementById('p-cat').value;
+  const preview = document.getElementById('template-preview');
+  const list = document.getElementById('template-preview-list');
+  const tpl = TEMPLATES[cat];
+  if(!tpl || state.editingProjectId) { preview.classList.remove('visible'); return; }
+  list.textContent = tpl.map((s,i) => `${i+1}. ${s.title}${s.skippable?' (kan afvælges)':''}`).join(' · ');
+  preview.classList.add('visible');
+}
+
+function applyTemplate(project) {
+  const tpl = TEMPLATES[project.cat];
+  if(!tpl || project.subtasks.length > 0) return;
+  tpl.forEach(s => {
+    project.subtasks.push({
+      id: state.nextId++,
+      title: s.title,
+      deadline: '',
+      time: '',
+      note: s.note || '',
+      done: false,
+      doneAt: null,
+      skippable: s.skippable || false,
+      skipped: false,
+    });
+  });
+}
+
+// ── AGENDA ──
+function renderAgenda() {
+  const el = document.getElementById('dash-agenda');
+  const today = new Date(); today.setHours(0,0,0,0);
+  const days = [];
+  for(let i = 0; i < 7; i++) {
+    const d = new Date(today); d.setDate(today.getDate() + i);
+    days.push(d);
+  }
+
+  // Collect all events per day
+  const dayEvents = days.map(d => {
+    const ds = d.toISOString().split('T')[0];
+    const events = [];
+
+    // Project deadlines
+    state.projects.filter(p => !p.done && p.deadline === ds).forEach(p => {
+      events.push({ type: 'deadline', title: p.title, sub: 'Projektdeadline', color: p.color, projId: p.id, time: '' });
+    });
+
+    // Subtask deadlines
+    state.projects.forEach(p => {
+      p.subtasks.filter(s => !s.skipped && s.deadline === ds).forEach(s => {
+        events.push({ type: 'subtask', title: s.title, sub: p.title, color: p.color, projId: p.id, stId: s.id, done: s.done, time: s.time || '' });
+      });
+    });
+
+    return { date: d, ds, events };
+  });
+
+  const hasAnything = dayEvents.some(d => d.events.length > 0);
+  if(!hasAnything) {
+    el.innerHTML = '<div class="empty"><div class="emoji">🎉</div>Ingen deadlines de næste 7 dage</div>';
+    return;
+  }
+
+  const DA_DAYS = ['Søndag','Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag'];
+  const DA_MONTHS = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+
+  el.innerHTML = dayEvents.map(({ date, events }) => {
+    if(!events.length) return '';
+    const isToday = date.toDateString() === new Date().toDateString();
+    const isTomorrow = date.toDateString() === new Date(Date.now()+86400000).toDateString();
+    const label = isToday ? 'I dag' : isTomorrow ? 'I morgen' : `${DA_DAYS[date.getDay()]} ${date.getDate()}. ${DA_MONTHS[date.getMonth()]}`;
+    return `<div class="agenda-section">
+      <div class="agenda-date-header ${isToday?'today-header':''}">${label}</div>
+      ${events.map(ev => `
+        <div class="agenda-item ${ev.done?'done-item':''}">
+          <div class="agenda-color-bar" style="background:${ev.color};"></div>
+          ${ev.type==='subtask' ? `<div class="agenda-check ${ev.done?'done':''}" onclick="toggleSubtask(${ev.projId},${ev.stId})">${ev.done?'✓':''}</div>` : '<div style="width:16px;"></div>'}
+          <div class="agenda-body">
+            <div class="agenda-title ${ev.done?'done':''}">${esc(ev.title)}</div>
+            <div class="agenda-sub">${esc(ev.sub)}</div>
+          </div>
+          ${ev.time ? `<div class="agenda-time">${ev.time}</div>` : ''}
+          <span class="agenda-type ${ev.type}">${ev.type==='deadline'?'Deadline':'Delopgave'}</span>
+        </div>`).join('')}
+    </div>`;
+  }).join('');
+}
+
 // ── PROJECTS ──
 function openProjectModal(id=null) {
   state.editingProjectId = id;
@@ -912,6 +1085,7 @@ function openProjectModal(id=null) {
   document.getElementById('p-prio').value = p?.prio||'mid';
   document.getElementById('p-cat').value = p?.cat||'Generelt';
   document.getElementById('p-deadline').value = p?.deadline||'';
+  document.getElementById('template-preview').classList.remove('visible');
   state.selectedColor = p?.color||'#6c63ff';
   document.querySelectorAll('.color-dot').forEach(d=>{
     d.classList.toggle('selected', d.dataset.color===state.selectedColor);
@@ -927,7 +1101,9 @@ function saveProject() {
     const p = state.projects.find(x=>x.id===state.editingProjectId);
     if(p) { p.title=title; p.desc=document.getElementById('p-desc').value; p.prio=document.getElementById('p-prio').value; p.cat=document.getElementById('p-cat').value; p.deadline=document.getElementById('p-deadline').value; p.color=state.selectedColor; }
   } else {
-    state.projects.push({ id:state.nextId++, title, desc:document.getElementById('p-desc').value, prio:document.getElementById('p-prio').value, cat:document.getElementById('p-cat').value, deadline:document.getElementById('p-deadline').value, color:state.selectedColor, done:false, subtasks:[], createdAt:new Date().toISOString() });
+    const newProj = { id:state.nextId++, title, desc:document.getElementById('p-desc').value, prio:document.getElementById('p-prio').value, cat:document.getElementById('p-cat').value, deadline:document.getElementById('p-deadline').value, color:state.selectedColor, done:false, subtasks:[], createdAt:new Date().toISOString() };
+    applyTemplate(newProj);
+    state.projects.push(newProj);
   }
   save(); closeModal('modal-project'); renderProjects(); renderDashboard(); updateBadge(); renderDiary();
 }
@@ -1114,6 +1290,8 @@ function renderDashboard() {
   document.getElementById('stat-done').textContent = doneSubs;
   document.getElementById('stat-deadlines').textContent = dlSoon;
   document.getElementById('stat-some').textContent = someWait;
+
+  renderAgenda();
 
   const projEl = document.getElementById('dash-projects');
   const soon = state.projects.filter(p=>!p.done&&p.deadline).sort((a,b)=>a.deadline.localeCompare(b.deadline)).slice(0,5);
