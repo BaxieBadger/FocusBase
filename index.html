@@ -684,7 +684,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
     <div class="nav-item active" onclick="nav('dashboard')"><span class="ni-icon">⊞</span> Dashboard</div>
     <div class="sidebar-section-label">Arbejde</div>
     <div class="nav-item" onclick="nav('projects')" id="nav-projects">
-      <span class="ni-icon">◫</span> Projekter
+      <span class="ni-icon">◫</span> Opgaver
       <span class="ni-badge" id="proj-badge" style="display:none">0</span>
     </div>
     <div class="nav-item" onclick="nav('calendar')"><span class="ni-icon">◷</span> Kalender</div>
@@ -715,7 +715,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
     <button class="btn secondary sm" onclick="startPomodoro()">⏱ Pomodoro</button>
     <button class="btn secondary sm" onclick="startPomodoroPlus()" title="Start med den mest presserende opgave">⚡ Pomodoro+</button>
     <button class="btn secondary sm" onclick="generateWeekReport()">📊 Ugerapport</button>
-    <button class="btn sm" onclick="openProjectModal()" id="new-btn">+ Nyt projekt</button>
+    <button class="btn sm" onclick="openTaskModal()" id="new-btn">+ Ny opgave</button>
   </div>
   <div class="content">
 
@@ -723,7 +723,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
     <div class="view active" id="view-dashboard">
       <div class="dash-stats">
         <div class="stat-card" id="sc-proj" style="transition:background 0.5s,border-color 0.5s;">
-          <div class="s-label" id="sc-proj-label">Åbne projekter</div>
+          <div class="s-label" id="sc-proj-label">Åbne opgaver</div>
           <div class="s-val" id="stat-proj">0</div>
           <div class="s-sub" id="sc-proj-sub"></div>
         </div>
@@ -765,7 +765,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
         </div>
         <div style="display:flex;flex-direction:column;gap:14px;">
           <div class="card">
-            <div class="card-header">◫ Deadlines snart</div>
+            <div class="card-header">◫ Opgave-deadlines snart</div>
             <div class="card-body" id="dash-projects"></div>
           </div>
           <div class="card">
@@ -790,7 +790,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
           <button class="filter-pill" onclick="setProjFilter('done',this)">Færdige</button>
           <button class="filter-pill" onclick="setProjFilter('high',this)">🔴 Høj prioritet</button>
         </div>
-        <button class="btn sm" onclick="openProjectModal()" style="margin-left:auto;">+ Nyt projekt</button>
+        <button class="btn sm" onclick="openTaskModal()" style="margin-left:auto;">+ Ny opgave</button>
       </div>
       <div class="project-list" id="project-list"></div>
     </div>
@@ -864,15 +864,15 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
     <div class="view" id="view-diary">
       <div class="diary-layout">
         <div class="task-list-panel">
-          <div style="padding:10px 12px;border-bottom:1px solid var(--border);font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;">Projekter</div>
+          <div style="padding:10px 12px;border-bottom:1px solid var(--border);font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;">Opgaver</div>
           <div id="diary-task-list"></div>
         </div>
         <div class="diary-panel">
           <div class="diary-panel-header">
-            <div style="font-size:15px;font-weight:600;" id="diary-task-name">Vælg et projekt</div>
+            <div style="font-size:15px;font-weight:600;" id="diary-task-name">Vælg en opgave</div>
           </div>
           <div class="diary-entries" id="diary-entries">
-            <div class="empty"><div class="emoji">📓</div>Vælg et projekt til venstre</div>
+            <div class="empty"><div class="emoji">📓</div>Vælg en opgave til venstre</div>
           </div>
           <div class="diary-input-row" id="diary-input-row" style="display:none;">
             <textarea id="diary-input" placeholder="Tilføj dagbogsnotat..."></textarea>
@@ -905,13 +905,13 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
 <div class="modal-overlay" id="modal-project">
   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title" id="modal-project-title">Nyt projekt</div>
+      <div class="modal-title" id="modal-project-title">Ny opgave</div>
       <button class="modal-close" onclick="closeModal('modal-project')">✕</button>
     </div>
     <div class="modal-body">
       <div class="field">
-        <label>Projektnavn *</label>
-        <input type="text" id="p-title" placeholder="Hvad handler projektet om?">
+        <label>Opgavenavn *</label>
+        <input type="text" id="p-title" placeholder="Hvad handler opgaven om?">
       </div>
       <div class="field">
         <label>Beskrivelse</label>
@@ -948,21 +948,8 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
         <label>Endegyldig deadline</label>
         <input type="date" id="p-deadline" style="width:100%;">
       </div>
-      <div class="field">
-        <label>Farve</label>
-        <div class="color-picker" id="color-picker">
-          <div class="color-dot selected" style="background:#0a2d6e;" data-color="#0a2d6e" onclick="selectColor(this)" title="SoMe – Mørkeblå"></div>
-          <div class="color-dot" style="background:#F47920;" data-color="#F47920" onclick="selectColor(this)" title="Presse – Gulf Orange"></div>
-          <div class="color-dot" style="background:#c8960c;" data-color="#c8960c" onclick="selectColor(this)" title="Nyhedsbrev – Guldgul"></div>
-          <div class="color-dot" style="background:#004225;" data-color="#004225" onclick="selectColor(this)" title="Artikel – British Racing Green"></div>
-          <div class="color-dot" style="background:#c8a97e;" data-color="#c8a97e" onclick="selectColor(this)" title="Møde – Sand"></div>
-          <div class="color-dot" style="background:#5b3fa0;" data-color="#5b3fa0" onclick="selectColor(this)" title="Admin – Lilla"></div>
-          <div class="color-dot" style="background:#00AEEF;" data-color="#00AEEF" onclick="selectColor(this)" title="Projekt – Gulf Blå"></div>
-          <div class="color-dot" style="background:#9099a8;" data-color="#9099a8" onclick="selectColor(this)" title="Andet – Grå"></div>
-        </div>
-      </div>
       <div class="flex gap8">
-        <button class="btn" onclick="saveProject()" style="flex:1;">Gem projekt</button>
+        <button class="btn" onclick="saveProject()" style="flex:1;">Gem opgave</button>
         <button class="btn secondary" onclick="closeModal('modal-project')">Annuller</button>
       </div>
     </div>
@@ -1245,7 +1232,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
       <div class="rep-stat"><div class="val" id="rep-best">–</div><div class="lbl">Bedste dag</div></div>
     </div>
     <div class="rep-section"><h3>Færdiggjort denne uge</h3><div id="rep-done-list"></div></div>
-    <div class="rep-section"><h3>Projekter i gang</h3><div id="rep-open-list"></div></div>
+    <div class="rep-section"><h3>Opgaver i gang</h3><div id="rep-open-list"></div></div>
     <button class="btn" onclick="closeReport()" style="width:100%;margin-top:16px;">Luk rapport</button>
   </div>
 </div>
@@ -1266,11 +1253,11 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
     </div>
     <div id="ai-chat" style="display:none;flex-direction:column;flex:1;">
       <div class="ai-messages" id="ai-messages">
-        <div class="ai-msg assistant">Hej! Jeg kan oprette projekter, delopgaver, SoMe-opslag og notater direkte for dig. Prøv fx: <em>"Opret projekt: Pressemeddelelse om åbent hus"</em></div>
+        <div class="ai-msg assistant">Hej! Jeg kan oprette opgaver, delopgaver, SoMe-opslag og notater direkte for dig. Prøv fx: <em>"Opret opgave: Pressemeddelelse om åbent hus"</em></div>
       </div>
       <div class="ai-suggestions">
-        <button class="ai-suggestion" onclick="aiSuggest('Hvad er mine åbne projekter?')">Åbne projekter?</button>
-        <button class="ai-suggestion" onclick="aiSuggest('Opret projekt: ')">+ Projekt</button>
+        <button class="ai-suggestion" onclick="aiSuggest('Hvad er mine åbne opgaver?')">Åbne opgaver?</button>
+        <button class="ai-suggestion" onclick="aiSuggest('Opret opgave: ')">+ Opgave</button>
         <button class="ai-suggestion" onclick="aiSuggest('Opret SoMe-opslag til LinkedIn: ')">+ SoMe</button>
         <button class="ai-suggestion" onclick="aiSuggest('Opret note: ')">+ Note</button>
       </div>
@@ -1492,10 +1479,10 @@ function nav(id) {
   if(items[map[id]]) items[map[id]].classList.add('active');
   const titles = {dashboard:'Dashboard',projects:'Projekter',calendar:'Kalender',some:'SoMe-opslag',notes:'Notater',diary:'Opgavedagbog',reports:'Afrapportering'};
   document.getElementById('page-title').textContent = titles[id]||id;
-  const newBtnLabels = {dashboard:'+ Nyt projekt',projects:'+ Nyt projekt',calendar:'+ Nyt projekt',some:'+ Nyt opslag',notes:'+ Ny note',diary:'+ Nyt projekt',reports:'+ Nyt projekt'};
+  const newBtnLabels = {dashboard:'+ Ny opgave',projects:'+ Ny opgave',calendar:'+ Ny opgave',some:'+ Nyt opslag',notes:'+ Ny note',diary:'+ Ny opgave',reports:'+ Ny opgave'};
   const newBtn = document.getElementById('new-btn');
   newBtn.textContent = newBtnLabels[id]||'+ Ny';
-  newBtn.onclick = id==='some' ? openSomeModal : id==='notes' ? newNote : openProjectModal;
+  newBtn.onclick = id==='some' ? openSomeModal : id==='notes' ? newNote : openTaskModal;
   if(id==='dashboard') renderDashboard();
   if(id==='projects')  renderProjects();
   if(id==='calendar')  renderCalendar();
@@ -1919,7 +1906,7 @@ function updateTopbarColor() {
     b.style.borderColor  = theme.btnBorder;
   });
 
-  // Style primary button (+ Nyt projekt) – invert for contrast
+  // Style primary button (+ Ny opgave) – invert for contrast
   const primary = document.querySelector('#main-topbar .btn:not(.secondary)');
   if(primary) {
     primary.style.background = theme.text === '#ffffff' ? 'rgba(255,255,255,0.95)' : 'rgba(0,0,0,0.75)';
@@ -1928,10 +1915,13 @@ function updateTopbarColor() {
 }
 
 // ── PROJECTS ──
+// openTaskModal is the user-facing alias for openProjectModal
+function openTaskModal(id=null) { openProjectModal(id); }
+
 function openProjectModal(id=null) {
   state.editingProjectId = id;
   const p = id ? state.projects.find(x=>x.id===id) : null;
-  document.getElementById('modal-project-title').textContent = p ? 'Rediger projekt' : 'Nyt projekt';
+  document.getElementById('modal-project-title').textContent = p ? 'Rediger opgave' : 'Ny opgave';
   document.getElementById('p-title').value = p?.title||'';
   document.getElementById('p-desc').value = p?.desc||'';
   document.getElementById('p-prio').value = p?.prio||'mid';
@@ -1948,7 +1938,7 @@ function openProjectModal(id=null) {
 
 function saveProject() {
   const title = document.getElementById('p-title').value.trim();
-  if(!title) { alert('Giv projektet et navn'); return; }
+  if(!title) { alert('Giv opgaven et navn'); return; }
   if(state.editingProjectId) {
     const p = state.projects.find(x=>x.id===state.editingProjectId);
     if(p) { p.title=title; p.desc=document.getElementById('p-desc').value; p.prio=document.getElementById('p-prio').value; p.cat=document.getElementById('p-cat').value; p.deadline=document.getElementById('p-deadline').value; p.color=state.selectedColor; }
@@ -1967,7 +1957,7 @@ function saveProject() {
 }
 
 function deleteProject(id) {
-  if(!confirm('Slet projekt og alle delopgaver?')) return;
+  if(!confirm('Slet opgave og alle delopgaver?')) return;
   state.projects = state.projects.filter(x=>x.id!==id);
   delete state.diaryEntries[id];
   save(); renderProjects(); renderDashboard(); updateBadge(); renderDiary();
@@ -2007,7 +1997,7 @@ function renderProjects() {
     if(a.done!==b.done) return a.done?1:-1;
     const po={high:0,mid:1,low:2}; return po[a.prio]-po[b.prio];
   });
-  if(!projects.length) { list.innerHTML='<div class="empty"><div class="emoji">📋</div>Ingen projekter endnu</div>'; return; }
+  if(!projects.length) { list.innerHTML='<div class="empty"><div class="emoji">📋</div>Ingen opgaver endnu</div>'; return; }
   list.innerHTML = projects.map(p=>renderProjectCard(p)).join('');
 }
 
@@ -2200,7 +2190,7 @@ function renderDashboard() {
     updateTopbarColor();
   }
 
-  // Stat 1: Åbne projekter – dominant cat by project count
+  // Stat 1: Åbne opgaver – dominant cat by project count
   const dominantProj = dominantCatAmong(openProjects);
   document.getElementById('stat-proj').textContent = openProjects.length;
   document.getElementById('sc-proj-sub').textContent = dominantProj ? `Flest: ${dominantProj}` : '';
@@ -2363,7 +2353,7 @@ function renderReports() {
   );
 
   if(!reportable.length) {
-    el.innerHTML = '<div class="empty"><div class="emoji">📋</div>Ingen afrapporteringer endnu.<br>Tilføj statistik til et projekt for at se det her.</div>';
+    el.innerHTML = '<div class="empty"><div class="emoji">📋</div>Ingen afrapporteringer endnu.<br>Tilføj statistik til en opgave for at se det her.</div>';
     return;
   }
 
@@ -2500,7 +2490,7 @@ function renderCalendar() {
     const isToday=!c.other&&today.getFullYear()===y&&today.getMonth()===m&&today.getDate()===c.day;
     const events=c.other?[]:state.projects.filter(p=>p.deadline===ds);
     const subs=c.other?[]:state.projects.flatMap(p=>p.subtasks.filter(s=>s.deadline===ds));
-    return `<div class="cal-day ${isToday?'today':''} ${c.other?'other-month':''}" onclick="${c.other?'':'openProjectModal()'}">
+    return `<div class="cal-day ${isToday?'today':''} ${c.other?'other-month':''}" onclick="${c.other?'':'openTaskModal()'}">
       <div class="cal-day-num">${c.day}</div>
       ${events.map(e=>`<div class="cal-event deadline">📁 ${esc(e.title)}</div>`).join('')}
       ${subs.slice(0,2).map(s=>`<div class="cal-event task">◻ ${esc(s.title)}</div>`).join('')}
@@ -2768,7 +2758,7 @@ function saveCurrentNote(){const n=state.notes.find(x=>x.id===state.currentNoteI
 // ── DIARY ──
 function renderDiary(){
   const list=document.getElementById('diary-task-list');
-  if(!state.projects.length){list.innerHTML='<div class="empty"><div class="emoji">📋</div>Ingen projekter</div>';return;}
+  if(!state.projects.length){list.innerHTML='<div class="empty"><div class="emoji">📋</div>Ingen opgaver</div>';return;}
   list.innerHTML=state.projects.map(p=>`<div class="task-list-item ${p.id===state.currentDiaryProjectId?'active':''}" onclick="selectDiaryProject(${p.id})"><h4>${esc(p.title)}</h4><p>${(state.diaryEntries[p.id]||[]).length} noter</p></div>`).join('');
 }
 function selectDiaryProject(id){state.currentDiaryProjectId=id;renderDiary();loadDiaryEntries();}
@@ -3018,7 +3008,7 @@ function generateWeekReport(){
   document.getElementById('rep-best').textContent=bestDay?bestDay[0].charAt(0).toUpperCase()+bestDay[0].slice(1):'–';
   const openProj=state.projects.filter(p=>!p.done);
   document.getElementById('rep-done-list').innerHTML=weekDone.length?weekDone.map(s=>`<div class="rep-item">✓ ${esc(s.title)}</div>`).join(''):'<div class="rep-item" style="color:var(--text-muted);">Ingen færdige delopgaver</div>';
-  document.getElementById('rep-open-list').innerHTML=openProj.length?openProj.map(p=>`<div class="rep-item">◫ ${esc(p.title)} · ${p.subtasks.filter(s=>!s.done).length} delopgaver tilbage</div>`).join(''):'<div class="rep-item" style="color:var(--accent2);">Ingen åbne projekter 🎉</div>';
+  document.getElementById('rep-open-list').innerHTML=openProj.length?openProj.map(p=>`<div class="rep-item">◫ ${esc(p.title)} · ${p.subtasks.filter(s=>!s.done).length} delopgaver tilbage</div>`).join(''):'<div class="rep-item" style="color:var(--accent2);">Ingen åbne opgaver 🎉</div>';
   document.getElementById('report-overlay').classList.add('open');
 }
 function closeReport(){document.getElementById('report-overlay').classList.remove('open');}
@@ -3047,10 +3037,10 @@ function saveApiKey(){const key=document.getElementById('api-key-input').value.t
 function aiSuggest(text){const inp=document.getElementById('ai-input');inp.value=text;inp.focus();inp.style.height='auto';inp.style.height=inp.scrollHeight+'px';}
 function addAiMsg(role,html){const el=document.createElement('div');el.className=`ai-msg ${role}`;el.innerHTML=html;document.getElementById('ai-messages').appendChild(el);document.getElementById('ai-messages').scrollTop=9999;return el;}
 function buildSystemPrompt(){
-  const projects=state.projects.map(p=>`[ID:${p.id}] "${p.title}" | prio:${p.prio} | ${p.done?'FÆRDIG':'ÅBEN'} | delopgaver:${p.subtasks.length}${p.deadline?' | deadline:'+p.deadline:''}`).join('\n')||'Ingen projekter.';
+  const projects=state.projects.map(p=>`[ID:${p.id}] "${p.title}" | prio:${p.prio} | ${p.done?'FÆRDIG':'ÅBEN'} | delopgaver:${p.subtasks.length}${p.deadline?' | deadline:'+p.deadline:''}`).join('\n')||'Ingen opgaver.';
   const some=state.some.map(s=>`[ID:${s.id}] ${s.platform} | status:${s.status}`).join('\n')||'Ingen opslag.';
   const notes=state.notes.map(n=>`[ID:${n.id}] "${n.title}"`).join('\n')||'Ingen notater.';
-  return `Du er FocusAssistenten i FocusBase. Kommuniker på dansk, kortfattet og direkte.\n\nPROJEKTER:\n${projects}\n\nSOME:\n${some}\n\nNOTATER:\n${notes}\n\nDu kan udføre handlinger med JSON-kommandoer sidst i dit svar:\n- Opret projekt: |||{"action":"create_project","title":"...","desc":"...","prio":"high|mid|low","cat":"...","deadline":"YYYY-MM-DD","color":"#6c63ff"}|||\n- Tilføj delopgave: |||{"action":"add_subtask","projectId":123,"title":"...","deadline":"YYYY-MM-DD","time":"HH:MM"}|||\n- Opret SoMe: |||{"action":"create_some","platform":"LinkedIn","content":"...","date":"YYYY-MM-DD","status":"draft"}|||\n- Opret note: |||{"action":"create_note","title":"...","body":"...","cat":"general"}|||\n\nSvar altid på dansk, maks 2-3 sætninger.`;
+  return `Du er FocusAssistenten i FocusBase. Kommuniker på dansk, kortfattet og direkte.\n\nPROJEKTER:\n${projects}\n\nSOME:\n${some}\n\nNOTATER:\n${notes}\n\nDu kan udføre handlinger med JSON-kommandoer sidst i dit svar:\n- Opret opgave: |||{"action":"create_project","title":"...","desc":"...","prio":"high|mid|low","cat":"...","deadline":"YYYY-MM-DD","color":"#6c63ff"}|||\n- Tilføj delopgave: |||{"action":"add_subtask","projectId":123,"title":"...","deadline":"YYYY-MM-DD","time":"HH:MM"}|||\n- Opret SoMe: |||{"action":"create_some","platform":"LinkedIn","content":"...","date":"YYYY-MM-DD","status":"draft"}|||\n- Opret note: |||{"action":"create_note","title":"...","body":"...","cat":"general"}|||\n\nSvar altid på dansk, maks 2-3 sætninger.`;
 }
 async function sendAiMessage(){
   const inp=document.getElementById('ai-input');const msg=inp.value.trim();if(!msg)return;
@@ -3070,7 +3060,7 @@ async function sendAiMessage(){
   btn.disabled=false;
 }
 function executeAiCommand(cmd){
-  if(cmd.action==='create_project'){state.projects.push({id:state.nextId++,title:cmd.title||'Nyt projekt',desc:cmd.desc||'',prio:cmd.prio||'mid',cat:cmd.cat||'Generelt',deadline:cmd.deadline||'',color:cmd.color||'#6c63ff',done:false,subtasks:[],createdAt:new Date().toISOString()});save();renderProjects();renderDashboard();updateBadge();renderDiary();toast(`✓ Projekt oprettet: ${cmd.title}`);}
+  if(cmd.action==='create_project'){state.projects.push({id:state.nextId++,title:cmd.title||'Ny opgave',desc:cmd.desc||'',prio:cmd.prio||'mid',cat:cmd.cat||'Generelt',deadline:cmd.deadline||'',color:cmd.color||'#6c63ff',done:false,subtasks:[],createdAt:new Date().toISOString()});save();renderProjects();renderDashboard();updateBadge();renderDiary();toast(`✓ Opgave oprettet: ${cmd.title}`);}
   else if(cmd.action==='add_subtask'){const p=state.projects.find(x=>x.id===cmd.projectId);if(p){p.subtasks.push({id:state.nextId++,title:cmd.title,deadline:cmd.deadline||'',time:cmd.time||'',note:'',done:false,doneAt:null});save();renderProjects();renderDashboard();toast(`✓ Delopgave tilføjet: ${cmd.title}`);}}
   else if(cmd.action==='create_some'){state.some.push({id:state.nextId++,platform:cmd.platform||'LinkedIn',content:cmd.content||'',date:cmd.date||'',status:cmd.status||'draft',checks:[false,false,false,false,false],createdAt:new Date().toISOString()});save();renderSome();renderDashboard();toast(`✓ SoMe-opslag oprettet`);}
   else if(cmd.action==='create_note'){const n={id:state.nextId++,title:cmd.title||'',body:cmd.body||'',cat:cmd.cat||'general',createdAt:new Date().toISOString()};state.notes.unshift(n);state.currentNoteId=n.id;save();renderNotes();loadNoteEditor();toast(`✓ Note oprettet`);}
