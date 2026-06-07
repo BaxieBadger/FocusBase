@@ -1,0 +1,1944 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FocusBase</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,700;1,9..144,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0e0e;
+    --surface: #161616;
+    --surface2: #1e1e1e;
+    --border: #2a2a2a;
+    --accent: #e8c547;
+    --accent2: #4ecdc4;
+    --accent3: #ff6b6b;
+    --text: #e8e4dc;
+    --text-muted: #6b6b6b;
+    --text-dim: #999;
+    --success: #69db7c;
+    --radius: 4px;
+    --font-mono: 'DM Mono', monospace;
+    --font-display: 'Fraunces', serif;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── LAYOUT ── */
+  .shell { display:flex; height:100vh; }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: 220px;
+    min-width: 220px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .logo {
+    padding: 20px 20px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo h1 {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+    line-height: 1;
+  }
+  .logo span {
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    display:block;
+    margin-top:4px;
+  }
+
+  .nav { padding: 12px 0; flex:1; }
+  .nav-section-label {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 8px 20px 4px;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 20px;
+    cursor: pointer;
+    color: var(--text-dim);
+    transition: all 0.15s;
+    border-left: 2px solid transparent;
+    font-size: 12px;
+  }
+  .nav-item:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+  .nav-item.active {
+    color: var(--accent);
+    border-left-color: var(--accent);
+    background: rgba(232,197,71,0.06);
+  }
+  .nav-item .icon { font-size: 15px; width:18px; text-align:center; }
+  .nav-item .badge {
+    margin-left: auto;
+    background: var(--accent3);
+    color: #000;
+    font-size: 9px;
+    padding: 1px 5px;
+    border-radius: 10px;
+    font-weight: 500;
+  }
+
+  .sidebar-footer {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+  .focus-meter {
+    margin-top: 6px;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .focus-meter-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    border-radius: 2px;
+    transition: width 0.5s ease;
+  }
+
+  /* ── MAIN ── */
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .topbar {
+    padding: 14px 28px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--surface);
+  }
+  .topbar-title {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 600;
+    flex:1;
+  }
+  .topbar-time {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .btn {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    padding: 7px 14px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: var(--radius);
+    transition: opacity 0.15s;
+    letter-spacing: 0.5px;
+  }
+  .btn:hover { opacity: 0.85; }
+  .btn.secondary {
+    background: transparent;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+  }
+  .btn.secondary:hover { color: var(--text); border-color: #444; }
+  .btn.danger { background: var(--accent3); color:#fff; }
+
+  .content {
+    flex:1;
+    overflow-y: auto;
+    padding: 28px;
+  }
+  .content::-webkit-scrollbar { width: 4px; }
+  .content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* ── VIEWS ── */
+  .view { display:none; }
+  .view.active { display:block; }
+
+  /* ── DASHBOARD ── */
+  .dash-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  .dash-stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+  }
+  .dash-stat .label { font-size: 10px; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase; }
+  .dash-stat .value {
+    font-family: var(--font-display);
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1.1;
+    margin-top: 4px;
+  }
+
+  .dash-row { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; }
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .panel-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .panel-header span { color: var(--text-dim); font-size: 14px; }
+  .panel-body { padding: 14px 18px; }
+
+  /* ── TODO ── */
+  .todo-filters {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .filter-btn {
+    padding: 5px 12px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    cursor: pointer;
+    border-radius: 20px;
+    transition: all 0.15s;
+  }
+  .filter-btn:hover, .filter-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(232,197,71,0.07);
+  }
+
+  .todo-input-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  input[type="text"], textarea, select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 8px 12px;
+    border-radius: var(--radius);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input[type="text"]:focus, textarea:focus, select:focus {
+    border-color: var(--accent);
+  }
+  input[type="text"] { flex:1; }
+  textarea { width:100%; resize:vertical; min-height:80px; }
+  select { cursor:pointer; }
+
+  .todo-list { display:flex; flex-direction:column; gap:6px; }
+  .todo-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    transition: all 0.2s;
+    cursor: default;
+  }
+  .todo-item:hover { border-color: #3a3a3a; }
+  .todo-item.done { opacity: 0.45; }
+  .todo-item.done .todo-text { text-decoration: line-through; color: var(--text-muted); }
+
+  .todo-check {
+    width: 16px; height: 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 3px;
+    cursor: pointer;
+    display: flex; align-items:center; justify-content:center;
+    flex-shrink: 0;
+    margin-top:1px;
+    transition: all 0.15s;
+  }
+  .todo-check:hover { border-color: var(--accent); }
+  .todo-check.checked { background: var(--accent); border-color: var(--accent); color:#000; font-size:10px; }
+
+  .todo-body { flex:1; }
+  .todo-text { font-size:13px; line-height:1.4; }
+  .todo-meta { display:flex; gap:8px; margin-top:5px; flex-wrap:wrap; }
+  .tag {
+    font-size: 9px;
+    padding: 2px 7px;
+    border-radius: 10px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+  .tag.prio-high { background: rgba(255,107,107,0.15); color: var(--accent3); }
+  .tag.prio-mid  { background: rgba(232,197,71,0.15);  color: var(--accent); }
+  .tag.prio-low  { background: rgba(78,205,196,0.15);  color: var(--accent2); }
+  .tag.cat       { background: rgba(255,255,255,0.07); color: var(--text-muted); }
+  .tag.deadline  { background: rgba(255,107,107,0.1);  color: #ff9a9a; }
+
+  .todo-actions { display:flex; gap:4px; margin-top:2px; }
+  .icon-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 13px;
+    padding: 2px 4px;
+    border-radius: 3px;
+    transition: color 0.15s;
+    font-family: var(--font-mono);
+  }
+  .icon-btn:hover { color: var(--text); }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    backdrop-filter: blur(4px);
+  }
+  .modal-overlay.open { display:flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    width: 520px;
+    max-width: 95vw;
+    max-height: 88vh;
+    overflow-y: auto;
+  }
+  .modal-header {
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .modal-title {
+    font-family: var(--font-display);
+    font-size: 17px;
+    font-weight: 600;
+  }
+  .modal-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 18px;
+    cursor: pointer;
+    line-height:1;
+  }
+  .modal-body { padding: 22px; display:flex; flex-direction:column; gap:14px; }
+  .field label { display:block; font-size:10px; color:var(--text-muted); letter-spacing:1px; text-transform:uppercase; margin-bottom:5px; }
+  .row2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+  /* ── CALENDAR ── */
+  .cal-nav {
+    display:flex; align-items:center; gap:12px; margin-bottom:20px;
+  }
+  .cal-nav h2 {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 600;
+    flex:1;
+  }
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+  }
+  .cal-day-header {
+    text-align:center;
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    padding: 6px 0;
+    text-transform: uppercase;
+  }
+  .cal-day {
+    min-height: 80px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 6px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+    position: relative;
+  }
+  .cal-day:hover { border-color: #3a3a3a; }
+  .cal-day.today { border-color: var(--accent); }
+  .cal-day.other-month { opacity: 0.35; }
+  .cal-day-num {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+  }
+  .cal-day.today .cal-day-num { color: var(--accent); font-weight: 500; }
+  .cal-event-dot {
+    font-size: 10px;
+    color: var(--accent2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 1px 3px;
+    margin-bottom:1px;
+    border-radius:2px;
+    background: rgba(78,205,196,0.12);
+  }
+  .cal-event-dot.deadline { color: var(--accent3); background: rgba(255,107,107,0.1); }
+
+  /* ── SOME ── */
+  .some-grid { display:grid; grid-template-columns: 1fr 1fr; gap:14px; }
+  .some-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .some-card:hover { border-color: #3a3a3a; }
+  .some-card-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    display:flex; align-items:center; gap:8px;
+  }
+  .some-platform {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .some-status {
+    margin-left: auto;
+    font-size: 9px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .some-status.draft { background: rgba(255,255,255,0.07); color: var(--text-muted); }
+  .some-status.ready { background: rgba(105,219,124,0.15); color: var(--success); }
+  .some-status.posted { background: rgba(78,205,196,0.15); color: var(--accent2); }
+  .some-card-body { padding: 14px 16px; }
+  .some-content { font-size:12px; line-height:1.6; color: var(--text-dim); margin-bottom:10px; }
+  .some-checklist { border-top: 1px solid var(--border); padding-top:10px; }
+  .some-check-item {
+    display:flex; align-items:center; gap:8px;
+    font-size: 11px;
+    color: var(--text-muted);
+    padding: 3px 0;
+    cursor:pointer;
+  }
+  .some-check-item.checked { color: var(--success); }
+  .some-check-item input[type="checkbox"] { accent-color: var(--success); }
+
+  /* ── NOTES ── */
+  .notes-layout { display:grid; grid-template-columns:220px 1fr; gap:16px; height: calc(100vh - 120px); }
+  .notes-list {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow-y:auto;
+  }
+  .notes-list::-webkit-scrollbar { width:3px; }
+  .notes-list::-webkit-scrollbar-thumb { background:var(--border); }
+  .note-list-item {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .note-list-item:hover { background: rgba(255,255,255,0.03); }
+  .note-list-item.active { background: rgba(232,197,71,0.07); border-left: 2px solid var(--accent); }
+  .note-list-item h4 { font-size:12px; color:var(--text); margin-bottom:3px; }
+  .note-list-item p { font-size:10px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .note-editor {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    display:flex; flex-direction:column;
+    overflow:hidden;
+  }
+  .note-editor-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    display:flex; gap:8px;
+  }
+  .note-title-input {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 600;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    flex:1;
+    outline:none;
+  }
+  .note-body-input {
+    flex:1;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    padding: 18px;
+    outline:none;
+    resize:none;
+    line-height: 1.8;
+  }
+
+  /* ── DIARY ── */
+  .diary-layout { display:grid; grid-template-columns:240px 1fr; gap:16px; }
+  .task-list-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow-y:auto;
+    max-height: calc(100vh - 140px);
+  }
+  .task-list-item {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .task-list-item:hover { background: rgba(255,255,255,0.03); }
+  .task-list-item.active { background: rgba(232,197,71,0.07); border-left: 2px solid var(--accent); }
+  .task-list-item h4 { font-size:12px; margin-bottom:2px; }
+  .task-list-item p { font-size:10px; color:var(--text-muted); }
+  .diary-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    display:flex;
+    flex-direction:column;
+    max-height: calc(100vh - 140px);
+    overflow:hidden;
+  }
+  .diary-panel-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    display:flex; align-items:center; gap:8px;
+  }
+  .diary-entries { flex:1; overflow-y:auto; padding:14px 18px; }
+  .diary-entries::-webkit-scrollbar { width:3px; }
+  .diary-entry {
+    margin-bottom: 20px;
+    border-left: 2px solid var(--border);
+    padding-left: 14px;
+  }
+  .diary-entry-time { font-size:10px; color:var(--text-muted); margin-bottom:4px; }
+  .diary-entry-text { font-size:12px; line-height:1.7; color:var(--text-dim); }
+  .diary-input-row {
+    padding: 14px 18px;
+    border-top: 1px solid var(--border);
+    display:flex; gap:8px;
+  }
+  .diary-input-row textarea { min-height:60px; flex:1; }
+
+  /* ── EMPTY STATE ── */
+  .empty {
+    text-align:center;
+    padding: 40px 20px;
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+  .empty .emoji { font-size: 28px; margin-bottom:8px; }
+
+  /* ── TIMER WIDGET ── */
+  .timer-widget {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 18px;
+    display:none;
+    z-index:50;
+    min-width:160px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  .timer-widget.visible { display:block; }
+  .timer-display {
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--accent);
+    text-align:center;
+    font-variant-numeric: tabular-nums;
+    margin-bottom:8px;
+  }
+  .timer-label { font-size:10px; color:var(--text-muted); text-align:center; letter-spacing:1px; text-transform:uppercase; margin-bottom:10px; }
+  .timer-controls { display:flex; gap:6px; justify-content:center; }
+
+  /* ── REMINDER TOAST ── */
+  .toasts {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    z-index:200;
+    pointer-events:none;
+  }
+  .toast {
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 10px 16px;
+    font-size:12px;
+    color: var(--text);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    animation: slideUp 0.3s ease;
+    pointer-events:all;
+  }
+  @keyframes slideUp {
+    from { transform:translateY(20px); opacity:0; }
+    to { transform:translateY(0); opacity:1; }
+  }
+
+  /* Utility */
+  .flex { display:flex; }
+  .gap8 { gap:8px; }
+  .ml-auto { margin-left:auto; }
+  .mt8 { margin-top:8px; }
+  .mt16 { margin-top:16px; }
+  hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
+
+  /* ── AI ASSISTANT ── */
+  .ai-bubble {
+    position: fixed;
+    bottom: 24px;
+    left: 236px;
+    z-index: 90;
+  }
+  .ai-toggle {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    border: none;
+    cursor: pointer;
+    display: flex; align-items:center; justify-content:center;
+    font-size: 18px;
+    box-shadow: 0 4px 20px rgba(78,205,196,0.3);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .ai-toggle:hover { transform: scale(1.08); box-shadow: 0 6px 28px rgba(78,205,196,0.45); }
+  .ai-toggle.open { background: linear-gradient(135deg, var(--accent), var(--accent2)); }
+
+  .ai-panel {
+    position: absolute;
+    bottom: 54px;
+    left: 0;
+    width: 360px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    max-height: 520px;
+  }
+  .ai-panel.open { display: flex; }
+
+  .ai-header {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .ai-header-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent2);
+    box-shadow: 0 0 8px var(--accent2);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .ai-header-title { font-size: 12px; font-weight: 500; color: var(--text); flex:1; }
+  .ai-header-sub { font-size: 10px; color: var(--text-muted); }
+
+  .ai-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 200px;
+    max-height: 340px;
+  }
+  .ai-messages::-webkit-scrollbar { width: 3px; }
+  .ai-messages::-webkit-scrollbar-thumb { background: var(--border); }
+
+  .ai-msg {
+    max-width: 85%;
+    font-size: 12px;
+    line-height: 1.5;
+    padding: 9px 12px;
+    border-radius: 6px;
+    animation: fadeIn 0.2s ease;
+  }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+  .ai-msg.assistant {
+    background: rgba(78,205,196,0.1);
+    border: 1px solid rgba(78,205,196,0.2);
+    color: var(--text);
+    align-self: flex-start;
+  }
+  .ai-msg.user {
+    background: rgba(232,197,71,0.1);
+    border: 1px solid rgba(232,197,71,0.2);
+    color: var(--text);
+    align-self: flex-end;
+  }
+  .ai-msg.thinking {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-style: italic;
+    align-self: flex-start;
+  }
+
+  .ai-input-row {
+    padding: 12px 14px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+  }
+  .ai-input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 8px 10px;
+    border-radius: var(--radius);
+    outline: none;
+    resize: none;
+    min-height: 36px;
+    max-height: 100px;
+    transition: border-color 0.15s;
+  }
+  .ai-input:focus { border-color: var(--accent2); }
+  .ai-send {
+    background: var(--accent2);
+    color: #000;
+    border: none;
+    padding: 8px 12px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    cursor: pointer;
+    border-radius: var(--radius);
+    font-weight: 500;
+    transition: opacity 0.15s;
+    white-space: nowrap;
+  }
+  .ai-send:hover { opacity: 0.85; }
+  .ai-send:disabled { opacity: 0.4; cursor: default; }
+
+  .ai-suggestions {
+    padding: 0 14px 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  .ai-suggestion {
+    font-size: 10px;
+    padding: 3px 9px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    background: transparent;
+    font-family: var(--font-mono);
+    transition: all 0.15s;
+  }
+  .ai-suggestion:hover { color: var(--accent2); border-color: var(--accent2); }
+
+  /* API key setup */
+  .api-setup {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .api-setup p { font-size: 11px; color: var(--text-muted); line-height: 1.6; }
+  .api-setup a { color: var(--accent2); }
+  .api-key-input {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 10px;
+    border-radius: var(--radius);
+    outline: none;
+    width: 100%;
+  }
+  .api-key-input:focus { border-color: var(--accent2); }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="logo">
+      <h1>FocusBase</h1>
+      <span>Dit system · Din flow</span>
+    </div>
+    <div class="nav">
+      <div class="nav-section-label">Overblik</div>
+      <div class="nav-item active" onclick="nav('dashboard')">
+        <span class="icon">◈</span> Dashboard
+      </div>
+      <div class="nav-section-label">Arbejde</div>
+      <div class="nav-item" onclick="nav('todo')" id="nav-todo">
+        <span class="icon">◻</span> To-do
+        <span class="badge" id="todo-badge" style="display:none">0</span>
+      </div>
+      <div class="nav-item" onclick="nav('calendar')">
+        <span class="icon">◷</span> Kalender
+      </div>
+      <div class="nav-item" onclick="nav('some')" id="nav-some">
+        <span class="icon">◈</span> SoMe
+      </div>
+      <div class="nav-section-label">Arkiv</div>
+      <div class="nav-item" onclick="nav('notes')">
+        <span class="icon">◱</span> Notater
+      </div>
+      <div class="nav-item" onclick="nav('diary')">
+        <span class="icon">◎</span> Opgavedagbog
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <div id="focus-label">Fokus-score i dag</div>
+      <div class="focus-meter">
+        <div class="focus-meter-fill" id="focus-fill" style="width:0%"></div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="page-title">Dashboard</div>
+      <div class="topbar-time" id="clock">--:--</div>
+      <button class="btn secondary" onclick="startPomodoro()" id="pomo-btn">⏱ Pomodoro</button>
+      <button class="btn" onclick="openNewModal()" id="new-btn">+ Ny opgave</button>
+    </div>
+
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="view active" id="view-dashboard">
+        <div class="dash-grid">
+          <div class="dash-stat">
+            <div class="label">Åbne opgaver</div>
+            <div class="value" id="stat-open">0</div>
+          </div>
+          <div class="dash-stat">
+            <div class="label">Færdige i dag</div>
+            <div class="value" id="stat-done">0</div>
+          </div>
+        </div>
+        <div class="dash-row">
+          <div class="panel">
+            <div class="panel-header"><span>◻</span> Næste op</div>
+            <div class="panel-body" id="dash-next"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-header"><span>⚑</span> Deadlines snart</div>
+            <div class="panel-body" id="dash-deadlines"></div>
+          </div>
+        </div>
+        <hr class="divider">
+        <div class="panel mt8">
+          <div class="panel-header"><span>◈</span> SoMe · Afventer tjek</div>
+          <div class="panel-body" id="dash-some-check"></div>
+        </div>
+      </div>
+
+      <!-- TODO -->
+      <div class="view" id="view-todo">
+        <div class="todo-input-row">
+          <input type="text" id="quick-todo" placeholder="Ny opgave — tryk Enter..." onkeydown="if(event.key==='Enter') quickAddTodo()">
+          <button class="btn" onclick="quickAddTodo()">Tilføj</button>
+          <button class="btn secondary" onclick="openNewModal()">⊕ Detaljeret</button>
+        </div>
+        <div class="todo-filters">
+          <button class="filter-btn active" onclick="setFilter('all',this)">Alle</button>
+          <button class="filter-btn" onclick="setFilter('open',this)">Åbne</button>
+          <button class="filter-btn" onclick="setFilter('done',this)">Færdige</button>
+          <button class="filter-btn" onclick="setFilter('high',this)">🔴 Høj prioritet</button>
+          <button class="filter-btn" onclick="setFilter('some',this)">SoMe</button>
+        </div>
+        <div class="todo-list" id="todo-list"></div>
+      </div>
+
+      <!-- CALENDAR -->
+      <div class="view" id="view-calendar">
+        <div class="cal-nav">
+          <button class="btn secondary" onclick="calPrev()">←</button>
+          <h2 id="cal-title"></h2>
+          <button class="btn secondary" onclick="calNext()">→</button>
+          <button class="btn secondary" onclick="calToday()">I dag</button>
+        </div>
+        <div class="cal-grid" id="cal-headers"></div>
+        <div class="cal-grid" id="cal-body" style="margin-top:2px;"></div>
+      </div>
+
+      <!-- SOME -->
+      <div class="view" id="view-some">
+        <div class="flex gap8" style="margin-bottom:20px;">
+          <button class="btn" onclick="openSomeModal()">+ Nyt opslag</button>
+        </div>
+        <div class="some-grid" id="some-grid"></div>
+      </div>
+
+      <!-- NOTES -->
+      <div class="view" id="view-notes">
+        <div class="notes-layout">
+          <div class="notes-list" id="notes-list">
+            <div style="padding:12px 14px; border-bottom:1px solid var(--border); display:flex; gap:6px;">
+              <button class="btn" style="font-size:10px; padding:5px 10px;" onclick="newNote()">+ Ny note</button>
+            </div>
+            <div id="notes-list-items"></div>
+          </div>
+          <div class="note-editor">
+            <div class="note-editor-header">
+              <input class="note-title-input" id="note-title" placeholder="Titel..." oninput="saveCurrentNote()">
+              <select id="note-cat" onchange="saveCurrentNote()" style="font-size:11px;">
+                <option value="general">Generelt</option>
+                <option value="some">SoMe</option>
+                <option value="projekt">Projekt</option>
+                <option value="idé">Idé</option>
+              </select>
+            </div>
+            <textarea class="note-body-input" id="note-body" placeholder="Skriv her..." oninput="saveCurrentNote()"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- DIARY -->
+      <div class="view" id="view-diary">
+        <div class="diary-layout">
+          <div class="task-list-panel">
+            <div style="padding:12px 14px; border-bottom:1px solid var(--border); font-size:10px; color:var(--text-muted); letter-spacing:1px; text-transform:uppercase;">Opgaver</div>
+            <div id="diary-task-list"></div>
+          </div>
+          <div class="diary-panel">
+            <div class="diary-panel-header">
+              <span style="font-family:var(--font-display);font-size:16px;font-weight:600;" id="diary-task-name">Vælg en opgave</span>
+            </div>
+            <div class="diary-entries" id="diary-entries">
+              <div class="empty"><div class="emoji">📓</div>Vælg en opgave til venstre for at se dagbogen</div>
+            </div>
+            <div class="diary-input-row" id="diary-input-row" style="display:none;">
+              <textarea id="diary-input" placeholder="Tilføj dagbogsnotat til denne opgave..."></textarea>
+              <button class="btn" onclick="addDiaryEntry()">Gem</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<!-- New Task Modal -->
+<div class="modal-overlay" id="modal-task">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-task-title">Ny opgave</div>
+      <button class="modal-close" onclick="closeModal('modal-task')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Opgavetitel *</label>
+        <input type="text" id="t-title" placeholder="Hvad skal laves?">
+      </div>
+      <div class="field">
+        <label>Beskrivelse</label>
+        <textarea id="t-desc" placeholder="Detaljer, noter, links..."></textarea>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Prioritet</label>
+          <select id="t-prio">
+            <option value="high">🔴 Høj</option>
+            <option value="mid" selected>🟡 Middel</option>
+            <option value="low">🟢 Lav</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Kategori</label>
+          <select id="t-cat">
+            <option value="generelt">Generelt</option>
+            <option value="some">SoMe</option>
+            <option value="møde">Møde</option>
+            <option value="projekt">Projekt</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Deadline</label>
+          <input type="date" id="t-deadline" style="width:100%;">
+        </div>
+        <div class="field">
+          <label>Tidspunkt</label>
+          <input type="time" id="t-time" style="width:100%;">
+        </div>
+      </div>
+      <div class="flex gap8">
+        <button class="btn" onclick="saveTask()" style="flex:1;">Gem opgave</button>
+        <button class="btn secondary" onclick="closeModal('modal-task')">Annuller</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SoMe Modal -->
+<div class="modal-overlay" id="modal-some">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Nyt SoMe-opslag</div>
+      <button class="modal-close" onclick="closeModal('modal-some')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Platform</label>
+        <select id="s-platform">
+          <option>LinkedIn</option>
+          <option>Instagram</option>
+          <option>Facebook</option>
+          <option>Twitter/X</option>
+          <option>TikTok</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Opslags-tekst</label>
+        <textarea id="s-content" placeholder="Skriv dit opslag her..." style="min-height:120px;"></textarea>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Planlagt dato</label>
+          <input type="date" id="s-date" style="width:100%;">
+        </div>
+        <div class="field">
+          <label>Status</label>
+          <select id="s-status">
+            <option value="draft">Kladde</option>
+            <option value="ready">Klar til post</option>
+            <option value="posted">Postet</option>
+          </select>
+        </div>
+      </div>
+      <div class="flex gap8">
+        <button class="btn" onclick="saveSome()" style="flex:1;">Gem opslag</button>
+        <button class="btn secondary" onclick="closeModal('modal-some')">Annuller</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Timer Widget -->
+<div class="timer-widget" id="timer-widget">
+  <div class="timer-label" id="timer-label">Fokus</div>
+  <div class="timer-display" id="timer-display">25:00</div>
+  <div class="timer-controls">
+    <button class="btn secondary" style="font-size:11px;padding:5px 10px;" onclick="toggleTimer()" id="timer-toggle-btn">▶ Start</button>
+    <button class="btn secondary" style="font-size:11px;padding:5px 10px;" onclick="resetTimer()">↺</button>
+    <button class="btn secondary" style="font-size:11px;padding:5px 10px;" onclick="closeTimer()">✕</button>
+  </div>
+</div>
+
+<!-- Toasts -->
+<div class="toasts" id="toasts"></div>
+
+<!-- AI ASSISTANT -->
+<div class="ai-bubble" id="ai-bubble">
+  <div class="ai-panel" id="ai-panel">
+    <div class="ai-header">
+      <div class="ai-header-dot"></div>
+      <div class="ai-header-title">FocusAssistent</div>
+      <div class="ai-header-sub">drevet af Claude</div>
+    </div>
+    <div class="api-setup" id="api-setup">
+      <p>For at aktivere AI-assistenten skal du indsætte din Anthropic API-nøgle. Den gemmes kun lokalt i din browser.<br><br>
+      Hent din nøgle på <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> under API Keys.</p>
+      <input class="api-key-input" id="api-key-input" type="password" placeholder="sk-ant-...">
+      <button class="btn" onclick="saveApiKey()" style="font-size:11px;">Gem nøgle og aktiver</button>
+    </div>
+    <div id="ai-chat" style="display:none;flex-direction:column;flex:1;">
+      <div class="ai-messages" id="ai-messages">
+        <div class="ai-msg assistant">Hej! Jeg er din FocusAssistent. Jeg kender dit system og kan oprette opgaver, SoMe-opslag og notater direkte for dig.<br><br>Prøv fx: <em>"Opret opgave: Ring til kunde fredag, høj prioritet"</em></div>
+      </div>
+      <div class="ai-suggestions">
+        <button class="ai-suggestion" onclick="aiSuggest('Hvad er mine åbne opgaver?')">Åbne opgaver?</button>
+        <button class="ai-suggestion" onclick="aiSuggest('Opret opgave: ')">+ Opgave</button>
+        <button class="ai-suggestion" onclick="aiSuggest('Opret SoMe-opslag til LinkedIn: ')">+ SoMe</button>
+        <button class="ai-suggestion" onclick="aiSuggest('Opret note: ')">+ Note</button>
+      </div>
+      <div class="ai-input-row">
+        <textarea class="ai-input" id="ai-input" placeholder="Skriv til assistenten..." rows="1"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAiMessage();}"
+          oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+        <button class="ai-send" id="ai-send-btn" onclick="sendAiMessage()">Send</button>
+      </div>
+    </div>
+  </div>
+  <button class="ai-toggle" id="ai-toggle-btn" onclick="toggleAiPanel()" title="AI-assistent">🤖</button>
+</div>
+
+<script>
+// ── STATE ──
+let state = {
+  todos: [],
+  some: [],
+  notes: [],
+  diaryEntries: {}, // taskId → [{time, text}]
+  nextId: 1,
+  currentNoteId: null,
+  currentDiaryTaskId: null,
+  calYear: new Date().getFullYear(),
+  calMonth: new Date().getMonth(),
+  todoFilter: 'all',
+  editingTaskId: null,
+};
+
+// ── PERSIST ──
+function save() {
+  try { localStorage.setItem('focusbase', JSON.stringify(state)); } catch(e){}
+}
+function load() {
+  try {
+    const d = localStorage.getItem('focusbase');
+    if (d) {
+      const parsed = JSON.parse(d);
+      Object.assign(state, parsed);
+    }
+  } catch(e){}
+}
+load();
+
+// ── CLOCK ──
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent =
+    now.toLocaleTimeString('da-DK', {hour:'2-digit',minute:'2-digit'});
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ── NAV ──
+const views = ['dashboard','todo','calendar','some','notes','diary'];
+function nav(id) {
+  views.forEach(v => {
+    document.getElementById('view-'+v).classList.toggle('active', v===id);
+  });
+  document.querySelectorAll('.nav-item').forEach(el => {
+    el.classList.toggle('active', el.textContent.trim().toLowerCase().includes(
+      id==='dashboard'?'dashboard':
+      id==='todo'?'to-do':
+      id==='calendar'?'kalender':
+      id==='some'?'some':
+      id==='notes'?'notater':
+      'dagbog'
+    ));
+  });
+  const titles = {dashboard:'Dashboard',todo:'To-do liste',calendar:'Kalender',some:'SoMe-opslag',notes:'Notater',diary:'Opgavedagbog'};
+  document.getElementById('page-title').textContent = titles[id]||id;
+  const newBtnLabels = {dashboard:'+ Ny opgave',todo:'+ Ny opgave',calendar:'+ Begivenhed',some:'+ Nyt opslag',notes:'+ Ny note',diary:'+ Ny opgave'};
+  document.getElementById('new-btn').textContent = newBtnLabels[id]||'+ Ny';
+  document.getElementById('new-btn').onclick = ()=>{
+    if(id==='some') openSomeModal();
+    else if(id==='notes') newNote();
+    else openNewModal();
+  };
+  if(id==='dashboard') renderDashboard();
+  if(id==='todo') renderTodos();
+  if(id==='calendar') renderCalendar();
+  if(id==='some') renderSome();
+  if(id==='notes') renderNotes();
+  if(id==='diary') renderDiary();
+  updateBadge();
+}
+
+// ── MODAL ──
+function openNewModal(id=null) {
+  state.editingTaskId = id;
+  const t = id ? state.todos.find(x=>x.id===id) : null;
+  document.getElementById('modal-task-title').textContent = t ? 'Rediger opgave' : 'Ny opgave';
+  document.getElementById('t-title').value = t?.title||'';
+  document.getElementById('t-desc').value = t?.desc||'';
+  document.getElementById('t-prio').value = t?.prio||'mid';
+  document.getElementById('t-cat').value = t?.cat||'generelt';
+  document.getElementById('t-deadline').value = t?.deadline||'';
+  document.getElementById('t-time').value = t?.time||'';
+  document.getElementById('modal-task').classList.add('open');
+  setTimeout(()=>document.getElementById('t-title').focus(),100);
+}
+function openSomeModal(id=null) {
+  const p = id ? state.some.find(x=>x.id===id) : null;
+  document.getElementById('s-platform').value = p?.platform||'LinkedIn';
+  document.getElementById('s-content').value = p?.content||'';
+  document.getElementById('s-date').value = p?.date||'';
+  document.getElementById('s-status').value = p?.status||'draft';
+  document.getElementById('modal-some').classList.add('open');
+  document.getElementById('modal-some').dataset.editId = id||'';
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+// ── TASKS ──
+function saveTask() {
+  const title = document.getElementById('t-title').value.trim();
+  if(!title) { alert('Giv opgaven en titel'); return; }
+  if(state.editingTaskId) {
+    const t = state.todos.find(x=>x.id===state.editingTaskId);
+    if(t){
+      t.title=title;
+      t.desc=document.getElementById('t-desc').value;
+      t.prio=document.getElementById('t-prio').value;
+      t.cat=document.getElementById('t-cat').value;
+      t.deadline=document.getElementById('t-deadline').value;
+      t.time=document.getElementById('t-time').value;
+    }
+  } else {
+    state.todos.push({
+      id: state.nextId++,
+      title,
+      desc: document.getElementById('t-desc').value,
+      prio: document.getElementById('t-prio').value,
+      cat: document.getElementById('t-cat').value,
+      deadline: document.getElementById('t-deadline').value,
+      time: document.getElementById('t-time').value,
+      done: false,
+      createdAt: new Date().toISOString(),
+      doneAt: null,
+    });
+  }
+  save();
+  closeModal('modal-task');
+  renderTodos();
+  renderDashboard();
+  updateBadge();
+  renderDiary();
+}
+
+function quickAddTodo() {
+  const inp = document.getElementById('quick-todo');
+  const title = inp.value.trim();
+  if(!title) return;
+  state.todos.push({
+    id: state.nextId++,
+    title,
+    desc:'', prio:'mid', cat:'generelt',
+    deadline:'', time:'',
+    done:false,
+    createdAt: new Date().toISOString(),
+    doneAt:null
+  });
+  inp.value='';
+  save();
+  renderTodos();
+  renderDashboard();
+  updateBadge();
+  renderDiary();
+}
+
+function toggleTodo(id) {
+  const t = state.todos.find(x=>x.id===id);
+  if(!t) return;
+  t.done = !t.done;
+  t.doneAt = t.done ? new Date().toISOString() : null;
+  save();
+  renderTodos();
+  renderDashboard();
+  updateBadge();
+  updateFocusScore();
+}
+
+function deleteTodo(id) {
+  if(!confirm('Slet opgave?')) return;
+  state.todos = state.todos.filter(x=>x.id!==id);
+  delete state.diaryEntries[id];
+  save();
+  renderTodos();
+  renderDashboard();
+  updateBadge();
+  renderDiary();
+}
+
+function setFilter(f, el) {
+  state.todoFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  renderTodos();
+}
+
+function renderTodos() {
+  const list = document.getElementById('todo-list');
+  let todos = [...state.todos];
+  const f = state.todoFilter;
+  if(f==='open') todos=todos.filter(t=>!t.done);
+  if(f==='done') todos=todos.filter(t=>t.done);
+  if(f==='high') todos=todos.filter(t=>t.prio==='high'&&!t.done);
+  if(f==='some') todos=todos.filter(t=>t.cat==='some');
+  todos.sort((a,b)=>{
+    if(a.done!==b.done) return a.done?1:-1;
+    const po={high:0,mid:1,low:2};
+    return (po[a.prio]||1)-(po[b.prio]||1);
+  });
+  if(!todos.length){
+    list.innerHTML=`<div class="empty"><div class="emoji">✓</div>Ingen opgaver her</div>`;
+    return;
+  }
+  list.innerHTML = todos.map(t=>`
+    <div class="todo-item ${t.done?'done':''}" id="todo-${t.id}">
+      <div class="todo-check ${t.done?'checked':''}" onclick="toggleTodo(${t.id})">${t.done?'✓':''}</div>
+      <div class="todo-body">
+        <div class="todo-text">${esc(t.title)}</div>
+        ${t.desc?`<div style="font-size:11px;color:var(--text-muted);margin-top:3px;">${esc(t.desc)}</div>`:''}
+        <div class="todo-meta">
+          <span class="tag prio-${t.prio}">${t.prio==='high'?'Høj':t.prio==='mid'?'Middel':'Lav'}</span>
+          <span class="tag cat">${esc(t.cat)}</span>
+          ${t.deadline?`<span class="tag deadline">⏰ ${formatDate(t.deadline)}${t.time?' '+t.time:''}</span>`:''}
+        </div>
+        <div class="todo-actions">
+          <button class="icon-btn" onclick="openNewModal(${t.id})" title="Rediger">✎</button>
+          <button class="icon-btn" onclick="nav('diary');selectDiaryTask(${t.id})" title="Dagbog">◎</button>
+          <button class="icon-btn" onclick="deleteTodo(${t.id})" title="Slet" style="color:var(--accent3)">✕</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── BADGE ──
+function updateBadge() {
+  const open = state.todos.filter(t=>!t.done).length;
+  const badge = document.getElementById('todo-badge');
+  badge.style.display = open>0?'':'none';
+  badge.textContent = open;
+}
+updateBadge();
+
+// ── DASHBOARD ──
+function renderDashboard() {
+  const open = state.todos.filter(t=>!t.done).length;
+  const today = new Date().toDateString();
+  const done = state.todos.filter(t=>t.done && t.doneAt && new Date(t.doneAt).toDateString()===today).length;
+  document.getElementById('stat-open').textContent = open;
+  document.getElementById('stat-done').textContent = done;
+
+  // Next up
+  const next = state.todos.filter(t=>!t.done)
+    .sort((a,b)=>{ const p={high:0,mid:1,low:2}; return p[a.prio]-p[b.prio]; })
+    .slice(0,4);
+  const nextEl = document.getElementById('dash-next');
+  if(!next.length){ nextEl.innerHTML='<div class="empty"><div class="emoji">🎉</div>Ingen åbne opgaver!</div>'; }
+  else { nextEl.innerHTML = next.map(t=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);">
+      <span class="tag prio-${t.prio}" style="flex-shrink:0;">${t.prio==='high'?'H':t.prio==='mid'?'M':'L'}</span>
+      <span style="font-size:12px;">${esc(t.title)}</span>
+      ${t.deadline?`<span style="margin-left:auto;font-size:10px;color:var(--text-muted);">${formatDate(t.deadline)}</span>`:''}
+    </div>
+  `).join('');}
+
+  // Deadlines
+  const soon = state.todos.filter(t=>!t.done&&t.deadline).sort((a,b)=>a.deadline.localeCompare(b.deadline)).slice(0,4);
+  const dlEl = document.getElementById('dash-deadlines');
+  if(!soon.length){ dlEl.innerHTML='<div class="empty" style="padding:20px 0;"><div class="emoji">📅</div>Ingen deadlines sat</div>'; }
+  else { dlEl.innerHTML = soon.map(t=>`
+    <div style="padding:7px 0;border-bottom:1px solid var(--border);">
+      <div style="font-size:12px;">${esc(t.title)}</div>
+      <div style="font-size:10px;color:var(--accent3);margin-top:2px;">⏰ ${formatDate(t.deadline)}</div>
+    </div>
+  `).join('');}
+
+  // SoMe check
+  const checkPending = state.some.filter(s=>s.status==='ready');
+  const someEl = document.getElementById('dash-some-check');
+  if(!checkPending.length){ someEl.innerHTML='<div class="empty" style="padding:16px 0;"><div class="emoji">✓</div>Ingen afventer godkendelse</div>'; }
+  else { someEl.innerHTML = checkPending.map(s=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:11px;color:var(--accent);font-weight:500;">${esc(s.platform)}</span>
+      <span style="font-size:12px;color:var(--text-dim);flex:1;">${esc(s.content).substring(0,60)}…</span>
+      <button class="btn" style="font-size:10px;padding:4px 10px;" onclick="markPosted(${s.id})">✓ Postet</button>
+    </div>
+  `).join('');}
+}
+renderDashboard();
+
+// ── CALENDAR ──
+const DAYS_DA = ['Man','Tir','Ons','Tor','Fre','Lør','Søn'];
+const MONTHS_DA = ['Januar','Februar','Marts','April','Maj','Juni','Juli','August','September','Oktober','November','December'];
+
+function renderCalendar() {
+  const y=state.calYear, m=state.calMonth;
+  document.getElementById('cal-title').textContent = `${MONTHS_DA[m]} ${y}`;
+  document.getElementById('cal-headers').innerHTML = DAYS_DA.map(d=>`<div class="cal-day-header">${d}</div>`).join('');
+
+  const first = new Date(y,m,1);
+  let startDow = first.getDay(); // 0=Sun
+  startDow = startDow===0?6:startDow-1; // Mon=0
+  const daysInMonth = new Date(y,m+1,0).getDate();
+  const prevDays = new Date(y,m,0).getDate();
+  const today = new Date();
+
+  let cells=[];
+  for(let i=0;i<startDow;i++) cells.push({day:prevDays-startDow+1+i,other:true});
+  for(let i=1;i<=daysInMonth;i++) cells.push({day:i,other:false});
+  while(cells.length%7!==0) cells.push({day:cells.length-startDow-daysInMonth+1,other:true});
+
+  document.getElementById('cal-body').innerHTML = cells.map(c=>{
+    const dateStr = c.other?'':
+      `${y}-${String(m+1).padStart(2,'0')}-${String(c.day).padStart(2,'0')}`;
+    const isToday = !c.other && today.getFullYear()===y&&today.getMonth()===m&&today.getDate()===c.day;
+    const events = c.other?[]:state.todos.filter(t=>t.deadline===dateStr);
+    return `<div class="cal-day ${isToday?'today':''} ${c.other?'other-month':''}" onclick="${c.other?'':'calDayClick(\''+dateStr+'\')'}">
+      <div class="cal-day-num">${c.day}</div>
+      ${events.slice(0,3).map(e=>`<div class="cal-event-dot ${e.prio==='high'?'deadline':''}">${esc(e.title)}</div>`).join('')}
+    </div>`;
+  }).join('');
+}
+function calPrev(){ if(state.calMonth===0){state.calMonth=11;state.calYear--;}else state.calMonth--; renderCalendar(); }
+function calNext(){ if(state.calMonth===11){state.calMonth=0;state.calYear++;}else state.calMonth++; renderCalendar(); }
+function calToday(){ state.calYear=new Date().getFullYear(); state.calMonth=new Date().getMonth(); renderCalendar(); }
+function calDayClick(d){
+  document.getElementById('t-deadline').value=d;
+  openNewModal();
+}
+
+// ── SOME ──
+const SOME_CHECKLIST = ['Tags tilføjet?','Links virker?','Korrekturlæst?','Billede/grafik vedhæftet?','Live-tjek udført?'];
+
+function renderSome() {
+  const grid = document.getElementById('some-grid');
+  if(!state.some.length){
+    grid.innerHTML=`<div class="empty" style="grid-column:span 2;"><div class="emoji">📱</div>Ingen opslag endnu</div>`;
+    return;
+  }
+  grid.innerHTML = state.some.map(s=>`
+    <div class="some-card">
+      <div class="some-card-header">
+        <span class="some-platform">${esc(s.platform)}</span>
+        ${s.date?`<span style="font-size:10px;color:var(--text-muted);">${formatDate(s.date)}</span>`:''}
+        <span class="some-status ${s.status}">${s.status==='draft'?'Kladde':s.status==='ready'?'Klar':''Postet'}</span>
+      </div>
+      <div class="some-card-body">
+        <div class="some-content">${esc(s.content)}</div>
+        <div class="some-checklist">
+          ${SOME_CHECKLIST.map((item,i)=>{
+            const checked = s.checks&&s.checks[i];
+            return `<label class="some-check-item ${checked?'checked':''}">
+              <input type="checkbox" ${checked?'checked':''} onchange="toggleSomeCheck(${s.id},${i},this.checked)">
+              ${item}
+            </label>`;
+          }).join('')}
+        </div>
+        <div class="flex gap8 mt8">
+          ${s.status!=='posted'?`<button class="btn secondary" style="font-size:10px;padding:4px 10px;" onclick="markPosted(${s.id})">✓ Markér postet</button>`:''}
+          <button class="btn secondary" style="font-size:10px;padding:4px 10px;" onclick="deleteSome(${s.id})">Slet</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function saveSome() {
+  const content = document.getElementById('s-content').value.trim();
+  if(!content){ alert('Skriv indhold til opslaget'); return; }
+  const editId = parseInt(document.getElementById('modal-some').dataset.editId)||null;
+  if(editId) {
+    const s = state.some.find(x=>x.id===editId);
+    if(s){
+      s.platform=document.getElementById('s-platform').value;
+      s.content=content;
+      s.date=document.getElementById('s-date').value;
+      s.status=document.getElementById('s-status').value;
+    }
+  } else {
+    state.some.push({
+      id: state.nextId++,
+      platform: document.getElementById('s-platform').value,
+      content,
+      date: document.getElementById('s-date').value,
+      status: document.getElementById('s-status').value,
+      checks: [false,false,false,false,false],
+      createdAt: new Date().toISOString(),
+    });
+  }
+  save();
+  closeModal('modal-some');
+  renderSome();
+  renderDashboard();
+}
+
+function toggleSomeCheck(id, idx, val) {
+  const s = state.some.find(x=>x.id===id);
+  if(!s) return;
+  if(!s.checks) s.checks=[false,false,false,false,false];
+  s.checks[idx]=val;
+  // If all checked and status isn't posted, bump to ready
+  if(s.checks.every(Boolean) && s.status==='draft'){
+    s.status='ready';
+    toast('Alle tjek ok! Opslaget er klar til at poste 🎉');
+  }
+  save();
+  renderSome();
+  renderDashboard();
+}
+
+function markPosted(id) {
+  const s = state.some.find(x=>x.id===id);
+  if(s){ s.status='posted'; save(); renderSome(); renderDashboard(); toast('Opslaget er markeret som postet ✓'); }
+}
+
+function deleteSome(id) {
+  if(!confirm('Slet opslag?')) return;
+  state.some = state.some.filter(x=>x.id!==id);
+  save();
+  renderSome();
+}
+
+// ── NOTES ──
+function renderNotes() {
+  const items = document.getElementById('notes-list-items');
+  if(!state.notes.length){ items.innerHTML='<div class="empty"><div class="emoji">📝</div>Ingen notater</div>'; return; }
+  items.innerHTML = state.notes.map(n=>`
+    <div class="note-list-item ${n.id===state.currentNoteId?'active':''}" onclick="selectNote(${n.id})">
+      <h4>${esc(n.title)||'Ingen titel'}</h4>
+      <p>${esc(n.body).substring(0,50)||'Tom note'}</p>
+    </div>
+  `).join('');
+}
+
+function newNote() {
+  const n = {id:state.nextId++, title:'', body:'', cat:'general', createdAt:new Date().toISOString()};
+  state.notes.unshift(n);
+  state.currentNoteId = n.id;
+  save();
+  renderNotes();
+  loadNoteEditor();
+}
+
+function selectNote(id) {
+  state.currentNoteId = id;
+  renderNotes();
+  loadNoteEditor();
+}
+
+function loadNoteEditor() {
+  const n = state.notes.find(x=>x.id===state.currentNoteId);
+  if(!n) return;
+  document.getElementById('note-title').value = n.title;
+  document.getElementById('note-body').value = n.body;
+  document.getElementById('note-cat').value = n.cat;
+}
+
+function saveCurrentNote() {
+  const n = state.notes.find(x=>x.id===state.currentNoteId);
+  if(!n) return;
+  n.title = document.getElementById('note-title').value;
+  n.body = document.getElementById('note-body').value;
+  n.cat = document.getElementById('note-cat').value;
+  save();
+  renderNotes();
+}
+
+// ── DIARY ──
+function renderDiary() {
+  const list = document.getElementById('diary-task-list');
+  if(!state.todos.length){ list.innerHTML='<div class="empty"><div class="emoji">📋</div>Ingen opgaver</div>'; return; }
+  list.innerHTML = state.todos.map(t=>`
+    <div class="task-list-item ${t.id===state.currentDiaryTaskId?'active':''}" onclick="selectDiaryTask(${t.id})">
+      <h4>${esc(t.title)}</h4>
+      <p>${(state.diaryEntries[t.id]||[]).length} noter · ${t.done?'Færdig':'Åben'}</p>
+    </div>
+  `).join('');
+}
+
+function selectDiaryTask(id) {
+  state.currentDiaryTaskId = id;
+  renderDiary();
+  loadDiaryEntries();
+}
+
+function loadDiaryEntries() {
+  const id = state.currentDiaryTaskId;
+  const t = state.todos.find(x=>x.id===id);
+  if(!t) return;
+  document.getElementById('diary-task-name').textContent = t.title;
+  document.getElementById('diary-input-row').style.display='flex';
+  const entries = state.diaryEntries[id]||[];
+  const el = document.getElementById('diary-entries');
+  if(!entries.length){
+    el.innerHTML='<div class="empty"><div class="emoji">📓</div>Ingen dagbogsnotater endnu</div>';
+    return;
+  }
+  el.innerHTML = entries.map(e=>`
+    <div class="diary-entry">
+      <div class="diary-entry-time">${formatDatetime(e.time)}</div>
+      <div class="diary-entry-text">${esc(e.text)}</div>
+    </div>
+  `).join('');
+  el.scrollTop = el.scrollHeight;
+}
+
+function addDiaryEntry() {
+  const text = document.getElementById('diary-input').value.trim();
+  if(!text) return;
+  const id = state.currentDiaryTaskId;
+  if(!state.diaryEntries[id]) state.diaryEntries[id]=[];
+  state.diaryEntries[id].push({time:new Date().toISOString(), text});
+  document.getElementById('diary-input').value='';
+  save();
+  loadDiaryEntries();
+  renderDiary();
+}
+
+// ── POMODORO ──
+let timerInterval=null, timerSecs=25*60, timerRunning=false, timerMode='focus';
+function startPomodoro() {
+  document.getElementById('timer-widget').classList.add('visible');
+  timerSecs=25*60; timerMode='focus'; timerRunning=false;
+  updateTimerDisplay();
+}
+function toggleTimer(){
+  timerRunning=!timerRunning;
+  document.getElementById('timer-toggle-btn').textContent=timerRunning?'⏸ Pause':'▶ Start';
+  if(timerRunning){
+    timerInterval=setInterval(()=>{
+      timerSecs--;
+      updateTimerDisplay();
+      if(timerSecs<=0){
+        clearInterval(timerInterval);
+        timerRunning=false;
+        if(timerMode==='focus'){
+          toast('⏱ Fokus-session færdig! Tag en pause 🎉');
+          timerMode='break'; timerSecs=5*60;
+          document.getElementById('timer-label').textContent='Pause';
+        } else {
+          toast('Pause slut – klar til fokus? 💪');
+          timerMode='focus'; timerSecs=25*60;
+          document.getElementById('timer-label').textContent='Fokus';
+        }
+        document.getElementById('timer-toggle-btn').textContent='▶ Start';
+        updateTimerDisplay();
+        updateFocusScore();
+      }
+    },1000);
+  } else {
+    clearInterval(timerInterval);
+  }
+}
+function resetTimer(){ clearInterval(timerInterval); timerRunning=false; timerSecs=25*60; timerMode='focus'; document.getElementById('timer-label').textContent='Fokus'; document.getElementById('timer-toggle-btn').textContent='▶ Start'; updateTimerDisplay(); }
+function closeTimer(){ clearInterval(timerInterval); timerRunning=false; document.getElementById('timer-widget').classList.remove('visible'); }
+function updateTimerDisplay(){
+  const m=Math.floor(timerSecs/60), s=timerSecs%60;
+  document.getElementById('timer-display').textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+// ── FOCUS SCORE ──
+function updateFocusScore() {
+  const today = new Date().toDateString();
+  const done = state.todos.filter(t=>t.done && t.doneAt && new Date(t.doneAt).toDateString()===today).length;
+  const pct = Math.min(100, done*20);
+  document.getElementById('focus-fill').style.width = pct+'%';
+  document.getElementById('focus-label').textContent = `Fokus-score: ${pct}%`;
+}
+updateFocusScore();
+
+// ── TOAST ──
+function toast(msg) {
+  const t = document.createElement('div');
+  t.className='toast';
+  t.textContent=msg;
+  document.getElementById('toasts').appendChild(t);
+  setTimeout(()=>t.remove(),4000);
+}
+
+// ── REMINDER: check deadlines ──
+function checkDeadlines() {
+  const today = new Date().toISOString().split('T')[0];
+  const tomorrow = new Date(Date.now()+86400000).toISOString().split('T')[0];
+  state.todos.filter(t=>!t.done&&t.deadline).forEach(t=>{
+    if(t.deadline===today) toast(`⚑ Deadline i dag: ${t.title}`);
+    if(t.deadline===tomorrow) toast(`⏰ Deadline i morgen: ${t.title}`);
+  });
+}
+setTimeout(checkDeadlines, 2000);
+
+// ── UTILS ──
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function formatDate(d){ if(!d) return ''; const p=d.split('-'); return `${p[2]}/${p[1]}/${p[1]?p[0].slice(2):''}` ; }
+function formatDate(d){ if(!d) return ''; try{ const dt=new Date(d+'T12:00:00'); return dt.toLocaleDateString('da-DK',{day:'numeric',month:'short'}); } catch(e){ return d; } }
+function formatDatetime(s){ try{ return new Date(s).toLocaleString('da-DK',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}); } catch(e){ return s; } }
+
+// ── AI ASSISTANT ──
+let aiOpen = false;
+let aiHistory = [];
+
+function toggleAiPanel() {
+  aiOpen = !aiOpen;
+  document.getElementById('ai-panel').classList.toggle('open', aiOpen);
+  document.getElementById('ai-toggle-btn').classList.toggle('open', aiOpen);
+  if(aiOpen) checkApiKey();
+}
+
+function checkApiKey() {
+  const key = localStorage.getItem('fb_apikey');
+  if(key) {
+    document.getElementById('api-setup').style.display = 'none';
+    document.getElementById('ai-chat').style.display = 'flex';
+  } else {
+    document.getElementById('api-setup').style.display = 'flex';
+    document.getElementById('ai-chat').style.display = 'none';
+  }
+}
+
+function saveApiKey() {
+  const key = document.getElementById('api-key-input').value.trim();
+  if(!key.startsWith('sk-')) { alert('Indsæt en gyldig Anthropic API-nøgle (starter med sk-)'); return; }
+  localStorage.setItem('fb_apikey', key);
+  checkApiKey();
+  toast('API-nøgle gemt – assistenten er aktiv ✓');
+}
+
+function aiSuggest(text) {
+  const inp = document.getElementById('ai-input');
+  inp.value = text;
+  inp.focus();
+  inp.style.height = 'auto';
+  inp.style.height = inp.scrollHeight + 'px';
+}
+
+function addAiMsg(role, html) {
+  const el = document.createElement('div');
+  el.className = `ai-msg ${role}`;
+  el.innerHTML = html;
+  document.getElementById('ai-messages').appendChild(el);
+  document.getElementById('ai-messages').scrollTop = 9999;
+  return el;
+}
+
+function buildSystemPrompt() {
+  const todos = state.todos.map(t =>
+    `[ID:${t.id}] "${t.title}" | prio:${t.prio} | kat:${t.cat} | ${t.done?'FÆRDIG':'ÅBEN'}${t.deadline?' | deadline:'+t.deadline:''}`
+  ).join('\n') || 'Ingen opgaver endnu.';
+
+  const some = state.some.map(s =>
+    `[ID:${s.id}] ${s.platform} | "${s.content.substring(0,60)}..." | status:${s.status}`
+  ).join('\n') || 'Ingen SoMe-opslag endnu.';
+
+  const notes = state.notes.map(n =>
+    `[ID:${n.id}] "${n.title}" | kat:${n.cat}`
+  ).join('\n') || 'Ingen notater endnu.';
+
+  return `Du er FocusAssistenten i FocusBase – et personligt produktivitetssystem. Du kommunikerer på dansk, kortfattet og direkte.
+
+Du har adgang til brugerens data:
+
+OPGAVER:
+${todos}
+
+SOME-OPSLAG:
+${some}
+
+NOTATER:
+${notes}
+
+Du kan udføre handlinger ved at svare med JSON-kommandoer i denne format – placer dem ALTID sidst i dit svar, efter din tekstbesked:
+
+Tilgængelige kommandoer (inkluder kun når brugeren beder om en handling):
+- Opret opgave: |||{"action":"create_todo","title":"...","desc":"...","prio":"high|mid|low","cat":"generelt|some|møde|projekt|admin","deadline":"YYYY-MM-DD"}|||
+- Opret SoMe-opslag: |||{"action":"create_some","platform":"LinkedIn|Instagram|Facebook|Twitter/X","content":"...","date":"YYYY-MM-DD","status":"draft|ready"}|||
+- Opret note: |||{"action":"create_note","title":"...","body":"...","cat":"general|some|projekt|idé"}|||
+- Marker opgave færdig: |||{"action":"complete_todo","id":123}|||
+
+Regler:
+- Svar altid på dansk
+- Vær kortfattet – maks 2-3 sætninger tekst
+- Udled prio, kategori og deadline fra kontekst hvis muligt
+- Hvis du ikke er sikker på en detalje, sæt fornuftige defaults
+- Inkluder KUN JSON-kommandoen når du rent faktisk skal udføre en handling`;
+}
+
+async function sendAiMessage() {
+  const inp = document.getElementById('ai-input');
+  const msg = inp.value.trim();
+  if(!msg) return;
+  const key = localStorage.getItem('fb_apikey');
+  if(!key) { toast('Indsæt API-nøgle for at bruge assistenten'); return; }
+
+  inp.value = '';
+  inp.style.height = 'auto';
+  addAiMsg('user', esc(msg));
+  aiHistory.push({role:'user', content: msg});
+
+  const btn = document.getElementById('ai-send-btn');
+  btn.disabled = true;
+  const thinking = addAiMsg('thinking', '⟳ Tænker...');
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: buildSystemPrompt(),
+        messages: aiHistory
+      })
+    });
+
+    const data = await res.json();
+    thinking.remove();
+
+    if(data.error) {
+      addAiMsg('assistant', '⚠️ Fejl: ' + esc(data.error.message));
+      btn.disabled = false;
+      return;
+    }
+
+    const fullText = data.content.map(b => b.text||'').join('');
+    aiHistory.push({role:'assistant', content: fullText});
+
+    // Extract commands
+    const cmdRegex = /\|\|\|(\{.*?\})\|\|\|/gs;
+    let displayText = fullText.replace(cmdRegex, '').trim();
+    addAiMsg('assistant', esc(displayText).replace(/\n/g,'<br>'));
+
+    // Execute commands
+    const matches = [...fullText.matchAll(cmdRegex)];
+    for(const m of matches) {
+      try {
+        const cmd = JSON.parse(m[1]);
+        executeAiCommand(cmd);
+      } catch(e) { console.error('CMD parse error', e); }
+    }
+
+  } catch(e) {
+    thinking.remove();
+    addAiMsg('assistant', '⚠️ Netværksfejl – prøv igen.');
+  }
+  btn.disabled = false;
+}
+
+function executeAiCommand(cmd) {
+  if(cmd.action === 'create_todo') {
+    state.todos.push({
+      id: state.nextId++,
+      title: cmd.title||'Ny opgave',
+      desc: cmd.desc||'',
+      prio: cmd.prio||'mid',
+      cat: cmd.cat||'generelt',
+      deadline: cmd.deadline||'',
+      time: '',
+      done: false,
+      createdAt: new Date().toISOString(),
+      doneAt: null
+    });
+    save(); renderTodos(); renderDashboard(); updateBadge(); renderDiary();
+    toast(`✓ Opgave oprettet: ${cmd.title}`);
+  }
+  else if(cmd.action === 'create_some') {
+    state.some.push({
+      id: state.nextId++,
+      platform: cmd.platform||'LinkedIn',
+      content: cmd.content||'',
+      date: cmd.date||'',
+      status: cmd.status||'draft',
+      checks: [false,false,false,false,false],
+      createdAt: new Date().toISOString()
+    });
+    save(); renderSome(); renderDashboard();
+    toast(`✓ SoMe-opslag oprettet til ${cmd.platform}`);
+  }
+  else if(cmd.action === 'create_note') {
+    const n = {id:state.nextId++, title:cmd.title||'', body:cmd.body||'', cat:cmd.cat||'general', createdAt:new Date().toISOString()};
+    state.notes.unshift(n);
+    state.currentNoteId = n.id;
+    save(); renderNotes(); loadNoteEditor();
+    toast(`✓ Note oprettet: ${cmd.title}`);
+  }
+  else if(cmd.action === 'complete_todo') {
+    const t = state.todos.find(x=>x.id===cmd.id);
+    if(t){ t.done=true; t.doneAt=new Date().toISOString(); save(); renderTodos(); renderDashboard(); updateBadge(); updateFocusScore(); toast(`✓ Opgave markeret færdig: ${t.title}`); }
+  }
+}
+
+// ── INIT ──
+renderDashboard();
+renderCalendar();
+renderSome();
+renderNotes();
+renderDiary();
+renderTodos();
+</script>
+</body>
+</html>
