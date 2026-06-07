@@ -144,7 +144,22 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); font-si
 .card-body { padding:16px 18px; }
 
 /* ── DASHBOARD ── */
-.dash-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px; }
+.dash-stats {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+@media (max-width: 900px) {
+  .dash-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+  #sc-cat { order: -1 !important; grid-column: span 2; min-height: 160px; }
+}
+@media (max-width: 500px) {
+  .dash-stats { grid-template-columns: 1fr; }
+  #sc-cat { grid-column: span 1; }
+}
 .stat-card {
   background:var(--surface); border:1px solid var(--border);
   border-radius:var(--radius-lg); padding:16px 18px;
@@ -738,15 +753,31 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
 
     <!-- DASHBOARD -->
     <div class="view active" id="view-dashboard">
-      <!-- CAT STRESS WIDGET -->
-      <div id="cat-widget" style="display:flex;align-items:center;gap:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 20px;margin-bottom:16px;box-shadow:var(--shadow);transition:border-color 0.5s;">
-        <img id="cat-img" src="" alt="Kat" style="height:80px;width:auto;object-fit:contain;border-radius:8px;transition:opacity 0.4s;">
-        <div>
-          <div id="cat-status" style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:3px;"></div>
-          <div id="cat-msg"    style="font-size:12px;color:var(--text-muted);line-height:1.5;"></div>
+      <div class="dash-stats" id="dash-stats-grid">
+        <div class="stat-card" id="sc-cat" style="transition:border-color 0.5s;padding:0;overflow:hidden;cursor:default;order:5;">
+          <img id="cat-img" src="" alt="" style="width:100%;height:100%;object-fit:cover;display:block;min-height:90px;transition:opacity 0.4s;border-radius:var(--radius-lg);">
+        </div>
+        <div class="stat-card" id="sc-proj" style="transition:background 0.5s,border-color 0.5s;order:1;">
+          <div class="s-label" id="sc-proj-label">Åbne opgaver</div>
+          <div class="s-val" id="stat-proj">0</div>
+          <div class="s-sub" id="sc-proj-sub"></div>
+        </div>
+        <div class="stat-card" id="sc-subs" style="transition:background 0.5s,border-color 0.5s;order:2;">
+          <div class="s-label" id="sc-subs-label">Åbne delopgaver</div>
+          <div class="s-val" id="stat-done">0</div>
+          <div class="s-sub" id="sc-subs-sub"></div>
+        </div>
+        <div class="stat-card" id="sc-dl" style="transition:background 0.5s,border-color 0.5s;order:3;">
+          <div class="s-label">Deadlines denne uge</div>
+          <div class="s-val" id="stat-deadlines">0</div>
+          <div class="s-sub" id="sc-dl-sub"></div>
+        </div>
+        <div class="stat-card" id="sc-some" style="transition:background 0.5s,border-color 0.5s;order:4;">
+          <div class="s-label" id="sc-some-label">SoMe afventer</div>
+          <div class="s-val" id="stat-some">0</div>
+          <div class="s-sub" id="sc-some-sub"></div>
         </div>
       </div>
-      <div class="dash-stats">
         <div class="stat-card" id="sc-proj" style="transition:background 0.5s,border-color 0.5s;">
           <div class="s-label" id="sc-proj-label">Åbne opgaver</div>
           <div class="s-val" id="stat-proj">0</div>
@@ -2317,10 +2348,8 @@ function updateBadge() {
 function updateCatWidget() {
   const today = new Date(); today.setHours(0,0,0,0);
   const todayStr = today.toISOString().split('T')[0];
-
   const openProjects = state.projects.filter(p=>!p.done);
 
-  // Find most urgent state
   const overdue  = openProjects.filter(p=>p.deadline && p.deadline < todayStr);
   const dueToday = openProjects.filter(p=>p.deadline && p.deadline === todayStr);
   const due2days = openProjects.filter(p=>{
@@ -2328,51 +2357,30 @@ function updateCatWidget() {
     const diff = (new Date(p.deadline+'T00:00:00') - today) / 86400000;
     return diff > 0 && diff <= 2;
   });
-  const dueSoon  = openProjects.filter(p=>{
+  const dueSoon = openProjects.filter(p=>{
     if(!p.deadline) return false;
     const diff = (new Date(p.deadline+'T00:00:00') - today) / 86400000;
     return diff > 2 && diff <= 7;
   });
 
   const BASE = 'https://BaxieBadger.github.io/FocusBase/';
-  let img, status, msg, border;
+  let img, border;
 
-  if(overdue.length) {
-    img    = BASE + 'kat-overskredent.png';
-    status = '🔴 Overskredet!';
-    msg    = `${overdue.length} opgave${overdue.length>1?'r':''} er overskredet. Stop alt og tag fat nu.`;
-    border = '#8b0000';
-  } else if(dueToday.length) {
-    img    = BASE + 'kat-deadline-i-dag.png';
-    status = '🟠 Deadline i dag!';
-    msg    = `${dueToday.length} opgave${dueToday.length>1?'r':''} skal afsluttes i dag.`;
-    border = '#e44258';
-  } else if(due2days.length) {
-    img    = BASE + 'kat-deadline-om-to-dage.png';
-    status = '🟡 Deadline om 1-2 dage';
-    msg    = `${due2days.map(p=>p.title).slice(0,2).join(', ')}${due2days.length>2?' m.fl.':''} nærmer sig.`;
-    border = '#f5a623';
-  } else if(dueSoon.length) {
-    img    = BASE + 'kat-deadline-snart.png';
-    status = '🟢 Deadline inden for en uge';
-    msg    = `${dueSoon.map(p=>p.title).slice(0,2).join(', ')}${dueSoon.length>2?' m.fl.':''} denne uge.`;
-    border = '#00c875';
-  } else {
-    img    = BASE + 'kat-ingen-deadlines.png';
-    status = '😴 Ingen presserende deadlines';
-    msg    = 'Alt er under kontrol. God tid til at planlægge fremad.';
-    border = 'var(--border)';
-  }
+  if(overdue.length)       { img = BASE+'kat-overskredent.png';    border = '#8b0000'; }
+  else if(dueToday.length) { img = BASE+'kat-deadline-i-dag.png';  border = '#e44258'; }
+  else if(due2days.length) { img = BASE+'kat-deadline-om-to-dage.png'; border = '#f5a623'; }
+  else if(dueSoon.length)  { img = BASE+'kat-deadline-snart.png';  border = '#00c875'; }
+  else                     { img = BASE+'kat-ingen-deadlines.png'; border = 'var(--border)'; }
 
   const catImg = document.getElementById('cat-img');
-  const widget = document.getElementById('cat-widget');
-  if(catImg) {
+  const catCard = document.getElementById('sc-cat');
+  if(catImg && catImg.src !== img) {
     catImg.style.opacity = '0';
-    setTimeout(()=>{ catImg.src = img; catImg.style.opacity = '1'; }, 150);
+    setTimeout(()=>{ catImg.src = img; catImg.style.opacity = '1'; }, 200);
+  } else if(catImg && !catImg.src) {
+    catImg.src = img;
   }
-  if(document.getElementById('cat-status')) document.getElementById('cat-status').textContent = status;
-  if(document.getElementById('cat-msg'))    document.getElementById('cat-msg').textContent    = msg;
-  if(widget) widget.style.borderColor = border;
+  if(catCard) catCard.style.borderColor = border;
 }
 
 // ── DASHBOARD ──
