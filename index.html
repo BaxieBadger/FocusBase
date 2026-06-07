@@ -714,7 +714,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   <div class="sidebar-logo">
     <div style="font-size:10px;color:var(--sidebar-text);opacity:0.6;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
     <h1>FocusBase</h1>
-    <span>Dit system · Din flow · v1.06</span>
+    <span>Dit system · Din flow · v1.08</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
@@ -1522,6 +1522,8 @@ function parseSupabaseData(r) {
   obj.id = r.id;
   if(!Array.isArray(obj.subtasks)) obj.subtasks = [];
   if(!obj.title) obj.title = obj.subject || '(ingen titel)';
+  // Clean email content from signatures and quoted text
+  if(obj.desc) obj.desc = cleanEmailContent(obj.desc);
   if(!obj.prio)  obj.prio  = 'mid';
   if(!obj.cat)   obj.cat   = 'Generelt';
   if(!obj.color) obj.color = '#9099a8';
@@ -1730,6 +1732,59 @@ function previewSmartDate(inputId, previewId) {
     if(preview) { preview.textContent = val ? 'Ugyldigt format – prøv fx 15/6' : ''; preview.style.color = 'var(--danger)'; }
     if(hidden) hidden.value = '';
   }
+}
+
+// ── EMAIL RENSNING ──
+function cleanEmailContent(text) {
+  if(!text) return '';
+
+  // Remove HTML tags
+  text = text.replace(/<[^>]*>/g, ' ');
+  text = text.replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+  text = text.replace(/[ \t]+/g, ' ');
+
+  const lines = text.split(/\r?\n/).map(l => l.trim());
+
+  // Look for forwarded message marker
+  const forwardMarkers = [
+    /^-+\s*(videresendt|forwarded|original)\s*(meddelelse|message)?/i,
+    /^Fra:\s/i,
+    /^From:\s/i,
+  ];
+
+  let forwardStart = -1;
+  for(let i = 0; i < lines.length; i++) {
+    if(forwardMarkers.some(p => p.test(lines[i]))) {
+      forwardStart = i;
+      break;
+    }
+  }
+
+  let contentLines = [];
+
+  if(forwardStart >= 0) {
+    // Skip the header lines (Fra/Sendt/Til/Emne/CC) after the marker
+    const headerPatterns = [/^Fra:/i,/^From:/i,/^Sendt:/i,/^Sent:/i,/^Til:/i,/^To:/i,/^Emne:/i,/^Subject:/i,/^CC:/i,/^Cc:/i,/^-+$/];
+    let i = forwardStart + 1;
+    while(i < lines.length && (headerPatterns.some(p => p.test(lines[i])) || !lines[i])) i++;
+    // Now collect actual content until next signature
+    const sigPatterns = [/^De bedste hilsner/i,/^Med venlig hilsen/i,/^Mvh/i,/^Best regards/i,/^Kind regards/i,/Landsforeningen/i,/Karetmagervej/i];
+    for(; i < lines.length; i++) {
+      if(sigPatterns.some(p => p.test(lines[i]))) break;
+      contentLines.push(lines[i]);
+    }
+  } else {
+    // No forward marker – use top content before signature
+    const sigPatterns = [/^De bedste hilsner/i,/^Med venlig hilsen/i,/^Mvh/i,/^Best regards/i,/Landsforeningen/i,/Karetmagervej/i];
+    for(const line of lines) {
+      if(sigPatterns.some(p => p.test(line))) break;
+      contentLines.push(line);
+    }
+  }
+
+  // Clean up empty lines and join
+  const result = contentLines.filter(l => l).join(' ').trim();
+  return result.substring(0, 300) || '(ingen beskrivelse)';
 }
 
 // ── MODAL ──
