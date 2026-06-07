@@ -713,7 +713,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
 <nav class="sidebar">
   <div class="sidebar-logo">
     <h1>FocusBase</h1>
-    <span>Dit system · Din flow · v1.02</span>
+    <span>Dit system · Din flow · v1.03</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
@@ -1485,13 +1485,20 @@ function parseSupabaseData(r) {
   if(!r || !r.data) return null;
   let obj = r.data;
 
-  // Keep parsing until we get an object or give up
+  // Step 1: if it's a string, parse it (possibly multiple times for triple-escaping)
   for(let i = 0; i < 4; i++) {
-    if(typeof obj === 'object' && !Array.isArray(obj)) break;
-    if(typeof obj !== 'string') return null;
-    // Fix semikolon-fejl fra Make: "key"; "value" → "key": "value"
-    const fixed = obj.replace(/"([^"]+)"\s*;\s*"/g, '"$1": "');
-    try { obj = JSON.parse(fixed); } catch(e) { return null; }
+    if(typeof obj !== 'string') break;
+    try {
+      const parsed = JSON.parse(obj);
+      obj = parsed;
+    } catch(e) {
+      // JSON parse failed – try fixing semicolon-as-colon error from Make
+      const fixed = obj.replace(/"([^"]+)"\s*;\s*"/g, '"$1": "');
+      if(fixed !== obj) {
+        try { obj = JSON.parse(fixed); break; } catch(e2) {}
+      }
+      return null;
+    }
   }
 
   if(typeof obj !== 'object' || Array.isArray(obj)) return null;
