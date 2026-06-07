@@ -1143,6 +1143,28 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   </div>
 </div>
 
+<!-- MEDIA LIST MODAL -->
+<div class="modal-overlay" id="modal-media-list">
+  <div class="modal" style="width:460px;">
+    <div class="modal-header">
+      <div class="modal-title">📋 Rediger medieliste</div>
+      <button class="modal-close" onclick="closeModal('modal-media-list')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:11px;color:var(--text-muted);margin-bottom:12px;line-height:1.6;">Definér de medier du normalt sender pressemeddelelser til. Listen vises automatisk under "Vælg medier" på alle dine presse-opgaver.</p>
+      <div id="media-list-items" style="margin-bottom:12px;"></div>
+      <div style="display:flex;gap:8px;">
+        <input type="text" id="media-new-input" placeholder="Tilføj medie, fx DR Nyheder..." style="flex:1;"
+          onkeydown="if(event.key==='Enter') addMediaItem()">
+        <button class="btn sm" onclick="addMediaItem()">+ Tilføj</button>
+      </div>
+      <div class="flex gap8" style="margin-top:14px;">
+        <button class="btn" onclick="closeModal('modal-media-list')" style="flex:1;">Luk og gem</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- DEADLINE WIZARD MODAL -->
 <div class="modal-overlay" id="modal-wizard">
   <div class="modal" style="width:460px;">
@@ -1293,7 +1315,7 @@ let state = {
   selectedColor: '#6c63ff',
   editingProjectId: null,
   editingSubtaskId: null,
-  editingSubtaskProjectId: null,
+  mediaList: [], // brugerens faste medieliste til presse-opgaver
 };
 
 // ── SUPABASE CONFIG ──
@@ -2039,17 +2061,55 @@ function renderProjectCard(p) {
 }
 
 function renderSubtask(projId, s) {
+  if(s.skipped) {
+    return `<div class="subtask-item" id="st-${s.id}" style="opacity:0.35;background:var(--surface2);">
+      <div class="subtask-check" style="border-color:var(--border2);"></div>
+      <span class="subtask-text done" style="font-style:italic;">↷ ${esc(s.title)} <span style="font-size:10px;color:var(--text-muted);">(fravalgt)</span></span>
+      <div class="subtask-meta">
+        <div class="subtask-actions" style="opacity:1;">
+          <button class="icon-btn" onclick="unskipSubtask(${projId},${s.id})" title="Genaktiver" style="color:var(--accent2);">↺</button>
+        </div>
+      </div>
+    </div>`;
+  }
   return `<div class="subtask-item" id="st-${s.id}">
     <div class="subtask-check ${s.done?'done':''}" onclick="toggleSubtask(${projId},${s.id})">${s.done?'✓':''}</div>
-    <span class="subtask-text ${s.done?'done':''}">${esc(s.title)}</span>
+    <span class="subtask-text ${s.done?'done':''}">${esc(s.title)}${s.skippable&&!s.done?`<span style="font-size:9px;color:var(--text-muted);margin-left:6px;font-style:italic;">kan frafaldes</span>`:''}</span>
+    ${s.title.toLowerCase().includes('vælg medier') ? `
+      <div style="margin-top:6px;padding:8px 10px;background:var(--surface2);border-radius:var(--radius);border:1px solid var(--border);width:100%;">
+        <div style="font-size:9px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;display:flex;align-items:center;gap:8px;">
+          Medier
+          <button class="icon-btn" onclick="openMediaListModal()" style="font-size:10px;color:var(--accent);" title="Rediger medieliste">✎ Rediger liste</button>
+        </div>
+        ${getMediaChecklistHtml(projId, s.id, s.mediaChecked)}
+      </div>` : ''}
     <div class="subtask-meta">
       ${s.deadline?`<span class="subtask-deadline">⏰ ${formatDate(s.deadline)}${s.time?' '+s.time:''}</span>`:''}
       <div class="subtask-actions">
+        ${s.skippable&&!s.done?`<button class="icon-btn" onclick="skipSubtask(${projId},${s.id})" title="Frafaldt – ikke relevant" style="color:var(--text-muted);">↷</button>`:''}
         <button class="icon-btn" onclick="openSubtaskModal(${projId},${s.id})" title="Rediger">✎</button>
         <button class="icon-btn red" onclick="deleteSubtask(${projId},${s.id})" title="Slet">✕</button>
       </div>
     </div>
   </div>`;
+}
+
+function skipSubtask(projId, stId) {
+  const p = state.projects.find(x=>x.id===projId);
+  const s = p?.subtasks.find(x=>x.id===stId);
+  if(!s) return;
+  s.skipped = true;
+  save(); renderProjects(); renderDashboard();
+  setTimeout(()=>{ document.getElementById('subtasks-'+projId)?.classList.add('open'); document.getElementById('arrow-'+projId)?.classList.add('open'); },50);
+}
+
+function unskipSubtask(projId, stId) {
+  const p = state.projects.find(x=>x.id===projId);
+  const s = p?.subtasks.find(x=>x.id===stId);
+  if(!s) return;
+  s.skipped = false;
+  save(); renderProjects(); renderDashboard();
+  setTimeout(()=>{ document.getElementById('subtasks-'+projId)?.classList.add('open'); document.getElementById('arrow-'+projId)?.classList.add('open'); },50);
 }
 
 function quickAddSubtask(projId) {
@@ -2502,6 +2562,69 @@ function calNext(){ if(state.calMonth===11){state.calMonth=0;state.calYear++;}el
 function calToday(){ state.calYear=new Date().getFullYear(); state.calMonth=new Date().getMonth(); renderCalendar(); }
 
 // ── SOME ──
+// ── MEDIELISTE ──
+function openMediaListModal() {
+  renderMediaListItems();
+  document.getElementById('modal-media-list').classList.add('open');
+  setTimeout(()=>document.getElementById('media-new-input').focus(), 80);
+}
+
+function renderMediaListItems() {
+  const el = document.getElementById('media-list-items');
+  if(!state.mediaList?.length) {
+    el.innerHTML = '<div style="font-size:11px;color:var(--text-muted);padding:8px 0;">Ingen medier tilføjet endnu.</div>';
+    return;
+  }
+  el.innerHTML = state.mediaList.map((m,i) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:12px;flex:1;">${esc(m)}</span>
+      <button class="icon-btn red" onclick="deleteMediaItem(${i})">✕</button>
+    </div>`).join('');
+}
+
+function addMediaItem() {
+  const inp = document.getElementById('media-new-input');
+  const val = inp.value.trim();
+  if(!val) return;
+  if(!state.mediaList) state.mediaList = [];
+  state.mediaList.push(val);
+  inp.value = '';
+  save();
+  renderMediaListItems();
+}
+
+function deleteMediaItem(idx) {
+  state.mediaList.splice(idx, 1);
+  save();
+  renderMediaListItems();
+}
+
+// Returns rendered media checklist for "Vælg medier" subtask note
+function getMediaChecklistHtml(projId, stId, checkedMedia) {
+  if(!state.mediaList?.length) {
+    return `<div style="font-size:11px;color:var(--text-muted);">
+      Ingen medier defineret. <button class="icon-btn" onclick="openMediaListModal()" style="color:var(--accent);font-size:11px;">+ Tilføj medier</button>
+    </div>`;
+  }
+  return state.mediaList.map((m,i) => {
+    const checked = checkedMedia?.includes(m);
+    return `<label style="display:flex;align-items:center;gap:7px;font-size:11px;padding:3px 0;cursor:pointer;">
+      <input type="checkbox" ${checked?'checked':''} onchange="toggleMediaCheck(${projId},${stId},'${m.replace(/'/g,"\\'")}',this.checked)" style="accent-color:var(--accent2);">
+      ${esc(m)}
+    </label>`;
+  }).join('');
+}
+
+function toggleMediaCheck(projId, stId, media, checked) {
+  const p = state.projects.find(x=>x.id===projId);
+  const s = p?.subtasks.find(x=>x.id===stId);
+  if(!s) return;
+  if(!s.mediaChecked) s.mediaChecked = [];
+  if(checked) { if(!s.mediaChecked.includes(media)) s.mediaChecked.push(media); }
+  else { s.mediaChecked = s.mediaChecked.filter(m=>m!==media); }
+  save();
+}
+
 // ── SOME STATS ──
 let editingSomeStatsId = null;
 function openSomeStatsModal(id) {
