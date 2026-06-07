@@ -701,6 +701,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
       <div class="streak-info">dages streak<br><span style="font-size:9px;opacity:0.6;">kun hverdage</span></div>
     </div>
     <button class="streak-off-btn" onclick="markDayOff()">📅 Markér fridag / afspadsering</button>
+    <button class="streak-off-btn" onclick="openSupabaseModal()" style="margin-top:4px;" id="sb-btn">☁ Supabase: ikke forbundet</button>
     <div class="focus-bar-label" id="focus-label">Fokus-score: 0%</div>
     <div class="focus-bar"><div class="focus-bar-fill" id="focus-fill" style="width:0%"></div></div>
   </div>
@@ -1028,6 +1029,38 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   </div>
 </div>
 
+<!-- SUPABASE SETUP MODAL -->
+<div class="modal-overlay" id="modal-supabase">
+  <div class="modal" style="width:480px;">
+    <div class="modal-header">
+      <div class="modal-title">☁ Supabase-forbindelse</div>
+      <button class="modal-close" onclick="closeModal('modal-supabase')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:12px;color:var(--text-muted);line-height:1.6;margin-bottom:4px;">
+        Forbind til Supabase så dine data synkroniserer på tværs af alle dine enheder.
+        Find værdierne under <strong>Project Settings → API</strong> i Supabase.
+      </p>
+      <div class="field">
+        <label>Project URL</label>
+        <input type="text" id="sb-url-input" placeholder="https://xxxxxxxxxxxx.supabase.co">
+      </div>
+      <div class="field">
+        <label>anon public nøgle</label>
+        <input type="text" id="sb-key-input" placeholder="eyJhbGciOi...">
+      </div>
+      <div id="sb-status" style="font-size:11px;color:var(--text-muted);margin-top:4px;"></div>
+      <div class="flex gap8">
+        <button class="btn" onclick="saveSupabaseConfig()" style="flex:1;">Gem og forbind</button>
+        <button class="btn secondary" onclick="closeModal('modal-supabase')">Annuller</button>
+      </div>
+      <div id="sb-connected-info" style="display:none;background:var(--accent2-light);border:1px solid var(--accent2);border-radius:var(--radius);padding:10px 12px;font-size:11px;color:var(--accent2);">
+        ✓ Forbundet til Supabase – data synkroniserer automatisk
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- NEWSLETTER STATS MODAL -->
 <div class="modal-overlay" id="modal-newsletter-stats">
   <div class="modal" style="width:520px;">
@@ -1262,9 +1295,173 @@ let state = {
   editingSubtaskProjectId: null,
 };
 
-function save() { try { localStorage.setItem('focusbase_v2', JSON.stringify(state)); updateTopbarColor(); } catch(e){} }
-function load() { try { const d=localStorage.getItem('focusbase_v2'); if(d) Object.assign(state, JSON.parse(d)); } catch(e){} }
-load();
+// ── SUPABASE CONFIG ──
+// Skriv dine værdier her efter du har sat dem op i FocusBase-indstillinger
+let SUPABASE_URL = localStorage.getItem('fb_sb_url') || '';
+let SUPABASE_KEY = localStorage.getItem('fb_sb_key') || '';
+let sbReady = false;
+
+function sbHeaders() {
+  return {
+    'Content-Type':  'application/json',
+    'apikey':        SUPABASE_KEY,
+    'Authorization': 'Bearer ' + SUPABASE_KEY,
+    'Prefer':        'resolution=merge-duplicates',
+  };
+}
+
+async function sbUpsert(table, payload) {
+  if(!sbReady) return;
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+      method:  'POST',
+      headers: sbHeaders(),
+      body:    JSON.stringify(payload),
+    });
+  } catch(e) { console.warn('Supabase write error:', e); }
+}
+
+async function sbSelect(table) {
+  if(!sbReady) return null;
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?select=*`, { headers: sbHeaders() });
+    if(!r.ok) return null;
+    return await r.json();
+  } catch(e) { return null; }
+}
+
+async function syncToSupabase() {
+  if(!sbReady) return;
+  // Projects
+  for(const p of state.projects) {
+    await sbUpsert('projects', { id: p.id, data: p });
+  }
+  // SoMe
+  for(const s of state.some) {
+    await sbUpsert('some_posts', { id: s.id, data: s });
+  }
+  // Notes
+  for(const n of state.notes) {
+    await sbUpsert('notes', { id: n.id, data: n });
+  }
+  // Diary
+  for(const [projId, entries] of Object.entries(state.diaryEntries)) {
+    await sbUpsert('diary_entries', { project_id: parseInt(projId), data: entries });
+  }
+  // System state
+  await sbUpsert('system_state', { key: 'meta', value: {
+    nextId:        state.nextId,
+    streakDays:    state.streakDays,
+    offDays:       state.offDays,
+    currentStreak: state.currentStreak,
+  }});
+}
+
+async function loadFromSupabase() {
+  if(!sbReady) return false;
+  try {
+    showSyncIndicator('Henter data fra sky...');
+    const [projects, some, notes, diary, sys] = await Promise.all([
+      sbSelect('projects'),
+      sbSelect('some_posts'),
+      sbSelect('notes'),
+      sbSelect('diary_entries'),
+      sbSelect('system_state'),
+    ]);
+
+    if(projects?.length)  state.projects      = projects.map(r=>r.data);
+    if(some?.length)      state.some          = some.map(r=>r.data);
+    if(notes?.length)     state.notes         = notes.map(r=>r.data);
+    if(diary?.length)     diary.forEach(r=>{ state.diaryEntries[r.project_id] = r.data; });
+    if(sys?.length) {
+      const meta = sys.find(r=>r.key==='meta')?.value;
+      if(meta) {
+        state.nextId        = meta.nextId        || state.nextId;
+        state.streakDays    = meta.streakDays    || state.streakDays;
+        state.offDays       = meta.offDays       || state.offDays;
+        state.currentStreak = meta.currentStreak || state.currentStreak;
+      }
+    }
+    hideSyncIndicator();
+    return true;
+  } catch(e) {
+    hideSyncIndicator();
+    console.warn('Supabase load error:', e);
+    return false;
+  }
+}
+
+// Sync indicator
+function showSyncIndicator(msg) {
+  let el = document.getElementById('sync-indicator');
+  if(!el) {
+    el = document.createElement('div');
+    el.id = 'sync-indicator';
+    el.style.cssText = 'position:fixed;bottom:80px;right:20px;background:var(--sidebar-bg);color:#fff;font-size:11px;padding:6px 12px;border-radius:var(--radius);z-index:300;opacity:0.9;';
+    document.body.appendChild(el);
+  }
+  el.textContent = '☁ ' + msg;
+  el.style.display = 'block';
+}
+function hideSyncIndicator() {
+  const el = document.getElementById('sync-indicator');
+  if(el) el.style.display = 'none';
+}
+
+// Debounced sync – waits 2 seconds after last save before syncing
+let syncTimer = null;
+function scheduleSyncToSupabase() {
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(()=>{ syncToSupabase(); }, 2000);
+}
+
+// ── SAVE / LOAD ──
+function save() {
+  try {
+    localStorage.setItem('focusbase_v2', JSON.stringify(state));
+    scheduleSyncToSupabase();
+    updateTopbarColor();
+  } catch(e) {}
+}
+function load() {
+  try {
+    const d = localStorage.getItem('focusbase_v2');
+    if(d) Object.assign(state, JSON.parse(d));
+  } catch(e) {}
+}
+
+async function initStorage() {
+  // Load from localStorage first for instant startup
+  load();
+
+  // Check if Supabase is configured
+  if(SUPABASE_URL && SUPABASE_KEY) {
+    sbReady = true;
+    // Try loading from Supabase (overrides localStorage if newer data exists)
+    const loaded = await loadFromSupabase();
+    if(loaded) {
+      // Persist to localStorage as cache
+      localStorage.setItem('focusbase_v2', JSON.stringify(state));
+    }
+  }
+
+  // Render everything
+  renderAll();
+}
+
+function renderAll() {
+  renderDashboard();
+  renderCalendar();
+  renderSome();
+  renderNotes();
+  renderDiary();
+  renderProjects();
+  renderReports();
+  renderStreak();
+  checkAndUpdateStreak();
+  checkFridayReport();
+  updateFocusScore();
+}
 
 // ── CLOCK ──
 function updateClock() { document.getElementById('clock').textContent = new Date().toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'}); }
@@ -2829,17 +3026,68 @@ function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace
 function formatDate(d){if(!d)return'';try{return new Date(d+'T12:00:00').toLocaleDateString('da-DK',{day:'numeric',month:'short'});}catch(e){return d;}}
 function formatDatetime(s){try{return new Date(s).toLocaleString('da-DK',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});}catch(e){return s;}}
 
+// ── SUPABASE SETUP ──
+function openSupabaseModal() {
+  document.getElementById('sb-url-input').value = SUPABASE_URL;
+  document.getElementById('sb-key-input').value = SUPABASE_KEY;
+  document.getElementById('sb-status').textContent = '';
+  document.getElementById('sb-connected-info').style.display = sbReady ? 'block' : 'none';
+  document.getElementById('modal-supabase').classList.add('open');
+}
+
+async function saveSupabaseConfig() {
+  const url = document.getElementById('sb-url-input').value.trim();
+  const key = document.getElementById('sb-key-input').value.trim();
+  if(!url || !key) { alert('Udfyld både URL og nøgle'); return; }
+  document.getElementById('sb-status').textContent = '⏳ Tester forbindelse...';
+
+  // Test connection
+  try {
+    const r = await fetch(`${url}/rest/v1/system_state?select=key&limit=1`, {
+      headers: { 'apikey': key, 'Authorization': 'Bearer ' + key }
+    });
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+  } catch(e) {
+    document.getElementById('sb-status').textContent = '❌ Kunne ikke forbinde: ' + e.message;
+    return;
+  }
+
+  SUPABASE_URL = url;
+  SUPABASE_KEY = key;
+  localStorage.setItem('fb_sb_url', url);
+  localStorage.setItem('fb_sb_key', key);
+  sbReady = true;
+
+  document.getElementById('sb-connected-info').style.display = 'block';
+  document.getElementById('sb-status').textContent = '';
+  document.getElementById('sb-btn').textContent = '☁ Supabase: forbundet ✓';
+  document.getElementById('sb-btn').style.color = 'var(--accent2)';
+
+  // Initial full sync
+  showSyncIndicator('Synkroniserer...');
+  await syncToSupabase();
+  hideSyncIndicator();
+  toast('☁ Supabase forbundet – data synkroniserer nu på tværs af enheder ✓');
+  closeModal('modal-supabase');
+}
+
+function updateSbButton() {
+  const btn = document.getElementById('sb-btn');
+  if(!btn) return;
+  if(sbReady) {
+    btn.textContent = '☁ Supabase: forbundet ✓';
+    btn.style.color = 'var(--accent2)';
+  } else {
+    btn.textContent = '☁ Supabase: ikke forbundet';
+    btn.style.color = '';
+  }
+}
+
 // ── INIT ──
-renderDashboard();
-renderCalendar();
-renderSome();
-renderNotes();renderDiary();
-renderProjects();
-renderReports();
-renderStreak();
-checkAndUpdateStreak();
-checkFridayReport();
-updateFocusScore();
+initStorage().then(() => {
+  updateSbButton();
+  updateTopbarColor();
+});
 </script>
 </body>
 </html>
