@@ -664,6 +664,23 @@ select { cursor:pointer; }
 .agenda-subtask-row:hover { border-color:var(--border2); }
 .agenda-subtask-row.done-item { opacity:0.45; }
 
+/* ── INTERVIEWS ── */
+.interview-card {
+  border:1px solid var(--border); border-radius:var(--radius);
+  padding:9px 12px; margin-bottom:6px; background:var(--surface2);
+  transition:border-color 0.15s;
+}
+.interview-card:hover { border-color:var(--border2); }
+.interview-card.aflyst { opacity:0.45; }
+.interview-status {
+  display:inline-block; font-size:9px; font-weight:600; padding:2px 7px;
+  border-radius:10px; text-transform:uppercase; letter-spacing:0.3px; margin-bottom:4px;
+}
+.iv-afventer  { background:var(--warning-light);  color:var(--warning); }
+.iv-aftalt    { background:var(--accent2-light);   color:var(--accent2); }
+.iv-gennemfort{ background:var(--accent-light);    color:var(--accent); }
+.iv-aflyst    { background:var(--surface2);        color:var(--text-muted); }
+
 /* Utility */
 .flex { display:flex; } .gap8 { gap:8px; } .ml-auto { margin-left:auto; }
 .mt8 { margin-top:8px; } .mt16 { margin-top:16px; }
@@ -767,6 +784,10 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
           <div class="card">
             <div class="card-header">◫ Opgave-deadlines snart</div>
             <div class="card-body" id="dash-projects"></div>
+          </div>
+          <div class="card">
+            <div class="card-header">🎙 Interviews</div>
+            <div class="card-body" id="dash-interviews"></div>
           </div>
           <div class="card">
             <div class="card-header">◈ SoMe · Afventer</div>
@@ -1138,6 +1159,55 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
       <div id="article-links-list"></div>
       <div class="flex gap8" style="margin-top:8px;">
         <button class="btn secondary" onclick="closeModal('modal-article-links')" style="flex:1;">Luk</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- INTERVIEW MODAL -->
+<div class="modal-overlay" id="modal-interview">
+  <div class="modal" style="width:500px;">
+    <div class="modal-header">
+      <div class="modal-title" id="interview-modal-title">Interview</div>
+      <button class="modal-close" onclick="closeModal('modal-interview')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="row2">
+        <div class="field"><label>Person</label><input type="text" id="iv-person" placeholder="Navn..."></div>
+        <div class="field"><label>Stilling / Titel</label><input type="text" id="iv-role" placeholder="Stilling..."></div>
+      </div>
+      <div class="field">
+        <label>Format</label>
+        <select id="iv-format" onchange="updateInterviewFormat()">
+          <option value="telefonisk">Telefonisk</option>
+          <option value="online">Online (Teams/Zoom)</option>
+          <option value="personligt">Personligt</option>
+        </select>
+      </div>
+      <div class="field" id="iv-address-field" style="display:none;">
+        <label>Adresse</label>
+        <input type="text" id="iv-address" placeholder="Adresse for mødet...">
+      </div>
+      <div class="row2">
+        <div class="field"><label>Dato</label><input type="date" id="iv-date" style="width:100%;"></div>
+        <div class="field"><label>Tidspunkt</label><input type="time" id="iv-time" style="width:100%;"></div>
+      </div>
+      <div class="field">
+        <label>Spørgsmål</label>
+        <textarea id="iv-questions" placeholder="Spørgsmål til interviewet..." style="min-height:100px;"></textarea>
+      </div>
+      <div class="field">
+        <label>Status</label>
+        <select id="iv-status">
+          <option value="afventer">Afventer aftale</option>
+          <option value="aftalt">Aftalt</option>
+          <option value="gennemfort">Gennemført</option>
+          <option value="aflyst">Aflyst / hoppet fra</option>
+        </select>
+      </div>
+      <div class="flex gap8">
+        <button class="btn" onclick="saveInterview()" style="flex:1;">Gem interview</button>
+        <button class="btn secondary" onclick="closeModal('modal-interview')">Annuller</button>
       </div>
     </div>
   </div>
@@ -1547,6 +1617,39 @@ const TEMPLATES = {
     { title: 'Send', skippable: false },
     { title: 'Evaluering – samle artikellinks', skippable: false, note: 'Links:' },
   ],
+  'Nyhedsbrev': [
+    { title: 'Indsaml idéer til nyhedsbrevet', skippable: false },
+    { title: 'Opsæt nyhedsbrev', skippable: false },
+    { title: 'Send til korrektur', skippable: false },
+    { title: 'Gør klar til afsendelse', skippable: false },
+    { title: 'Send', skippable: false },
+    { title: 'Evaluering 1. døgn', skippable: false, evalOffset: 1 },
+    { title: 'Evaluering 1 uge', skippable: false, evalOffset: 7 },
+    { title: 'Opsamling', skippable: false, evalOffset: 7 },
+  ],
+  'Artikel': [
+    { title: 'Læg fast på vinkel', skippable: false },
+    { title: 'Research', skippable: false },
+    { title: 'Udvælg kilder', skippable: false, sameDay: 'Arranger interviews' },
+    { title: 'Arranger interviews', skippable: false, sameDay: 'Udvælg kilder' },
+    { title: 'Interviews', skippable: false, isInterviewStep: true },
+    { title: 'Skriv artikel', skippable: false },
+    { title: 'Send til korrektur', skippable: false },
+    { title: 'Publicer', skippable: false },
+    { title: 'Evaluering', skippable: false },
+  ],
+  'Møde': [
+    { title: 'Emne – definer dagsorden', skippable: false },
+    { title: 'Hvem deltager', skippable: false },
+    { title: 'Hvor holdes mødet', skippable: false },
+    { title: 'Hvad skal forberedes', skippable: false },
+    { title: 'Afhold møde', skippable: false },
+    { title: 'Opfølgning på referat', skippable: true },
+  ],
+  'Admin': [
+    { title: 'Planlægning', skippable: false },
+    { title: 'Evaluering', skippable: false },
+  ],
 };
 
 function showTemplatePreview() {
@@ -1560,8 +1663,7 @@ function showTemplatePreview() {
     'SoMe':'#0a2d6e', 'Presse':'#F47920', 'Nyhedsbrev':'#c8960c',
     'Artikel':'#004225', 'Møde':'#c8a97e', 'Admin':'#5b3fa0',
     'Projekt':'#00AEEF', 'Andet':'#9099a8'
-  };
-  if(catColorMap[cat] && !state.editingProjectId) {
+  };  if(catColorMap[cat] && !state.editingProjectId) {
     state.selectedColor = catColorMap[cat];
     document.querySelectorAll('.color-dot').forEach(d => {
       d.classList.toggle('selected', d.dataset.color === state.selectedColor);
@@ -1587,6 +1689,10 @@ function applyTemplate(project) {
       doneAt: null,
       skippable: s.skippable || false,
       skipped: false,
+      evalOffset: s.evalOffset || null,   // days after send date
+      sameDay: s.sameDay || null,         // paired subtask name
+      isInterviewStep: s.isInterviewStep || false,
+      interviews: s.isInterviewStep ? [] : undefined,
     });
   });
 }
@@ -1822,22 +1928,32 @@ function wizardSameDay() {
   const baseDate = document.getElementById('wiz-sameday-date').value;
   if(!baseDate) { alert('Vælg en dato først'); return; }
 
-  // Calculate day-after for evaluations
   const base = new Date(baseDate+'T12:00:00');
   const dayAfter = new Date(base); dayAfter.setDate(base.getDate()+1);
   const dayAfterStr = dayAfter.toISOString().split('T')[0];
-
-  // Use project deadline for evaluations if set, otherwise day after base
   const evalDate = _wizardProject.deadline || dayAfterStr;
 
+  // Find "Send"-delopgaven for evalOffset-beregning (Nyhedsbrev)
+  const sendSub = _wizardProject.subtasks.find(s => s.title.toLowerCase() === 'send');
+  const sendDate = sendSub?.deadline || baseDate;
+
   _wizardProject.subtasks.filter(s=>!s.skipped).forEach(s => {
-    s.deadline = isEvalSubtask(s.title) ? evalDate : baseDate;
+    if(s.evalOffset) {
+      // Calculate date relative to send date
+      const d = new Date(sendDate+'T12:00:00');
+      d.setDate(d.getDate() + s.evalOffset);
+      s.deadline = d.toISOString().split('T')[0];
+    } else if(isEvalSubtask(s.title) && !s.evalOffset) {
+      s.deadline = evalDate;
+    } else {
+      s.deadline = baseDate;
+    }
     s.time = '';
   });
 
   document.getElementById('modal-wizard').classList.remove('open');
   finaliseProject(_wizardProject);
-  toast(`✓ Alle delopgaver sat til ${formatDate(baseDate)} · Evalueringer til ${formatDate(evalDate)}`);
+  toast(`✓ Alle delopgaver sat til ${formatDate(baseDate)}`);
 }
 
 function showWizardStep() {
@@ -2083,6 +2199,7 @@ function renderSubtask(projId, s) {
         </div>
         ${getMediaChecklistHtml(projId, s.id, s.mediaChecked)}
       </div>` : ''}
+    ${s.isInterviewStep ? renderInterviewsForSubtask(projId, s.id) : ''}
     <div class="subtask-meta">
       ${s.deadline?`<span class="subtask-deadline">⏰ ${formatDate(s.deadline)}${s.time?' '+s.time:''}</span>`:''}
       <div class="subtask-actions">
@@ -2303,6 +2420,7 @@ function renderDashboard() {
   if(dashView === 'agenda') renderAgenda(); else renderKanban();
 
   checkWorkdayWarnings();
+  renderDashboardInterviews();
 
   const projEl = document.getElementById('dash-projects');
   const soon = openProjects.filter(p=>p.deadline).sort((a,b)=>a.deadline.localeCompare(b.deadline)).slice(0,5);
@@ -2562,6 +2680,143 @@ function calNext(){ if(state.calMonth===11){state.calMonth=0;state.calYear++;}el
 function calToday(){ state.calYear=new Date().getFullYear(); state.calMonth=new Date().getMonth(); renderCalendar(); }
 
 // ── SOME ──
+// ── INTERVIEWS ──
+let _ivProjId = null, _ivStId = null, _ivIdx = null;
+
+function updateInterviewFormat() {
+  const fmt = document.getElementById('iv-format').value;
+  document.getElementById('iv-address-field').style.display = fmt === 'personligt' ? 'block' : 'none';
+}
+
+function openInterviewModal(projId, stId, idx=null) {
+  _ivProjId = projId; _ivStId = stId; _ivIdx = idx;
+  const p = state.projects.find(x=>x.id===projId);
+  const s = p?.subtasks.find(x=>x.id===stId);
+  const iv = idx !== null ? s?.interviews?.[idx] : null;
+
+  document.getElementById('interview-modal-title').textContent = iv ? 'Rediger interview' : 'Nyt interview';
+  document.getElementById('iv-person').value    = iv?.person    || '';
+  document.getElementById('iv-role').value      = iv?.role      || '';
+  document.getElementById('iv-format').value    = iv?.format    || 'telefonisk';
+  document.getElementById('iv-address').value   = iv?.address   || '';
+  document.getElementById('iv-date').value      = iv?.date      || '';
+  document.getElementById('iv-time').value      = iv?.time      || '';
+  document.getElementById('iv-questions').value = iv?.questions || '';
+  document.getElementById('iv-status').value    = iv?.status    || 'afventer';
+  updateInterviewFormat();
+  document.getElementById('modal-interview').classList.add('open');
+}
+
+function saveInterview() {
+  const p = state.projects.find(x=>x.id===_ivProjId);
+  const s = p?.subtasks.find(x=>x.id===_ivStId);
+  if(!s) return;
+  if(!s.interviews) s.interviews = [];
+
+  const iv = {
+    person:    document.getElementById('iv-person').value.trim(),
+    role:      document.getElementById('iv-role').value.trim(),
+    format:    document.getElementById('iv-format').value,
+    address:   document.getElementById('iv-address').value.trim(),
+    date:      document.getElementById('iv-date').value,
+    time:      document.getElementById('iv-time').value,
+    questions: document.getElementById('iv-questions').value.trim(),
+    status:    document.getElementById('iv-status').value,
+  };
+
+  if(_ivIdx !== null) s.interviews[_ivIdx] = iv;
+  else s.interviews.push(iv);
+
+  save();
+  closeModal('modal-interview');
+  renderProjects();
+  renderDashboard();
+  toast(`🎙 Interview ${_ivIdx !== null ? 'opdateret' : 'tilføjet'}: ${iv.person||'Unavngivet'}`);
+}
+
+function deleteInterview(projId, stId, idx) {
+  const p = state.projects.find(x=>x.id===projId);
+  const s = p?.subtasks.find(x=>x.id===stId);
+  if(!s?.interviews) return;
+  if(!confirm('Slet dette interview?')) return;
+  s.interviews.splice(idx, 1);
+  save(); renderProjects(); renderDashboard();
+}
+
+function renderInterviewsForSubtask(projId, stId) {
+  const p = state.projects.find(x=>x.id===projId);
+  const s = p?.subtasks.find(x=>x.id===stId);
+  const ivs = s?.interviews || [];
+  const statusLabel = { afventer:'Afventer aftale', aftalt:'Aftalt', gennemfort:'Gennemført', aflyst:'Aflyst' };
+
+  return `<div style="margin-top:8px;padding:10px;background:var(--surface2);border-radius:var(--radius);border:1px solid var(--border);">
+    <div style="font-size:9px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:flex;align-items:center;gap:8px;">
+      🎙 Interviews (${ivs.filter(i=>i.status!=='aflyst').length} aktive · ${ivs.filter(i=>i.status==='afventer').length} afventer aftale)
+      <button class="btn sm" onclick="openInterviewModal(${projId},${stId})" style="font-size:9px;padding:2px 8px;margin-left:auto;">+ Tilføj</button>
+    </div>
+    ${ivs.length === 0
+      ? `<div style="font-size:11px;color:var(--text-muted);">Ingen interviews tilføjet endnu.</div>`
+      : ivs.map((iv,i) => `
+        <div class="interview-card ${iv.status==='aflyst'?'aflyst':''}">
+          <span class="interview-status iv-${iv.status}">${statusLabel[iv.status]||iv.status}</span>
+          <div style="font-size:12px;font-weight:600;">${esc(iv.person)||'Unavngivet'}${iv.role?` · <span style="font-weight:400;color:var(--text-muted);">${esc(iv.role)}</span>`:''}</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">
+            ${iv.format==='personligt'?'👤':'iv.format'==='online'?'💻':'📞'} ${iv.format}
+            ${iv.address?' · '+esc(iv.address):''}
+            ${iv.date?' · '+formatDate(iv.date)+(iv.time?' '+iv.time:''):''}
+          </div>
+          ${iv.questions?`<div style="font-size:11px;color:var(--text-muted);margin-top:4px;font-style:italic;">${esc(iv.questions).substring(0,80)}${iv.questions.length>80?'…':''}</div>`:''}
+          <div class="flex gap8 mt8">
+            <button class="icon-btn" onclick="openInterviewModal(${projId},${stId},${i})" style="font-size:11px;color:var(--accent);">✎ Rediger</button>
+            <button class="icon-btn red" onclick="deleteInterview(${projId},${stId},${i})" style="font-size:11px;">✕</button>
+          </div>
+        </div>`).join('')}
+  </div>`;
+}
+
+function renderDashboardInterviews() {
+  const el = document.getElementById('dash-interviews');
+  if(!el) return;
+
+  // Collect all interviews across all artikel-projects
+  const all = [];
+  state.projects.filter(p=>!p.done&&p.cat==='Artikel').forEach(p => {
+    p.subtasks.filter(s=>s.isInterviewStep&&s.interviews?.length).forEach(s => {
+      s.interviews.forEach((iv,i) => { all.push({iv, projId:p.id, stId:s.id, idx:i, projTitle:p.title}); });
+    });
+  });
+
+  const afventer  = all.filter(x=>x.iv.status==='afventer').length;
+  const aftalt    = all.filter(x=>x.iv.status==='aftalt').length;
+  const total     = all.filter(x=>x.iv.status!=='aflyst').length;
+
+  if(!total) {
+    el.innerHTML = '<div class="empty" style="padding:12px 0;"><div class="emoji">🎙</div>Ingen interviews</div>';
+    return;
+  }
+
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+      <div style="text-align:center;background:var(--warning-light);border-radius:var(--radius);padding:8px;">
+        <div style="font-size:20px;font-weight:700;color:var(--warning);">${afventer}</div>
+        <div style="font-size:10px;color:var(--warning);">Afventer aftale</div>
+      </div>
+      <div style="text-align:center;background:var(--accent2-light);border-radius:var(--radius);padding:8px;">
+        <div style="font-size:20px;font-weight:700;color:var(--accent2);">${aftalt}</div>
+        <div style="font-size:10px;color:var(--accent2);">Aftalt</div>
+      </div>
+    </div>
+    ${all.filter(x=>x.iv.status==='afventer'||x.iv.status==='aftalt').slice(0,4).map(({iv,projId,stId,idx,projTitle})=>`
+      <div style="padding:6px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;">
+        <span class="interview-status iv-${iv.status}" style="flex-shrink:0;">${iv.status==='afventer'?'?':'✓'}</span>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:11px;font-weight:500;">${esc(iv.person||'Unavngivet')}</div>
+          <div style="font-size:10px;color:var(--text-muted);">${esc(projTitle)}</div>
+        </div>
+        <button class="icon-btn" onclick="openInterviewModal(${projId},${stId},${idx})" style="font-size:11px;color:var(--accent);">✎</button>
+      </div>`).join('')}`;
+}
+
 // ── MEDIELISTE ──
 function openMediaListModal() {
   renderMediaListItems();
