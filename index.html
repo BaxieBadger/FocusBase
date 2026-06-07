@@ -148,14 +148,38 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); font-si
 .stat-card {
   background:var(--surface); border:1px solid var(--border);
   border-radius:var(--radius-lg); padding:16px 18px;
-  box-shadow:var(--shadow);
+  box-shadow:var(--shadow); transition:background 0.5s, border-color 0.5s;
 }
-.stat-card .s-label { font-size:11px; color:var(--text-muted); font-weight:500; margin-bottom:6px; }
-.stat-card .s-val { font-size:28px; font-weight:700; color:var(--text); line-height:1; }
-.stat-card .s-sub { font-size:10px; color:var(--text-dim); margin-top:4px; }
+.stat-card .s-label { font-size:11px; font-weight:500; margin-bottom:6px; }
+.stat-card .s-val { font-size:28px; font-weight:700; line-height:1; }
+.stat-card .s-sub { font-size:10px; margin-top:4px; opacity:0.7; }
 .stat-card.accent .s-val { color:var(--accent); }
 .stat-card.green .s-val  { color:var(--accent2); }
 .stat-card.warn .s-val   { color:var(--warning); }
+.stat-card.overdue { border-color:var(--danger) !important; animation: pulse-red 2s infinite; }
+@keyframes pulse-red { 0%,100%{border-color:var(--danger)} 50%{border-color:rgba(228,66,88,0.4)} }
+
+/* ── REPORTS ── */
+.report-card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius-lg); box-shadow:var(--shadow);
+  margin-bottom:14px; overflow:hidden;
+}
+.report-card-header {
+  padding:14px 18px; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; gap:10px;
+}
+.report-card-title { font-size:14px; font-weight:600; flex:1; }
+.report-card-body { padding:16px 18px; }
+.report-stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:14px; }
+.report-stat-box { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:10px 12px; text-align:center; }
+.report-stat-box .rsb-val { font-size:20px; font-weight:700; color:var(--text); }
+.report-stat-box .rsb-lbl { font-size:10px; color:var(--text-muted); margin-top:2px; }
+.report-ab-box { background:var(--accent-light); border:1px solid rgba(108,99,255,0.2); border-radius:var(--radius); padding:10px 12px; margin-bottom:10px; }
+.report-ab-box .ab-label { font-size:10px; font-weight:600; color:var(--accent); letter-spacing:1px; text-transform:uppercase; margin-bottom:4px; }
+.report-ab-box .ab-text { font-size:12px; color:var(--text); line-height:1.5; }
+.article-link-chip { display:inline-flex; align-items:center; gap:6px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:4px 10px; margin:3px; font-size:11px; color:var(--text); text-decoration:none; }
+.article-link-chip:hover { border-color:var(--accent); color:var(--accent); }
 
 .dash-cols { display:grid; grid-template-columns:2fr 1fr; gap:16px; }
 
@@ -668,6 +692,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
     <div class="sidebar-section-label">Arkiv</div>
     <div class="nav-item" onclick="nav('notes')"><span class="ni-icon">◱</span> Notater</div>
     <div class="nav-item" onclick="nav('diary')"><span class="ni-icon">◎</span> Dagbog</div>
+    <div class="nav-item" onclick="nav('reports')"><span class="ni-icon">📋</span> Afrapportering</div>
   </div>
   <div class="sidebar-footer">
     <div class="streak-row">
@@ -696,21 +721,25 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
     <!-- DASHBOARD -->
     <div class="view active" id="view-dashboard">
       <div class="dash-stats">
-        <div class="stat-card accent">
-          <div class="s-label">Åbne projekter</div>
+        <div class="stat-card" id="sc-proj" style="transition:background 0.5s,border-color 0.5s;">
+          <div class="s-label" id="sc-proj-label">Åbne projekter</div>
           <div class="s-val" id="stat-proj">0</div>
+          <div class="s-sub" id="sc-proj-sub"></div>
         </div>
-        <div class="stat-card green">
-          <div class="s-label">Delopgaver færdige i dag</div>
+        <div class="stat-card" id="sc-subs" style="transition:background 0.5s,border-color 0.5s;">
+          <div class="s-label" id="sc-subs-label">Åbne delopgaver</div>
           <div class="s-val" id="stat-done">0</div>
+          <div class="s-sub" id="sc-subs-sub"></div>
         </div>
-        <div class="stat-card warn">
+        <div class="stat-card" id="sc-dl" style="transition:background 0.5s,border-color 0.5s;">
           <div class="s-label">Deadlines denne uge</div>
           <div class="s-val" id="stat-deadlines">0</div>
+          <div class="s-sub" id="sc-dl-sub"></div>
         </div>
-        <div class="stat-card">
-          <div class="s-label">SoMe afventer</div>
+        <div class="stat-card" id="sc-some" style="transition:background 0.5s,border-color 0.5s;">
+          <div class="s-label" id="sc-some-label">SoMe afventer</div>
           <div class="s-val" id="stat-some">0</div>
+          <div class="s-sub" id="sc-some-sub"></div>
         </div>
       </div>
 
@@ -852,6 +881,21 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
       </div>
     </div>
 
+    <!-- REPORTS -->
+    <div class="view" id="view-reports">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
+        <div class="board-filters" id="report-filters">
+          <button class="filter-pill active" onclick="setReportFilter('all',this)">Alle</button>
+          <button class="filter-pill" onclick="setReportFilter('some',this)">SoMe</button>
+          <button class="filter-pill" onclick="setReportFilter('newsletter',this)">Nyhedsbrev</button>
+          <button class="filter-pill" onclick="setReportFilter('press',this)">Presse</button>
+        </div>
+        <button class="btn sm secondary" onclick="downloadReportsPDF()" style="margin-left:auto;">⬇ PDF</button>
+        <button class="btn sm secondary" onclick="downloadReportsWord()">⬇ Word</button>
+      </div>
+      <div id="reports-list"></div>
+    </div>
+
   </div>
 </div>
 </div>
@@ -886,6 +930,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
           <select id="p-cat" onchange="showTemplatePreview()">
             <option>SoMe</option>
             <option>Presse</option>
+            <option>Nyhedsbrev</option>
             <option>Artikel</option>
             <option>Møde</option>
             <option>Admin</option>
@@ -907,6 +952,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
         <div class="color-picker" id="color-picker">
           <div class="color-dot selected" style="background:#0a2d6e;" data-color="#0a2d6e" onclick="selectColor(this)" title="SoMe – Mørkeblå"></div>
           <div class="color-dot" style="background:#F47920;" data-color="#F47920" onclick="selectColor(this)" title="Presse – Gulf Orange"></div>
+          <div class="color-dot" style="background:#c8960c;" data-color="#c8960c" onclick="selectColor(this)" title="Nyhedsbrev – Guldgul"></div>
           <div class="color-dot" style="background:#004225;" data-color="#004225" onclick="selectColor(this)" title="Artikel – British Racing Green"></div>
           <div class="color-dot" style="background:#c8a97e;" data-color="#c8a97e" onclick="selectColor(this)" title="Møde – Sand"></div>
           <div class="color-dot" style="background:#5b3fa0;" data-color="#5b3fa0" onclick="selectColor(this)" title="Admin – Lilla"></div>
@@ -977,6 +1023,101 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
       <div class="flex gap8">
         <button class="btn" onclick="saveSome()" style="flex:1;">Gem opslag</button>
         <button class="btn secondary" onclick="closeModal('modal-some')">Annuller</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NEWSLETTER STATS MODAL -->
+<div class="modal-overlay" id="modal-newsletter-stats">
+  <div class="modal" style="width:520px;">
+    <div class="modal-header">
+      <div class="modal-title">📧 Nyhedsbrev-statistik</div>
+      <button class="modal-close" onclick="closeModal('modal-newsletter-stats')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="nl-stats-proj-name" style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:14px;"></div>
+      <div class="row2">
+        <div class="field"><label>📬 Åbningsrate (%)</label><input type="number" id="nl-opens" placeholder="0.0" step="0.1" min="0" max="100"></div>
+        <div class="field"><label>🔗 Klikrate (%)</label><input type="number" id="nl-clicks" placeholder="0.0" step="0.1" min="0" max="100"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>❌ Afmeldinger</label><input type="number" id="nl-unsubs" placeholder="0" min="0"></div>
+        <div class="field"><label>⚠️ Bounce</label><input type="number" id="nl-bounce" placeholder="0" min="0"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>📤 Udsendt til</label><input type="number" id="nl-sent" placeholder="0" min="0"></div>
+        <div class="field"><label>📅 Udsendt dato</label><input type="date" id="nl-date" style="width:100%;"></div>
+      </div>
+      <div class="field">
+        <label>🧪 A/B-test beskrivelse</label>
+        <textarea id="nl-ab" placeholder="Beskriv A/B-test: hvad testede du, hvilken version vandt og hvorfor..." style="min-height:80px;"></textarea>
+      </div>
+      <div class="field">
+        <label>📝 Evaluering / noter</label>
+        <textarea id="nl-note" placeholder="Hvad virkede? Hvad ville du gøre anderledes?" style="min-height:60px;"></textarea>
+      </div>
+      <div class="flex gap8">
+        <button class="btn" onclick="saveNewsletterStats()" style="flex:1;">Gem statistik</button>
+        <button class="btn secondary" onclick="closeModal('modal-newsletter-stats')">Annuller</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SOME STATS MODAL -->
+<div class="modal-overlay" id="modal-some-stats">
+  <div class="modal" style="width:480px;">
+    <div class="modal-header">
+      <div class="modal-title">📊 SoMe-statistik</div>
+      <button class="modal-close" onclick="closeModal('modal-some-stats')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="some-stats-platform-label" style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:4px;"></div>
+      <div id="some-stats-content-preview" style="font-size:12px;color:var(--text-muted);border-left:3px solid var(--border);padding-left:10px;margin-bottom:16px;line-height:1.5;"></div>
+      <div class="row3">
+        <div class="field"><label>👁 Reach / Visninger</label><input type="number" id="stat-reach" placeholder="0" min="0"></div>
+        <div class="field"><label>❤️ Likes / Reaktioner</label><input type="number" id="stat-likes" placeholder="0" min="0"></div>
+        <div class="field"><label>💬 Kommentarer</label><input type="number" id="stat-comments" placeholder="0" min="0"></div>
+      </div>
+      <div class="row3">
+        <div class="field"><label>🔁 Delinger</label><input type="number" id="stat-shares" placeholder="0" min="0"></div>
+        <div class="field"><label>🔗 Klik på link</label><input type="number" id="stat-clicks" placeholder="0" min="0"></div>
+        <div class="field"><label>📅 Målt dato</label><input type="date" id="stat-date" style="width:100%;"></div>
+      </div>
+      <div class="field"><label>Note</label><textarea id="stat-note" placeholder="Hvad virkede? Hvad virkede ikke?" style="min-height:60px;"></textarea></div>
+      <div class="flex gap8">
+        <button class="btn" onclick="saveSomeStats()" style="flex:1;">Gem statistik</button>
+        <button class="btn secondary" onclick="closeModal('modal-some-stats')">Annuller</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ARTICLE LINKS MODAL -->
+<div class="modal-overlay" id="modal-article-links">
+  <div class="modal" style="width:520px;">
+    <div class="modal-header">
+      <div class="modal-title">📰 Artikellinks – evaluering</div>
+      <button class="modal-close" onclick="closeModal('modal-article-links')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="article-links-proj-name" style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:14px;"></div>
+      <!-- Add new link -->
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:16px;">
+        <div style="font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:1px;">Tilføj artikel</div>
+        <div class="row2">
+          <div class="field"><label>Medie</label><input type="text" id="al-medie" placeholder="fx Politiken, TV2..."></div>
+          <div class="field"><label>Dato</label><input type="date" id="al-date" style="width:100%;"></div>
+        </div>
+        <div class="field"><label>Overskrift</label><input type="text" id="al-title" placeholder="Artiklens overskrift"></div>
+        <div class="field"><label>Link (URL)</label><input type="text" id="al-url" placeholder="https://..."></div>
+        <button class="btn sm" onclick="addArticleLink()" style="margin-top:4px;">+ Tilføj artikel</button>
+      </div>
+      <!-- Existing links -->
+      <div id="article-links-list"></div>
+      <div class="flex gap8" style="margin-top:8px;">
+        <button class="btn secondary" onclick="closeModal('modal-article-links')" style="flex:1;">Luk</button>
       </div>
     </div>
   </div>
@@ -1131,25 +1272,26 @@ setInterval(updateClock,1000); updateClock();
 
 // ── NAV ──
 function nav(id) {
-  ['dashboard','projects','calendar','some','notes','diary'].forEach(v => {
+  ['dashboard','projects','calendar','some','notes','diary','reports'].forEach(v => {
     document.getElementById('view-'+v).classList.toggle('active', v===id);
   });
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-  const map = {dashboard:0,projects:1,calendar:2,some:3,notes:4,diary:5};
+  const map = {dashboard:0,projects:1,calendar:2,some:3,notes:4,diary:5,reports:6};
   const items = document.querySelectorAll('.nav-item');
   if(items[map[id]]) items[map[id]].classList.add('active');
-  const titles = {dashboard:'Dashboard',projects:'Projekter',calendar:'Kalender',some:'SoMe-opslag',notes:'Notater',diary:'Opgavedagbog'};
+  const titles = {dashboard:'Dashboard',projects:'Projekter',calendar:'Kalender',some:'SoMe-opslag',notes:'Notater',diary:'Opgavedagbog',reports:'Afrapportering'};
   document.getElementById('page-title').textContent = titles[id]||id;
-  const newBtnLabels = {dashboard:'+ Nyt projekt',projects:'+ Nyt projekt',calendar:'+ Nyt projekt',some:'+ Nyt opslag',notes:'+ Ny note',diary:'+ Nyt projekt'};
+  const newBtnLabels = {dashboard:'+ Nyt projekt',projects:'+ Nyt projekt',calendar:'+ Nyt projekt',some:'+ Nyt opslag',notes:'+ Ny note',diary:'+ Nyt projekt',reports:'+ Nyt projekt'};
   const newBtn = document.getElementById('new-btn');
   newBtn.textContent = newBtnLabels[id]||'+ Ny';
   newBtn.onclick = id==='some' ? openSomeModal : id==='notes' ? newNote : openProjectModal;
   if(id==='dashboard') renderDashboard();
-  if(id==='projects') renderProjects();
-  if(id==='calendar') renderCalendar();
-  if(id==='some') renderSome();
-  if(id==='notes') renderNotes();
-  if(id==='diary') renderDiary();
+  if(id==='projects')  renderProjects();
+  if(id==='calendar')  renderCalendar();
+  if(id==='some')      renderSome();
+  if(id==='notes')     renderNotes();
+  if(id==='diary')     renderDiary();
+  if(id==='reports')   renderReports();
   updateBadge();
 }
 
@@ -1195,8 +1337,9 @@ function showTemplatePreview() {
 
   // Auto-set matching category color
   const catColorMap = {
-    'SoMe':'#0a2d6e', 'Presse':'#F47920', 'Artikel':'#004225',
-    'Møde':'#c8a97e', 'Admin':'#5b3fa0', 'Projekt':'#00AEEF', 'Andet':'#9099a8'
+    'SoMe':'#0a2d6e', 'Presse':'#F47920', 'Nyhedsbrev':'#c8960c',
+    'Artikel':'#004225', 'Møde':'#c8a97e', 'Admin':'#5b3fa0',
+    'Projekt':'#00AEEF', 'Andet':'#9099a8'
   };
   if(catColorMap[cat] && !state.editingProjectId) {
     state.selectedColor = catColorMap[cat];
@@ -1359,7 +1502,7 @@ function renderKanban() {
   const board = document.getElementById('kanban-board');
 
   // Collect all categories in use + fixed ones
-  const fixedCats = ['SoMe','Presse','Artikel','Møde','Admin','Projekt','Andet'];
+  const fixedCats = ['SoMe','Presse','Nyhedsbrev','Artikel','Møde','Admin','Projekt','Andet'];
   const usedCats  = [...new Set(state.projects.map(p => p.cat))];
   const allCats   = [...new Set([...fixedCats, ...usedCats])];
 
@@ -1370,14 +1513,15 @@ function renderKanban() {
   })).filter(col => col.projects.length > 0 || fixedCats.includes(col.cat));
 
   const catColors = {
-    'SoMe':    '#0a2d6e',  // Mørkeblå
-    'Presse':  '#F47920',  // Gulf orange
-    'Artikel': '#004225',  // British Racing Green
-    'Møde':    '#c8a97e',  // Sandfarvet
-    'Admin':   '#5b3fa0',  // Lilla
-    'Projekt': '#00AEEF',  // Gulf lyseblå
-    'Andet':   '#9099a8',  // Grå
-    'Generelt':'#9099a8',  // Grå (fallback)
+    'SoMe':        '#0a2d6e',
+    'Presse':      '#F47920',
+    'Nyhedsbrev':  '#c8960c',
+    'Artikel':     '#004225',
+    'Møde':        '#c8a97e',
+    'Admin':       '#5b3fa0',
+    'Projekt':     '#00AEEF',
+    'Andet':       '#9099a8',
+    'Generelt':    '#9099a8',
   };
 
   board.style.gridTemplateColumns = `repeat(${Math.min(cols.length, 4)}, 1fr)`;
@@ -1473,14 +1617,15 @@ function finaliseProject(project) {
 
 // ── DYNAMIC TOPBAR COLOR ──
 const CAT_COLORS = {
-  'SoMe':    { bg:'#0a2d6e', text:'#ffffff', muted:'rgba(255,255,255,0.6)', btnBg:'rgba(255,255,255,0.15)', btnBorder:'rgba(255,255,255,0.3)', btnText:'#ffffff' },
-  'Presse':  { bg:'#F47920', text:'#ffffff', muted:'rgba(255,255,255,0.7)', btnBg:'rgba(255,255,255,0.2)',  btnBorder:'rgba(255,255,255,0.4)', btnText:'#ffffff' },
-  'Artikel': { bg:'#004225', text:'#ffffff', muted:'rgba(255,255,255,0.6)', btnBg:'rgba(255,255,255,0.15)', btnBorder:'rgba(255,255,255,0.3)', btnText:'#ffffff' },
-  'Møde':    { bg:'#c8a97e', text:'#2a1f0e', muted:'rgba(42,31,14,0.55)',  btnBg:'rgba(42,31,14,0.12)',   btnBorder:'rgba(42,31,14,0.25)',   btnText:'#2a1f0e' },
-  'Admin':   { bg:'#5b3fa0', text:'#ffffff', muted:'rgba(255,255,255,0.6)', btnBg:'rgba(255,255,255,0.15)', btnBorder:'rgba(255,255,255,0.3)', btnText:'#ffffff' },
-  'Projekt': { bg:'#00AEEF', text:'#012a3a', muted:'rgba(1,42,58,0.6)',    btnBg:'rgba(1,42,58,0.12)',    btnBorder:'rgba(1,42,58,0.25)',    btnText:'#012a3a' },
-  'Andet':   { bg:'#9099a8', text:'#ffffff', muted:'rgba(255,255,255,0.6)', btnBg:'rgba(255,255,255,0.15)', btnBorder:'rgba(255,255,255,0.3)', btnText:'#ffffff' },
-  'Generelt':{ bg:'#9099a8', text:'#ffffff', muted:'rgba(255,255,255,0.6)', btnBg:'rgba(255,255,255,0.15)', btnBorder:'rgba(255,255,255,0.3)', btnText:'#ffffff' },
+  'SoMe':       { bg:'#0a2d6e', text:'#ffffff', muted:'rgba(255,255,255,0.6)', btnBg:'rgba(255,255,255,0.15)', btnBorder:'rgba(255,255,255,0.3)', btnText:'#ffffff' },
+  'Presse':     { bg:'#F47920', text:'#ffffff', muted:'rgba(255,255,255,0.7)', btnBg:'rgba(255,255,255,0.2)',  btnBorder:'rgba(255,255,255,0.4)', btnText:'#ffffff' },
+  'Nyhedsbrev': { bg:'#c8960c', text:'#2a1c00', muted:'rgba(42,28,0,0.55)',   btnBg:'rgba(42,28,0,0.12)',    btnBorder:'rgba(42,28,0,0.25)',    btnText:'#2a1c00' },
+  'Artikel':    { bg:'#004225', text:'#ffffff', muted:'rgba(255,255,255,0.6)', btnBg:'rgba(255,255,255,0.15)', btnBorder:'rgba(255,255,255,0.3)', btnText:'#ffffff' },
+  'Møde':       { bg:'#c8a97e', text:'#2a1f0e', muted:'rgba(42,31,14,0.55)',  btnBg:'rgba(42,31,14,0.12)',   btnBorder:'rgba(42,31,14,0.25)',   btnText:'#2a1f0e' },
+  'Admin':      { bg:'#5b3fa0', text:'#ffffff', muted:'rgba(255,255,255,0.6)', btnBg:'rgba(255,255,255,0.15)', btnBorder:'rgba(255,255,255,0.3)', btnText:'#ffffff' },
+  'Projekt':    { bg:'#00AEEF', text:'#012a3a', muted:'rgba(1,42,58,0.6)',    btnBg:'rgba(1,42,58,0.12)',    btnBorder:'rgba(1,42,58,0.25)',    btnText:'#012a3a' },
+  'Andet':      { bg:'#9099a8', text:'#ffffff', muted:'rgba(255,255,255,0.6)', btnBg:'rgba(255,255,255,0.15)', btnBorder:'rgba(255,255,255,0.3)', btnText:'#ffffff' },
+  'Generelt':   { bg:'#9099a8', text:'#ffffff', muted:'rgba(255,255,255,0.6)', btnBg:'rgba(255,255,255,0.15)', btnBorder:'rgba(255,255,255,0.3)', btnText:'#ffffff' },
 };
 
 function updateTopbarColor() {
@@ -1634,6 +1779,8 @@ function renderProjectCard(p) {
         </div>`:''}
         <span class="project-deadline ${dlClass}">⏰ ${dlText}</span>
         <button class="btn secondary sm" onclick="event.stopPropagation();openProjectModal(${p.id})" style="font-size:10px;padding:3px 8px;">✎</button>
+        ${(p.cat==='Presse'||p.cat==='Nyhedsbrev'||p.cat==='Artikel') ? `<button class="btn secondary sm" onclick="event.stopPropagation();openArticleLinksModal(${p.id})" style="font-size:10px;padding:3px 8px;" title="Artikellinks">📰 ${(p.articleLinks||[]).length}</button>` : ''}
+        ${p.cat==='Nyhedsbrev' ? `<button class="btn secondary sm" onclick="event.stopPropagation();openNewsletterStatsModal(${p.id})" style="font-size:10px;padding:3px 8px;" title="Nyhedsbrev-statistik">📧</button>` : ''}
         <button class="btn secondary sm" onclick="event.stopPropagation();toggleProjectDone(${p.id})" style="font-size:10px;padding:3px 8px;">${p.done?'↺ Genåbn':'✓ Færdig'}</button>
         <button class="btn sm danger" onclick="event.stopPropagation();deleteProject(${p.id})" style="font-size:10px;padding:3px 8px;">✕</button>
       </div>
@@ -1739,22 +1886,124 @@ function updateBadge() {
 }
 
 // ── DASHBOARD ──
+const CAT_HEX = {
+  'SoMe':'#0a2d6e','Presse':'#F47920','Nyhedsbrev':'#c8960c',
+  'Artikel':'#004225','Møde':'#c8a97e','Admin':'#5b3fa0',
+  'Projekt':'#00AEEF','Andet':'#9099a8','Generelt':'#9099a8'
+};
+
+function hexToRgba(hex, a) {
+  const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+function dominantCatAmong(projects) {
+  const counts = {};
+  projects.forEach(p => { counts[p.cat] = (counts[p.cat]||0)+1; });
+  const top = Object.entries(counts).sort((a,b)=>b[1]-a[1])[0];
+  return top ? top[0] : null;
+}
+
+function styleStatCard(cardId, cat, valColor, textColor) {
+  const card = document.getElementById(cardId);
+  if(!card) return;
+  const hex = cat ? CAT_HEX[cat]||'#6c63ff' : null;
+  if(hex) {
+    card.style.background = hexToRgba(hex, 0.08);
+    card.style.borderColor = hexToRgba(hex, 0.35);
+    card.querySelector('.s-label').style.color = hex;
+    card.querySelector('.s-val').style.color   = hex;
+    if(card.querySelector('.s-sub')) card.querySelector('.s-sub').style.color = hex;
+  } else {
+    card.style.background  = '';
+    card.style.borderColor = '';
+    card.querySelector('.s-label').style.color = '';
+    card.querySelector('.s-val').style.color   = '';
+  }
+}
+
 function renderDashboard() {
-  const openProj = state.projects.filter(p=>!p.done).length;
-  const today = new Date().toDateString();
-  const doneSubs = state.projects.flatMap(p=>p.subtasks).filter(s=>s.done&&s.doneAt&&new Date(s.doneAt).toDateString()===today).length;
-  const now = new Date(); const weekEnd = new Date(now); weekEnd.setDate(now.getDate()+7);
-  const dlSoon = state.projects.filter(p=>!p.done&&p.deadline&&new Date(p.deadline)<=weekEnd).length;
-  const someWait = state.some.filter(s=>s.status==='ready').length;
-  document.getElementById('stat-proj').textContent = openProj;
-  document.getElementById('stat-done').textContent = doneSubs;
-  document.getElementById('stat-deadlines').textContent = dlSoon;
-  document.getElementById('stat-some').textContent = someWait;
+  const openProjects = state.projects.filter(p=>!p.done);
+  const openSubs     = openProjects.flatMap(p=>p.subtasks.filter(s=>!s.done&&!s.skipped));
+  const now = new Date();
+  const weekEnd = new Date(now); weekEnd.setDate(now.getDate()+7);
+  const todayStr = now.toISOString().split('T')[0];
+
+  // Check overdue
+  const overdue = openProjects.filter(p=>p.deadline && p.deadline < todayStr);
+  const hasOverdue = overdue.length > 0;
+
+  // Topbar blood red if overdue
+  const topbar = document.getElementById('main-topbar');
+  if(hasOverdue) {
+    topbar.style.background   = '#8b0000';
+    topbar.style.borderBottom = 'none';
+    document.querySelector('.topbar-title').style.color = '#fff';
+    document.getElementById('clock').style.color = 'rgba(255,255,255,0.7)';
+    document.querySelectorAll('#main-topbar .btn').forEach(b => {
+      b.style.background='rgba(255,255,255,0.15)'; b.style.color='#fff'; b.style.borderColor='rgba(255,255,255,0.3)';
+    });
+  } else {
+    updateTopbarColor();
+  }
+
+  // Stat 1: Åbne projekter – colored by dominant cat
+  const dominantProj = dominantCatAmong(openProjects);
+  document.getElementById('stat-proj').textContent = openProjects.length;
+  document.getElementById('sc-proj-sub').textContent = dominantProj ? `Flest: ${dominantProj}` : '';
+  styleStatCard('sc-proj', dominantProj, null, null);
+
+  // Stat 2: Åbne delopgaver – colored by dominant cat of projects with open subs
+  const projsWithOpenSubs = openProjects.filter(p=>p.subtasks.some(s=>!s.done&&!s.skipped));
+  const dominantSubs = dominantCatAmong(projsWithOpenSubs);
+  document.getElementById('stat-done').textContent = openSubs.length;
+  document.getElementById('sc-subs-sub').textContent = dominantSubs ? `Flest: ${dominantSubs}` : '';
+  styleStatCard('sc-subs', dominantSubs, null, null);
+
+  // Stat 3: Deadlines denne uge
+  const dlSoon = openProjects.filter(p=>p.deadline&&new Date(p.deadline+'T23:59:59')<=weekEnd);
+  const dominantDl = dominantCatAmong(dlSoon);
+  document.getElementById('stat-deadlines').textContent = dlSoon.length;
+  document.getElementById('sc-dl-sub').textContent = hasOverdue ? `⚠️ ${overdue.length} overskredet` : (dominantDl||'');
+  const scDl = document.getElementById('sc-dl');
+  if(hasOverdue) {
+    scDl.style.background   = hexToRgba('#e44258', 0.1);
+    scDl.style.borderColor  = '#e44258';
+    scDl.querySelector('.s-label').style.color = '#e44258';
+    scDl.querySelector('.s-val').style.color   = '#e44258';
+    scDl.querySelector('.s-sub').style.color   = '#e44258';
+    scDl.classList.add('overdue');
+  } else {
+    scDl.classList.remove('overdue');
+    styleStatCard('sc-dl', dominantDl, null, null);
+  }
+
+  // Stat 4: SoMe afventer – show dominant platform
+  const pending = state.some.filter(s=>s.status==='ready');
+  document.getElementById('stat-some').textContent = pending.length;
+  const platCounts = {};
+  pending.forEach(s=>{ platCounts[s.platform]=(platCounts[s.platform]||0)+1; });
+  const topPlat = Object.entries(platCounts).sort((a,b)=>b[1]-a[1])[0];
+  const pcLabel = document.getElementById('sc-some-label');
+  document.getElementById('sc-some-sub').textContent = topPlat ? topPlat[0] : '';
+  if(topPlat) {
+    const pc = platColor(topPlat[0]);
+    const sc4 = document.getElementById('sc-some');
+    sc4.style.background  = pc.light;
+    sc4.style.borderColor = pc.bg;
+    sc4.querySelector('.s-label').style.color = pc.bg;
+    sc4.querySelector('.s-val').style.color   = pc.bg;
+  } else {
+    styleStatCard('sc-some', null, null, null);
+  }
 
   if(dashView === 'agenda') renderAgenda(); else renderKanban();
 
+  // Overdue notice + workday warning
+  checkWorkdayWarnings();
+
   const projEl = document.getElementById('dash-projects');
-  const soon = state.projects.filter(p=>!p.done&&p.deadline).sort((a,b)=>a.deadline.localeCompare(b.deadline)).slice(0,5);
+  const soon = openProjects.filter(p=>p.deadline).sort((a,b)=>a.deadline.localeCompare(b.deadline)).slice(0,5);
   projEl.innerHTML = soon.length ? soon.map(p=>`
     <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);">
       <span style="width:8px;height:8px;border-radius:3px;background:${p.color};flex-shrink:0;display:inline-block;"></span>
@@ -1763,13 +2012,222 @@ function renderDashboard() {
     </div>`).join('') : '<div class="empty" style="padding:16px 0;"><div class="emoji">📅</div>Ingen deadlines sat</div>';
 
   const someEl = document.getElementById('dash-some');
-  const pending = state.some.filter(s=>s.status==='ready');
-  someEl.innerHTML = pending.length ? pending.map(s=>`
-    <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);">
-      <span style="font-size:11px;font-weight:600;color:var(--accent);">${esc(s.platform)}</span>
+  someEl.innerHTML = pending.length ? pending.map(s=>{
+    const pc = platColor(s.platform);
+    return `<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:11px;font-weight:700;color:${pc.bg};">${esc(s.platform)}</span>
       <span style="font-size:11px;color:var(--text-muted);flex:1;">${esc(s.content).substring(0,50)}…</span>
       <button class="btn sm success" onclick="markPosted(${s.id})" style="font-size:10px;padding:3px 8px;">✓ Postet</button>
-    </div>`).join('') : '<div class="empty" style="padding:16px 0;"><div class="emoji">✓</div>Ingen afventer</div>';
+    </div>`;
+  }).join('') : '<div class="empty" style="padding:16px 0;"><div class="emoji">✓</div>Ingen afventer</div>';
+}
+
+// ── WORKDAY WARNING ──
+function countWorkdays(fromDate, toDate) {
+  let count = 0;
+  const d = new Date(fromDate);
+  while(d <= toDate) {
+    const dow = d.getDay();
+    if(dow >= 1 && dow <= 5) count++;
+    d.setDate(d.getDate()+1);
+  }
+  return count;
+}
+
+function checkWorkdayWarnings() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  state.projects.filter(p=>!p.done&&p.deadline).forEach(p => {
+    const dl = new Date(p.deadline+'T23:59:59');
+    const workdays = countWorkdays(today, dl);
+    const openSubs = p.subtasks.filter(s=>!s.done&&!s.skipped).length;
+    if(openSubs > workdays && workdays >= 0) {
+      const key = `workday-warn-${p.id}-${p.deadline}`;
+      if(!sessionStorage.getItem(key)) {
+        sessionStorage.setItem(key,'1');
+        setTimeout(()=>toast(`⚠️ "${p.title}": ${openSubs} delopgaver, kun ${workdays} arbejdsdage til deadline`), 500);
+      }
+    }
+  });
+}
+
+// ── NEWSLETTER STATS ──
+let editingNlProjId = null;
+function openNewsletterStatsModal(projId) {
+  editingNlProjId = projId;
+  const p = state.projects.find(x=>x.id===projId);
+  if(!p) return;
+  document.getElementById('nl-stats-proj-name').textContent = '📧 ' + p.title;
+  const st = p.nlStats || {};
+  document.getElementById('nl-opens').value  = st.opens  || '';
+  document.getElementById('nl-clicks').value = st.clicks || '';
+  document.getElementById('nl-unsubs').value = st.unsubs || '';
+  document.getElementById('nl-bounce').value = st.bounce || '';
+  document.getElementById('nl-sent').value   = st.sent   || '';
+  document.getElementById('nl-date').value   = st.date   || new Date().toISOString().split('T')[0];
+  document.getElementById('nl-ab').value     = st.ab     || '';
+  document.getElementById('nl-note').value   = st.note   || '';
+  document.getElementById('modal-newsletter-stats').classList.add('open');
+}
+function saveNewsletterStats() {
+  const p = state.projects.find(x=>x.id===editingNlProjId);
+  if(!p) return;
+  p.nlStats = {
+    opens:  parseFloat(document.getElementById('nl-opens').value)  || 0,
+    clicks: parseFloat(document.getElementById('nl-clicks').value) || 0,
+    unsubs: parseInt(document.getElementById('nl-unsubs').value)   || 0,
+    bounce: parseInt(document.getElementById('nl-bounce').value)   || 0,
+    sent:   parseInt(document.getElementById('nl-sent').value)     || 0,
+    date:   document.getElementById('nl-date').value,
+    ab:     document.getElementById('nl-ab').value,
+    note:   document.getElementById('nl-note').value,
+  };
+  save(); closeModal('modal-newsletter-stats'); renderProjects(); renderReports();
+  toast('📧 Nyhedsbrev-statistik gemt ✓');
+}
+
+// ── REPORTS ──
+let reportFilter = 'all';
+function setReportFilter(f, el) {
+  reportFilter = f;
+  document.querySelectorAll('#report-filters .filter-pill').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  renderReports();
+}
+
+function renderReports() {
+  const el = document.getElementById('reports-list');
+  if(!el) return;
+
+  let projects = state.projects;
+  if(reportFilter==='some')       projects = projects.filter(p=>p.cat==='SoMe');
+  if(reportFilter==='newsletter') projects = projects.filter(p=>p.cat==='Nyhedsbrev');
+  if(reportFilter==='press')      projects = projects.filter(p=>p.cat==='Presse'||p.cat==='Artikel');
+
+  // Only show projects with some data to report
+  const reportable = projects.filter(p =>
+    p.nlStats || p.articleLinks?.length ||
+    state.some.some(s=>s.stats&&s.stats.reach) ||
+    (state.diaryEntries[p.id]||[]).length > 0
+  );
+
+  if(!reportable.length) {
+    el.innerHTML = '<div class="empty"><div class="emoji">📋</div>Ingen afrapporteringer endnu.<br>Tilføj statistik til et projekt for at se det her.</div>';
+    return;
+  }
+
+  el.innerHTML = reportable.map(p => {
+    const hex = CAT_HEX[p.cat]||'#9099a8';
+    const total = p.subtasks.filter(s=>!s.skipped).length;
+    const done  = p.subtasks.filter(s=>s.done).length;
+    const diary = state.diaryEntries[p.id]||[];
+    const links = p.articleLinks||[];
+
+    let statsHtml = '';
+
+    // Newsletter stats
+    if(p.nlStats && p.nlStats.sent) {
+      const st = p.nlStats;
+      statsHtml += `<div class="report-stats-grid">
+        <div class="report-stat-box"><div class="rsb-val">${st.opens}%</div><div class="rsb-lbl">Åbningsrate</div></div>
+        <div class="report-stat-box"><div class="rsb-val">${st.clicks}%</div><div class="rsb-lbl">Klikrate</div></div>
+        <div class="report-stat-box"><div class="rsb-val">${st.unsubs}</div><div class="rsb-lbl">Afmeldinger</div></div>
+        <div class="report-stat-box"><div class="rsb-val">${st.bounce}</div><div class="rsb-lbl">Bounce</div></div>
+      </div>`;
+      if(st.ab) statsHtml += `<div class="report-ab-box"><div class="ab-label">🧪 A/B-test</div><div class="ab-text">${esc(st.ab)}</div></div>`;
+      if(st.note) statsHtml += `<div style="font-size:12px;color:var(--text-muted);line-height:1.6;margin-bottom:10px;">${esc(st.note)}</div>`;
+    }
+
+    // Article links
+    if(links.length) {
+      statsHtml += `<div style="margin-bottom:10px;"><div style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">📰 Artikler (${links.length})</div>`;
+      statsHtml += links.map(l=>`<a href="${esc(l.url||'#')}" target="_blank" class="article-link-chip">📄 ${esc(l.title||l.medie||'Artikel')}${l.medie?' · '+esc(l.medie):''}</a>`).join('');
+      statsHtml += '</div>';
+    }
+
+    // Diary entries
+    if(diary.length) {
+      statsHtml += `<div style="margin-bottom:8px;"><div style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">📓 Dagbogsnotater (${diary.length})</div>`;
+      statsHtml += diary.slice(-3).map(e=>`<div style="font-size:11px;color:var(--text-muted);padding:5px 0;border-bottom:1px solid var(--border);">${formatDatetime(e.time)} · ${esc(e.text).substring(0,100)}${e.text.length>100?'…':''}</div>`).join('');
+      statsHtml += '</div>';
+    }
+
+    return `<div class="report-card" id="report-${p.id}">
+      <div class="report-card-header" style="border-top:3px solid ${hex};">
+        <div class="kanban-dot" style="background:${hex};width:10px;height:10px;border-radius:3px;"></div>
+        <div class="report-card-title">${esc(p.title)}</div>
+        <span class="prio-badge ${p.prio}">${p.prio==='high'?'Høj':p.prio==='mid'?'Middel':'Lav'}</span>
+        <span style="font-size:10px;color:var(--text-muted);">${p.deadline?formatDate(p.deadline):''}</span>
+        ${progressPill(total,done)}
+        ${p.cat==='Nyhedsbrev'?`<button class="btn sm secondary" onclick="openNewsletterStatsModal(${p.id})" style="font-size:10px;">📧 Statistik</button>`:''}
+        ${links.length||p.cat==='Presse'||p.cat==='Artikel'?`<button class="btn sm secondary" onclick="openArticleLinksModal(${p.id})" style="font-size:10px;">📰 Artikler</button>`:''}
+      </div>
+      <div class="report-card-body">
+        ${statsHtml||'<div style="font-size:12px;color:var(--text-muted);">Ingen statistik registreret endnu.</div>'}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function downloadReportsPDF() {
+  // Build a printable HTML page and open print dialog
+  const content = document.getElementById('reports-list').innerHTML;
+  const win = window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html><head><title>Afrapportering – FocusBase</title>
+  <style>
+    body{font-family:Arial,sans-serif;font-size:12px;color:#1f2134;padding:24px;max-width:800px;margin:0 auto;}
+    .report-card{border:1px solid #e0e2e7;border-radius:8px;margin-bottom:16px;page-break-inside:avoid;}
+    .report-card-header{padding:12px 16px;border-bottom:1px solid #e0e2e7;display:flex;align-items:center;gap:8px;font-weight:600;font-size:13px;}
+    .report-card-body{padding:14px 16px;}
+    .report-stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;}
+    .report-stat-box{background:#f5f6f8;border:1px solid #e0e2e7;border-radius:4px;padding:8px;text-align:center;}
+    .rsb-val{font-size:18px;font-weight:700;} .rsb-lbl{font-size:9px;color:#676879;}
+    .report-ab-box{background:#ede9ff;border:1px solid rgba(108,99,255,0.2);border-radius:4px;padding:8px;margin-bottom:8px;}
+    .article-link-chip{display:inline-block;background:#f5f6f8;border:1px solid #e0e2e7;border-radius:4px;padding:3px 8px;margin:2px;font-size:11px;color:#1f2134;text-decoration:none;}
+    h1{font-size:20px;margin-bottom:4px;} .sub{font-size:11px;color:#676879;margin-bottom:20px;}
+    @media print{button{display:none;}}
+  </style></head><body>
+  <h1>Afrapportering</h1>
+  <div class="sub">FocusBase · ${new Date().toLocaleDateString('da-DK',{day:'numeric',month:'long',year:'numeric'})}</div>
+  ${content}
+  <script>window.onload=()=>window.print();<\/script>
+  </body></html>`);
+  win.document.close();
+}
+
+function downloadReportsWord() {
+  // Build simple HTML-based Word doc
+  const projects = state.projects.filter(p =>
+    p.nlStats || p.articleLinks?.length || (state.diaryEntries[p.id]||[]).length > 0
+  );
+  let body = `<h1>Afrapportering – FocusBase</h1><p><em>${new Date().toLocaleDateString('da-DK',{day:'numeric',month:'long',year:'numeric'})}</em></p><hr>`;
+  projects.forEach(p => {
+    body += `<h2>${p.title}</h2><p><strong>Kategori:</strong> ${p.cat} | <strong>Deadline:</strong> ${p.deadline?formatDate(p.deadline):'–'}</p>`;
+    if(p.nlStats?.sent) {
+      const st=p.nlStats;
+      body += `<h3>Nyhedsbrev-statistik</h3><table border="1" cellpadding="5" style="border-collapse:collapse;">
+        <tr><th>Åbningsrate</th><th>Klikrate</th><th>Afmeldinger</th><th>Bounce</th><th>Udsendt til</th></tr>
+        <tr><td>${st.opens}%</td><td>${st.clicks}%</td><td>${st.unsubs}</td><td>${st.bounce}</td><td>${st.sent}</td></tr>
+      </table>`;
+      if(st.ab) body += `<h4>A/B-test</h4><p>${st.ab}</p>`;
+      if(st.note) body += `<h4>Evaluering</h4><p>${st.note}</p>`;
+    }
+    if(p.articleLinks?.length) {
+      body += `<h3>Artikellinks</h3><ul>`;
+      p.articleLinks.forEach(l=>{ body += `<li><strong>${l.medie||'–'}</strong>: <a href="${l.url||'#'}">${l.title||l.url||'–'}</a> (${l.date?formatDate(l.date):'–'})</li>`; });
+      body += '</ul>';
+    }
+    const diary = state.diaryEntries[p.id]||[];
+    if(diary.length) {
+      body += `<h3>Dagbogsnotater</h3>`;
+      diary.forEach(e=>{ body += `<p><em>${formatDatetime(e.time)}</em><br>${e.text}</p>`; });
+    }
+    body += '<hr>';
+  });
+  const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>Afrapportering</title></head><body>${body}</body></html>`;
+  const blob = new Blob([html], {type:'application/msword'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a'); a.href=url; a.download='afrapportering.doc'; a.click();
+  URL.revokeObjectURL(url);
 }
 
 // ── CALENDAR ──
@@ -1802,6 +2260,102 @@ function calNext(){ if(state.calMonth===11){state.calMonth=0;state.calYear++;}el
 function calToday(){ state.calYear=new Date().getFullYear(); state.calMonth=new Date().getMonth(); renderCalendar(); }
 
 // ── SOME ──
+// ── SOME STATS ──
+let editingSomeStatsId = null;
+function openSomeStatsModal(id) {
+  editingSomeStatsId = id;
+  const s = state.some.find(x=>x.id===id);
+  if(!s) return;
+  const pc = platColor(s.platform);
+  document.getElementById('some-stats-platform-label').textContent = s.platform;
+  document.getElementById('some-stats-platform-label').style.color = pc.bg;
+  document.getElementById('some-stats-content-preview').textContent = s.content.substring(0,120) + (s.content.length>120?'…':'');
+  const st = s.stats || {};
+  document.getElementById('stat-reach').value    = st.reach    || '';
+  document.getElementById('stat-likes').value    = st.likes    || '';
+  document.getElementById('stat-comments').value = st.comments || '';
+  document.getElementById('stat-shares').value   = st.shares   || '';
+  document.getElementById('stat-clicks').value   = st.clicks   || '';
+  document.getElementById('stat-date').value     = st.date     || new Date().toISOString().split('T')[0];
+  document.getElementById('stat-note').value     = st.note     || '';
+  document.getElementById('modal-some-stats').classList.add('open');
+}
+function saveSomeStats() {
+  const s = state.some.find(x=>x.id===editingSomeStatsId);
+  if(!s) return;
+  s.stats = {
+    reach:    parseInt(document.getElementById('stat-reach').value)    || 0,
+    likes:    parseInt(document.getElementById('stat-likes').value)    || 0,
+    comments: parseInt(document.getElementById('stat-comments').value) || 0,
+    shares:   parseInt(document.getElementById('stat-shares').value)   || 0,
+    clicks:   parseInt(document.getElementById('stat-clicks').value)   || 0,
+    date:     document.getElementById('stat-date').value,
+    note:     document.getElementById('stat-note').value,
+  };
+  save(); closeModal('modal-some-stats'); renderSome();
+  toast('📊 Statistik gemt ✓');
+}
+
+// ── ARTICLE LINKS ──
+let editingArticleProjId = null;
+function openArticleLinksModal(projId) {
+  editingArticleProjId = projId;
+  const p = state.projects.find(x=>x.id===projId);
+  if(!p) return;
+  document.getElementById('article-links-proj-name').textContent = '📁 ' + p.title;
+  document.getElementById('al-medie').value = '';
+  document.getElementById('al-date').value  = '';
+  document.getElementById('al-title').value = '';
+  document.getElementById('al-url').value   = '';
+  renderArticleLinksList(projId);
+  document.getElementById('modal-article-links').classList.add('open');
+}
+function renderArticleLinksList(projId) {
+  const p = state.projects.find(x=>x.id===projId);
+  const links = p?.articleLinks || [];
+  const el = document.getElementById('article-links-list');
+  if(!links.length) {
+    el.innerHTML = '<div class="empty" style="padding:16px 0;"><div class="emoji">📰</div>Ingen artikler tilføjet endnu</div>';
+    return;
+  }
+  el.innerHTML = links.map((l,i) => `
+    <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:6px;">
+      <div style="flex:1;">
+        <div style="font-size:12px;font-weight:600;margin-bottom:2px;">${esc(l.title||'Ingen titel')}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">${esc(l.medie||'')}${l.date?' · '+formatDate(l.date):''}</div>
+        ${l.url?`<a href="${esc(l.url)}" target="_blank" style="font-size:11px;color:var(--accent);word-break:break-all;">${esc(l.url)}</a>`:''}
+      </div>
+      <button class="icon-btn red" onclick="deleteArticleLink(${projId},${i})">✕</button>
+    </div>`).join('');
+}
+function addArticleLink() {
+  const p = state.projects.find(x=>x.id===editingArticleProjId);
+  if(!p) return;
+  const url = document.getElementById('al-url').value.trim();
+  const title = document.getElementById('al-title').value.trim();
+  if(!url && !title) { alert('Tilføj mindst en overskrift eller et link'); return; }
+  if(!p.articleLinks) p.articleLinks = [];
+  p.articleLinks.push({
+    medie: document.getElementById('al-medie').value.trim(),
+    date:  document.getElementById('al-date').value,
+    title, url,
+    addedAt: new Date().toISOString()
+  });
+  document.getElementById('al-medie').value = '';
+  document.getElementById('al-date').value  = '';
+  document.getElementById('al-title').value = '';
+  document.getElementById('al-url').value   = '';
+  save(); renderArticleLinksList(editingArticleProjId); renderProjects();
+  toast('📰 Artikel tilføjet ✓');
+}
+function deleteArticleLink(projId, idx) {
+  const p = state.projects.find(x=>x.id===projId);
+  if(!p||!p.articleLinks) return;
+  if(!confirm('Slet dette link?')) return;
+  p.articleLinks.splice(idx,1);
+  save(); renderArticleLinksList(projId); renderProjects();
+}
+
 // ── SOME VIEWS ──
 let someView = 'cal';
 let someCalYear  = new Date().getFullYear();
@@ -1904,8 +2458,14 @@ function renderSomeKanban() {
                 </div>
                 <div class="flex gap8 mt8">
                   ${s.status!=='posted'?`<button class="btn sm success" onclick="event.stopPropagation();markPosted(${s.id})" style="font-size:10px;padding:3px 8px;">✓ Postet</button>`:''}
+                  <button class="btn sm secondary" onclick="event.stopPropagation();openSomeStatsModal(${s.id})" style="font-size:10px;padding:3px 8px;">📊 ${s.stats?'Statistik':'Tilføj statistik'}</button>
                   <button class="btn sm secondary" onclick="event.stopPropagation();deleteSome(${s.id})" style="font-size:10px;padding:3px 8px;">Slet</button>
                 </div>
+                ${s.stats&&s.stats.reach ? `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
+                  <div style="text-align:center;"><div style="font-size:14px;font-weight:700;color:var(--text);">${s.stats.reach.toLocaleString('da-DK')}</div><div style="font-size:9px;color:var(--text-muted);">Reach</div></div>
+                  <div style="text-align:center;"><div style="font-size:14px;font-weight:700;color:var(--text);">${s.stats.likes.toLocaleString('da-DK')}</div><div style="font-size:9px;color:var(--text-muted);">Likes</div></div>
+                  <div style="text-align:center;"><div style="font-size:14px;font-weight:700;color:var(--text);">${s.stats.shares.toLocaleString('da-DK')}</div><div style="font-size:9px;color:var(--text-muted);">Delinger</div></div>
+                </div>` : ''}
               </div>
             </div>`).join('')}
       </div>
@@ -2275,11 +2835,11 @@ renderCalendar();
 renderSome();
 renderNotes();renderDiary();
 renderProjects();
+renderReports();
 renderStreak();
 checkAndUpdateStreak();
 checkFridayReport();
 updateFocusScore();
-updateTopbarColor();
 </script>
 </body>
 </html>
