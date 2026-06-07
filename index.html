@@ -818,6 +818,34 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   </div>
 </div>
 
+<!-- DEADLINE WIZARD MODAL -->
+<div class="modal-overlay" id="modal-wizard">
+  <div class="modal" style="width:420px;">
+    <div class="modal-header">
+      <div class="modal-title">Sæt deadline for delopgave</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-left:auto;margin-right:16px;" id="wiz-step">1 / 1</div>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:15px;font-weight:600;color:var(--accent);padding:4px 0 14px;" id="wiz-title"></div>
+      <div class="row2">
+        <div class="field">
+          <label>Deadline</label>
+          <input type="date" id="wiz-date" style="width:100%;"
+            onkeydown="if(event.key==='Enter') wizardNext()">
+        </div>
+        <div class="field">
+          <label>Tidspunkt (valgfrit)</label>
+          <input type="time" id="wiz-time" style="width:100%;">
+        </div>
+      </div>
+      <div class="flex gap8" style="margin-top:4px;">
+        <button class="btn" onclick="wizardNext()" style="flex:1;">Næste →</button>
+        <button class="btn secondary" onclick="wizardSkip()">Spring over</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- CAPTURE -->
 <button class="capture-btn" onclick="toggleCapture()">+ CAPTURE</button>
 <div class="capture-modal" id="capture-modal">
@@ -1015,64 +1043,129 @@ function applyTemplate(project) {
 }
 
 // ── AGENDA ──
+function progressPill(total, done) {
+  if(total === 0) return '';
+  const pct = done / total;
+  let bg, color;
+  if(pct === 0)       { bg='#fde8eb'; color='#e44258'; }
+  else if(pct < 0.25) { bg='#fde8eb'; color='#e44258'; }
+  else if(pct < 0.5)  { bg='#fef0d0'; color='#e07b00'; }
+  else if(pct < 0.75) { bg='#fef9c3'; color='#b45309'; }
+  else if(pct < 1)    { bg='#dcfce7'; color='#16a34a'; }
+  else                { bg='#bbf7d0'; color='#15803d'; }
+  return `<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;background:${bg};color:${color};white-space:nowrap;">${done}/${total}</span>`;
+}
+
 function renderAgenda() {
   const el = document.getElementById('dash-agenda');
   const today = new Date(); today.setHours(0,0,0,0);
   const days = [];
-  for(let i = 0; i < 7; i++) {
+  for(let i = 0; i < 31; i++) {
     const d = new Date(today); d.setDate(today.getDate() + i);
     days.push(d);
   }
 
-  // Collect all events per day
   const dayEvents = days.map(d => {
     const ds = d.toISOString().split('T')[0];
     const events = [];
-
-    // Project deadlines
     state.projects.filter(p => !p.done && p.deadline === ds).forEach(p => {
-      events.push({ type: 'deadline', title: p.title, sub: 'Projektdeadline', color: p.color, projId: p.id, time: '' });
+      const total = p.subtasks.filter(s=>!s.skipped).length;
+      const done  = p.subtasks.filter(s=>s.done).length;
+      events.push({ type:'deadline', title:p.title, sub:'Projektdeadline', color:p.color, projId:p.id, time:'', total, done });
     });
-
-    // Subtask deadlines
     state.projects.forEach(p => {
+      const total = p.subtasks.filter(s=>!s.skipped).length;
+      const done  = p.subtasks.filter(s=>s.done).length;
       p.subtasks.filter(s => !s.skipped && s.deadline === ds).forEach(s => {
-        events.push({ type: 'subtask', title: s.title, sub: p.title, color: p.color, projId: p.id, stId: s.id, done: s.done, time: s.time || '' });
+        events.push({ type:'subtask', title:s.title, sub:p.title, color:p.color, projId:p.id, stId:s.id, done:s.done, time:s.time||'', total, doneProg:done });
       });
     });
-
-    return { date: d, ds, events };
+    return { date:d, ds, events };
   });
 
   const hasAnything = dayEvents.some(d => d.events.length > 0);
   if(!hasAnything) {
-    el.innerHTML = '<div class="empty"><div class="emoji">🎉</div>Ingen deadlines de næste 7 dage</div>';
+    el.innerHTML = '<div class="empty"><div class="emoji">🎉</div>Ingen deadlines de næste 30 dage</div>';
     return;
   }
 
-  const DA_DAYS = ['Søndag','Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag'];
+  const DA_DAYS   = ['Søndag','Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag'];
   const DA_MONTHS = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
 
   el.innerHTML = dayEvents.map(({ date, events }) => {
     if(!events.length) return '';
-    const isToday = date.toDateString() === new Date().toDateString();
+    const isToday    = date.toDateString() === new Date().toDateString();
     const isTomorrow = date.toDateString() === new Date(Date.now()+86400000).toDateString();
-    const label = isToday ? 'I dag' : isTomorrow ? 'I morgen' : `${DA_DAYS[date.getDay()]} ${date.getDate()}. ${DA_MONTHS[date.getMonth()]}`;
+    const label = isToday ? 'I dag' : isTomorrow ? 'I morgen'
+      : `${DA_DAYS[date.getDay()]} ${date.getDate()}. ${DA_MONTHS[date.getMonth()]}`;
     return `<div class="agenda-section">
       <div class="agenda-date-header ${isToday?'today-header':''}">${label}</div>
       ${events.map(ev => `
         <div class="agenda-item ${ev.done?'done-item':''}">
           <div class="agenda-color-bar" style="background:${ev.color};"></div>
-          ${ev.type==='subtask' ? `<div class="agenda-check ${ev.done?'done':''}" onclick="toggleSubtask(${ev.projId},${ev.stId})">${ev.done?'✓':''}</div>` : '<div style="width:16px;"></div>'}
+          ${ev.type==='subtask'
+            ? `<div class="agenda-check ${ev.done?'done':''}" onclick="toggleSubtask(${ev.projId},${ev.stId})">${ev.done?'✓':''}</div>`
+            : '<div style="width:16px;flex-shrink:0;"></div>'}
           <div class="agenda-body">
             <div class="agenda-title ${ev.done?'done':''}">${esc(ev.title)}</div>
             <div class="agenda-sub">${esc(ev.sub)}</div>
           </div>
           ${ev.time ? `<div class="agenda-time">${ev.time}</div>` : ''}
+          ${progressPill(ev.total, ev.type==='deadline' ? ev.done : ev.doneProg)}
           <span class="agenda-type ${ev.type}">${ev.type==='deadline'?'Deadline':'Delopgave'}</span>
         </div>`).join('')}
     </div>`;
   }).join('');
+}
+
+// ── DEADLINE WIZARD ──
+// After saving a new project with a template, ask for deadlines one by one
+let _wizardProject = null;
+let _wizardIndex   = 0;
+
+function startDeadlineWizard(project) {
+  const subs = project.subtasks.filter(s => !s.skipped);
+  if(!subs.length) { finaliseProject(project); return; }
+  _wizardProject = project;
+  _wizardIndex   = 0;
+  showWizardStep();
+}
+
+function showWizardStep() {
+  const subs = _wizardProject.subtasks.filter(s => !s.skipped);
+  if(_wizardIndex >= subs.length) { finaliseProject(_wizardProject); return; }
+  const s = subs[_wizardIndex];
+
+  // Build modal content dynamically
+  document.getElementById('wiz-step').textContent  = `${_wizardIndex + 1} / ${subs.length}`;
+  document.getElementById('wiz-title').textContent  = s.title;
+  document.getElementById('wiz-date').value         = '';
+  document.getElementById('wiz-time').value         = '';
+  document.getElementById('modal-wizard').classList.add('open');
+  setTimeout(()=>document.getElementById('wiz-date').focus(), 80);
+}
+
+function wizardNext() {
+  const subs = _wizardProject.subtasks.filter(s => !s.skipped);
+  const s    = subs[_wizardIndex];
+  s.deadline = document.getElementById('wiz-date').value;
+  s.time     = document.getElementById('wiz-time').value;
+  _wizardIndex++;
+  if(_wizardIndex < subs.length) { showWizardStep(); }
+  else { document.getElementById('modal-wizard').classList.remove('open'); finaliseProject(_wizardProject); }
+}
+
+function wizardSkip() {
+  _wizardIndex++;
+  const subs = _wizardProject.subtasks.filter(s => !s.skipped);
+  if(_wizardIndex < subs.length) { showWizardStep(); }
+  else { document.getElementById('modal-wizard').classList.remove('open'); finaliseProject(_wizardProject); }
+}
+
+function finaliseProject(project) {
+  state.projects.push(project);
+  save(); renderProjects(); renderDashboard(); updateBadge(); renderDiary();
+  toast(`✓ "${project.title}" oprettet med ${project.subtasks.length} delopgaver`);
 }
 
 // ── PROJECTS ──
@@ -1100,12 +1193,18 @@ function saveProject() {
   if(state.editingProjectId) {
     const p = state.projects.find(x=>x.id===state.editingProjectId);
     if(p) { p.title=title; p.desc=document.getElementById('p-desc').value; p.prio=document.getElementById('p-prio').value; p.cat=document.getElementById('p-cat').value; p.deadline=document.getElementById('p-deadline').value; p.color=state.selectedColor; }
+    save(); closeModal('modal-project'); renderProjects(); renderDashboard(); updateBadge(); renderDiary();
   } else {
     const newProj = { id:state.nextId++, title, desc:document.getElementById('p-desc').value, prio:document.getElementById('p-prio').value, cat:document.getElementById('p-cat').value, deadline:document.getElementById('p-deadline').value, color:state.selectedColor, done:false, subtasks:[], createdAt:new Date().toISOString() };
     applyTemplate(newProj);
-    state.projects.push(newProj);
+    closeModal('modal-project');
+    // If template gave subtasks, launch deadline wizard
+    if(newProj.subtasks.length > 0) {
+      startDeadlineWizard(newProj);
+    } else {
+      finaliseProject(newProj);
+    }
   }
-  save(); closeModal('modal-project'); renderProjects(); renderDashboard(); updateBadge(); renderDiary();
 }
 
 function deleteProject(id) {
