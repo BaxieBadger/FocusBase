@@ -149,7 +149,12 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); font-si
   grid-template-columns: repeat(4, 1fr) 0.5fr;
   gap: 14px;
   margin-bottom: 20px;
-  align-items: start;
+  align-items: stretch;
+}
+#sc-cat {
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
 }
 @media (max-width: 900px) {
   .dash-stats { grid-template-columns: 1fr 1fr; }
@@ -772,27 +777,6 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
           <div class="s-sub" id="sc-dl-sub"></div>
         </div>
         <div class="stat-card" id="sc-some" style="transition:background 0.5s,border-color 0.5s;order:4;">
-          <div class="s-label" id="sc-some-label">SoMe afventer</div>
-          <div class="s-val" id="stat-some">0</div>
-          <div class="s-sub" id="sc-some-sub"></div>
-        </div>
-      </div>
-        <div class="stat-card" id="sc-proj" style="transition:background 0.5s,border-color 0.5s;">
-          <div class="s-label" id="sc-proj-label">Åbne opgaver</div>
-          <div class="s-val" id="stat-proj">0</div>
-          <div class="s-sub" id="sc-proj-sub"></div>
-        </div>
-        <div class="stat-card" id="sc-subs" style="transition:background 0.5s,border-color 0.5s;">
-          <div class="s-label" id="sc-subs-label">Åbne delopgaver</div>
-          <div class="s-val" id="stat-done">0</div>
-          <div class="s-sub" id="sc-subs-sub"></div>
-        </div>
-        <div class="stat-card" id="sc-dl" style="transition:background 0.5s,border-color 0.5s;">
-          <div class="s-label">Deadlines denne uge</div>
-          <div class="s-val" id="stat-deadlines">0</div>
-          <div class="s-sub" id="sc-dl-sub"></div>
-        </div>
-        <div class="stat-card" id="sc-some" style="transition:background 0.5s,border-color 0.5s;">
           <div class="s-label" id="sc-some-label">SoMe afventer</div>
           <div class="s-val" id="stat-some">0</div>
           <div class="s-sub" id="sc-some-sub"></div>
