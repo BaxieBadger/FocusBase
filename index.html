@@ -819,6 +819,13 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
           <div class="card-body" id="dash-agenda" style="padding:14px 16px;max-height:calc(100vh - 300px);overflow-y:auto;"></div>
         </div>
         <div style="display:flex;flex-direction:column;gap:14px;">
+          <div class="card" id="dash-inbox-card" style="display:none;">
+            <div class="card-header" style="border-left:3px solid var(--accent);">
+              📥 Indbakke
+              <span id="inbox-count" style="margin-left:auto;background:var(--accent);color:#fff;font-size:10px;padding:1px 7px;border-radius:10px;font-weight:600;"></span>
+            </div>
+            <div class="card-body" id="dash-inbox"></div>
+          </div>
           <div class="card">
             <div class="card-header">◫ Opgave-deadlines snart</div>
             <div class="card-body" id="dash-projects"></div>
@@ -2145,8 +2152,7 @@ function saveProject() {
   if(state.editingProjectId) {
     const p = state.projects.find(x=>x.id===state.editingProjectId);
     if(p) { p.title=title; p.desc=document.getElementById('p-desc').value; p.prio=document.getElementById('p-prio').value; p.cat=document.getElementById('p-cat').value; p.deadline=document.getElementById('p-deadline').value; p.color=state.selectedColor; }
-    save(); closeModal('modal-project'); renderProjects(); renderDashboard(); updateBadge(); renderDiary();
-  } else {
+    save(); closeModal('modal-project'); renderProjects(); renderDashboard(); updateBadge(); renderDiary();  } else {
     const newProj = { id:state.nextId++, title, desc:document.getElementById('p-desc').value, prio:document.getElementById('p-prio').value, cat:document.getElementById('p-cat').value, deadline:document.getElementById('p-deadline').value, color:state.selectedColor, done:false, subtasks:[], createdAt:new Date().toISOString() };
     applyTemplate(newProj);
     closeModal('modal-project');
@@ -2370,6 +2376,45 @@ function updateBadge() {
   badge.textContent = open;
 }
 
+// ── INDBAKKE ──
+function renderInbox() {
+  // Unprocessed = no deadline set, default category, no subtasks, not done
+  const inbox = state.projects.filter(p =>
+    !p.done &&
+    !p.deadline &&
+    (p.subtasks||[]).length === 0 &&
+    (p.cat === 'Generelt' || !p.cat)
+  );
+
+  const card = document.getElementById('dash-inbox-card');
+  const el   = document.getElementById('dash-inbox');
+  const cnt  = document.getElementById('inbox-count');
+  if(!card || !el) return;
+
+  if(!inbox.length) {
+    card.style.display = 'none';
+    return;
+  }
+
+  card.style.display = 'block';
+  cnt.textContent = inbox.length;
+
+  el.innerHTML = inbox.map(p => `
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);">
+      <div style="width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0;"></div>
+      <span style="font-size:12px;flex:1;color:var(--text);">${esc(p.title)}</span>
+      <button class="btn sm" onclick="processInboxItem(${p.id})" style="font-size:10px;padding:3px 10px;white-space:nowrap;">
+        Planlæg →
+      </button>
+    </div>`).join('');
+}
+
+function processInboxItem(id) {
+  // Open the task modal pre-filled – user sets category, deadline, gets wizard
+  openTaskModal(id);
+  // After saving, the item will have a category and get template subtasks
+}
+
 // ── KAT-WIDGET ──
 function updateCatWidget() {
   const today = new Date(); today.setHours(0,0,0,0);
@@ -2525,6 +2570,7 @@ function renderDashboard() {
 
   checkWorkdayWarnings();
   renderDashboardInterviews();
+  renderInbox();
   updateCatWidget();
 
   const projEl = document.getElementById('dash-projects');
