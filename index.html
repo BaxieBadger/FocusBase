@@ -714,7 +714,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   <div class="sidebar-logo">
     <div style="font-size:10px;color:var(--sidebar-text);opacity:0.6;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
     <h1>FocusBase</h1>
-    <span>Dit system · Din flow · v1.08</span>
+    <span>Dit system · Din flow · v1.10</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
@@ -737,7 +737,8 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
       <span class="streak-num" id="streak-count">0</span>
       <div class="streak-info">dages streak<br><span style="font-size:9px;opacity:0.6;">kun hverdage</span></div>
     </div>
-    <button class="streak-off-btn" onclick="markDayOff()">📅 Markér fridag / afspadsering</button>
+    <button class="streak-off-btn" onclick="forceRefreshFromSupabase()" style="margin-top:4px;" id="refresh-btn">☁ Genindlæs fra sky</button>
+    <button class="streak-off-btn" onclick="openOffDaysModal()">📅 Markér fridage / ferie</button>
     <button class="streak-off-btn" onclick="openSupabaseModal()" style="margin-top:4px;" id="sb-btn">☁ Supabase: ikke forbundet</button>
     <div class="focus-bar-label" id="focus-label">Fokus-score: 0%</div>
     <div class="focus-bar"><div class="focus-bar-fill" id="focus-fill" style="width:0%"></div></div>
@@ -1070,6 +1071,37 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
         <button class="btn" onclick="saveSome()" style="flex:1;">Gem opslag</button>
         <button class="btn secondary" onclick="closeModal('modal-some')">Annuller</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- OFF DAYS MODAL -->
+<div class="modal-overlay" id="modal-offdays">
+  <div class="modal" style="width:420px;">
+    <div class="modal-header">
+      <div class="modal-title">📅 Fridage & ferie</div>
+      <button class="modal-close" onclick="closeModal('modal-offdays')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:11px;color:var(--text-muted);margin-bottom:14px;line-height:1.6;">Markér dage du er fraværende – din streak fortsætter på disse dage.</p>
+      <div class="row2">
+        <div class="field">
+          <label>Fra dato</label>
+          <input type="text" id="off-from" placeholder="fx 15/6" oninput="previewOffDate('off-from','off-from-preview')">
+          <div id="off-from-preview" style="font-size:11px;color:var(--accent2);margin-top:3px;min-height:14px;"></div>
+          <input type="hidden" id="off-from-hidden">
+        </div>
+        <div class="field">
+          <label>Til dato (valgfrit)</label>
+          <input type="text" id="off-to" placeholder="fx 22/6" oninput="previewOffDate('off-to','off-to-preview')">
+          <div id="off-to-preview" style="font-size:11px;color:var(--accent2);margin-top:3px;min-height:14px;"></div>
+          <input type="hidden" id="off-to-hidden">
+        </div>
+      </div>
+      <button class="btn" onclick="addOffDays()" style="width:100%;margin-bottom:16px;">Tilføj fridage</button>
+      <div style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Planlagte fridage</div>
+      <div id="offdays-list"></div>
+      <button class="btn secondary" onclick="closeModal('modal-offdays')" style="width:100%;margin-top:12px;">Luk</button>
     </div>
   </div>
 </div>
@@ -3497,15 +3529,103 @@ function updateStreakForToday(){
   if(!state.streakDays.includes(today)){state.streakDays.push(today);save();}
   renderStreak();
 }
-function markDayOff(){
-  const today=getTodayStr();
-  if(!state.offDays)state.offDays=[];if(!state.streakDays)state.streakDays=[];
-  if(!state.offDays.includes(today)){
-    state.offDays.push(today);
-    if(!state.streakDays.includes(today))state.streakDays.push(today);
-    save();toast('📅 Fridag markeret – streaken fortsætter ✓');renderStreak();
-  } else{toast('Allerede markeret som fridag');}
+function openOffDaysModal() {
+  document.getElementById('off-from').value = '';
+  document.getElementById('off-to').value = '';
+  document.getElementById('off-from-preview').textContent = '';
+  document.getElementById('off-to-preview').textContent = '';
+  document.getElementById('off-from-hidden').value = '';
+  document.getElementById('off-to-hidden').value = '';
+  renderOffDaysList();
+  document.getElementById('modal-offdays').classList.add('open');
 }
+
+function previewOffDate(inputId, previewId) {
+  const val = document.getElementById(inputId)?.value;
+  const preview = document.getElementById(previewId);
+  const hiddenId = inputId === 'off-from' ? 'off-from-hidden' : 'off-to-hidden';
+  const hidden = document.getElementById(hiddenId);
+  const result = parseSmartDate(val);
+  if(result) {
+    const d = new Date(result+'T12:00:00');
+    if(preview) { preview.textContent = `→ ${d.getDate()}. ${DA_MONTHS_SHORT[d.getMonth()]} ${d.getFullYear()}`; preview.style.color = 'var(--accent2)'; }
+    if(hidden) hidden.value = result;
+  } else {
+    if(preview) { preview.textContent = val ? 'Ugyldigt format' : ''; preview.style.color = 'var(--danger)'; }
+    if(hidden) hidden.value = '';
+  }
+}
+
+function addOffDays() {
+  const from = document.getElementById('off-from-hidden').value;
+  const to   = document.getElementById('off-to-hidden').value || from;
+  if(!from) { alert('Vælg mindst en fra-dato'); return; }
+  if(!state.offDays) state.offDays = [];
+  if(!state.streakDays) state.streakDays = [];
+  // Add all days in range
+  const start = new Date(from+'T12:00:00');
+  const end   = new Date(to+'T12:00:00');
+  let added = 0;
+  for(let d = new Date(start); d <= end; d.setDate(d.getDate()+1)) {
+    const ds = d.toISOString().split('T')[0];
+    if(!state.offDays.includes(ds)) { state.offDays.push(ds); added++; }
+    if(!state.streakDays.includes(ds)) state.streakDays.push(ds);
+  }
+  save(); renderStreak(); renderOffDaysList();
+  toast(`📅 ${added} fridag${added!==1?'e':''} tilføjet ✓`);
+  document.getElementById('off-from').value = '';
+  document.getElementById('off-to').value = '';
+  document.getElementById('off-from-preview').textContent = '';
+  document.getElementById('off-to-preview').textContent = '';
+  document.getElementById('off-from-hidden').value = '';
+  document.getElementById('off-to-hidden').value = '';
+}
+
+function renderOffDaysList() {
+  const el = document.getElementById('offdays-list');
+  if(!el) return;
+  const future = (state.offDays||[])
+    .filter(d => d >= new Date().toISOString().split('T')[0])
+    .sort();
+  if(!future.length) { el.innerHTML = '<div style="font-size:11px;color:var(--text-muted);">Ingen planlagte fridage</div>'; return; }
+  // Group consecutive days
+  const groups = [];
+  let start = future[0], prev = future[0];
+  for(let i = 1; i <= future.length; i++) {
+    const curr = future[i];
+    const prevD = new Date(prev+'T12:00:00');
+    const currD = curr ? new Date(curr+'T12:00:00') : null;
+    const isConsec = currD && (currD - prevD) === 86400000;
+    if(!isConsec) {
+      groups.push({ from: start, to: prev });
+      start = curr; prev = curr;
+    } else { prev = curr; }
+  }
+  el.innerHTML = groups.map(g => {
+    const fromD = new Date(g.from+'T12:00:00');
+    const toD   = new Date(g.to+'T12:00:00');
+    const label = g.from === g.to
+      ? `${fromD.getDate()}. ${DA_MONTHS_SHORT[fromD.getMonth()]} ${fromD.getFullYear()}`
+      : `${fromD.getDate()}. ${DA_MONTHS_SHORT[fromD.getMonth()]} – ${toD.getDate()}. ${DA_MONTHS_SHORT[toD.getMonth()]} ${toD.getFullYear()}`;
+    return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:12px;flex:1;">📅 ${label}</span>
+      <button class="icon-btn red" onclick="removeOffDayGroup('${g.from}','${g.to}')">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function removeOffDayGroup(from, to) {
+  const start = new Date(from+'T12:00:00');
+  const end   = new Date(to+'T12:00:00');
+  for(let d = new Date(start); d <= end; d.setDate(d.getDate()+1)) {
+    const ds = d.toISOString().split('T')[0];
+    state.offDays   = (state.offDays||[]).filter(x=>x!==ds);
+    state.streakDays = (state.streakDays||[]).filter(x=>x!==ds);
+  }
+  save(); renderStreak(); renderOffDaysList();
+}
+
+function markDayOff() { openOffDaysModal(); }
 function renderStreak(){
   if(!state.streakDays)state.streakDays=[];
   let streak=0;let d=new Date();
@@ -3769,6 +3889,21 @@ function executeAiCommand(cmd){
 function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function formatDate(d){if(!d)return'';try{return new Date(d+'T12:00:00').toLocaleDateString('da-DK',{day:'numeric',month:'short'});}catch(e){return d;}}
 function formatDatetime(s){try{return new Date(s).toLocaleString('da-DK',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});}catch(e){return s;}}
+
+async function forceRefreshFromSupabase() {
+  if(!sbReady) { toast('Supabase er ikke forbundet'); return; }
+  const btn = document.getElementById('refresh-btn');
+  if(btn) btn.textContent = '⏳ Henter...';
+  const loaded = await loadFromSupabase();
+  if(loaded) {
+    localStorage.setItem('focusbase_v2', JSON.stringify(state));
+    renderAll();
+    toast('☁ Data opdateret fra sky ✓');
+  } else {
+    toast('Kunne ikke hente data fra sky');
+  }
+  if(btn) btn.textContent = '☁ Genindlæs fra sky';
+}
 
 // ── SUPABASE SETUP ──
 function openSupabaseModal() {
