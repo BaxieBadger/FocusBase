@@ -1501,9 +1501,17 @@ function parseSupabaseData(r) {
   if(typeof obj === 'string') {
     try { obj = JSON.parse(obj); } catch(e) { return null; }
   }
-  if(typeof obj !== 'object') return null;
-  // Ensure subtasks is always an array
+  if(typeof obj !== 'object' || Array.isArray(obj)) return null;
+  // Always use Supabase row id as the authoritative id
+  obj.id = r.id;
+  // Ensure required fields exist
   if(!Array.isArray(obj.subtasks)) obj.subtasks = [];
+  if(!obj.title) obj.title = '(ingen titel)';
+  if(!obj.prio)  obj.prio  = 'mid';
+  if(!obj.cat)   obj.cat   = 'Generelt';
+  if(!obj.color) obj.color = '#9099a8';
+  if(obj.done === undefined) obj.done = false;
+  if(!obj.createdAt) obj.createdAt = new Date().toISOString();
   return obj;
 }
 
