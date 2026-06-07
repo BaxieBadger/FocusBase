@@ -1639,7 +1639,7 @@ function renderSome() {
       <div class="some-card-header">
         <span class="some-platform">${esc(s.platform)}</span>
         ${s.date?`<span style="font-size:10px;color:var(--text-muted);">${formatDate(s.date)}</span>`:''}
-        <span class="some-status ${s.status}">${s.status==='draft'?'Kladde':s.status==='ready'?'Klar':''Postet'}</span>
+        <span class="some-status ${s.status}">${s.status==='draft'?'Kladde':s.status==='ready'?'Klar':'Postet'}</span>
       </div>
       <div class="some-card-body">
         <div class="some-content">${esc(s.content)}</div>
