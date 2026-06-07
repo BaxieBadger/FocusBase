@@ -713,7 +713,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
 <nav class="sidebar">
   <div class="sidebar-logo">
     <h1>FocusBase</h1>
-    <span>Dit system · Din flow · v1.01</span>
+    <span>Dit system · Din flow · v1.02</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
@@ -1484,26 +1484,18 @@ async function syncToSupabase() {
 function parseSupabaseData(r) {
   if(!r || !r.data) return null;
   let obj = r.data;
-  // Handle double-escaped strings from Make
-  if(typeof obj === 'string') {
-    // Try direct parse
-    try { obj = JSON.parse(obj); } catch(e) {
-      // Try fixing common Make errors: semicolons instead of colons after keys
-      const fixed = obj.replace(/"(\w+)"\s*;\s*"/g, '"$1": "');
-      try { obj = JSON.parse(fixed); } catch(e2) {
-        // Try double-parse (string in string)
-        try { obj = JSON.parse(JSON.parse(obj)); } catch(e3) { return null; }
-      }
-    }
-    // If still a string after first parse, parse again
-    if(typeof obj === 'string') {
-      try { obj = JSON.parse(obj); } catch(e) { return null; }
-    }
+
+  // Keep parsing until we get an object or give up
+  for(let i = 0; i < 4; i++) {
+    if(typeof obj === 'object' && !Array.isArray(obj)) break;
+    if(typeof obj !== 'string') return null;
+    // Fix semikolon-fejl fra Make: "key"; "value" → "key": "value"
+    const fixed = obj.replace(/"([^"]+)"\s*;\s*"/g, '"$1": "');
+    try { obj = JSON.parse(fixed); } catch(e) { return null; }
   }
+
   if(typeof obj !== 'object' || Array.isArray(obj)) return null;
-  // Always use Supabase row id as the authoritative id
   obj.id = r.id;
-  // Ensure required fields exist
   if(!Array.isArray(obj.subtasks)) obj.subtasks = [];
   if(!obj.title) obj.title = obj.subject || '(ingen titel)';
   if(!obj.prio)  obj.prio  = 'mid';
