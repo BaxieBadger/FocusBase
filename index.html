@@ -516,6 +516,75 @@ select { cursor:pointer; }
 .template-preview.visible { display:block; }
 .template-preview strong { color:var(--text); font-size:11px; display:block; margin-bottom:4px; }
 
+/* ── VIEW TOGGLE ── */
+.view-toggle {
+  background:transparent; border:none; padding:5px 12px;
+  font-family:var(--font); font-size:11px; font-weight:500;
+  color:var(--text-muted); cursor:pointer; border-radius:4px;
+  transition:all 0.15s; white-space:nowrap;
+}
+.view-toggle:hover { color:var(--text); background:var(--surface); }
+.view-toggle.active { background:var(--surface); color:var(--accent); box-shadow:var(--shadow); }
+
+/* ── KANBAN ── */
+.kanban-board {
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:14px;
+  align-items:start;
+}
+.kanban-col {
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  overflow:hidden;
+}
+.kanban-col-header {
+  padding:10px 14px;
+  font-size:11px; font-weight:600;
+  letter-spacing:0.5px; text-transform:uppercase;
+  border-bottom:1px solid var(--border);
+  display:flex; align-items:center; gap:8px;
+}
+.kanban-col-header .col-count {
+  margin-left:auto; background:var(--border);
+  color:var(--text-muted); font-size:10px;
+  padding:1px 7px; border-radius:10px;
+}
+.kanban-col-body { padding:10px; display:flex; flex-direction:column; gap:8px; min-height:80px; }
+.kanban-card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); padding:11px 12px;
+  box-shadow:var(--shadow); transition:box-shadow 0.15s;
+}
+.kanban-card:hover { box-shadow:var(--shadow-md); }
+.kanban-card-top { display:flex; align-items:flex-start; gap:8px; margin-bottom:7px; }
+.kanban-dot { width:8px; height:8px; border-radius:3px; flex-shrink:0; margin-top:3px; }
+.kanban-card-title { font-size:12px; font-weight:500; flex:1; line-height:1.4; }
+.kanban-card-meta { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.kanban-card-dl { font-size:10px; color:var(--text-muted); }
+.kanban-card-dl.late { color:var(--danger); font-weight:600; }
+.kanban-card-dl.warn { color:var(--warning); font-weight:600; }
+
+/* Agenda grouped layout */
+.agenda-project-group { margin-bottom:12px; }
+.agenda-project-row {
+  display:flex; align-items:center; gap:8px;
+  padding:5px 8px; border-radius:var(--radius);
+  opacity:0.55; margin-bottom:3px;
+}
+.agenda-project-label { font-size:11px; font-weight:500; color:var(--text-muted); flex:1; }
+.agenda-project-deadline { font-size:10px; color:var(--text-muted); }
+.agenda-subtask-row {
+  display:flex; align-items:center; gap:8px;
+  padding:7px 8px 7px 20px;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); margin-bottom:4px;
+  transition:border-color 0.15s;
+}
+.agenda-subtask-row:hover { border-color:var(--border2); }
+.agenda-subtask-row.done-item { opacity:0.45; }
+
 /* Utility */
 .flex { display:flex; } .gap8 { gap:8px; } .ml-auto { margin-left:auto; }
 .mt8 { margin-top:8px; } .mt16 { margin-top:16px; }
@@ -588,16 +657,29 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
           <div class="s-val" id="stat-some">0</div>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start;">
-        <!-- AGENDA -->
-        <div class="card">
-          <div class="card-header">📅 Agenda – næste 7 dage</div>
-          <div class="card-body" id="dash-agenda" style="padding:14px 16px;"></div>
+
+      <!-- VIEW CONTROLS -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+        <div style="display:flex;gap:4px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:3px;">
+          <button class="view-toggle active" id="vt-agenda" onclick="setDashView('agenda',this)">📅 Agenda</button>
+          <button class="view-toggle" id="vt-kanban" onclick="setDashView('kanban',this)">◫ Kanban</button>
         </div>
-        <!-- RIGHT COLUMN -->
+        <div style="display:flex;gap:4px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:3px;" id="time-filter-group">
+          <button class="view-toggle active" id="tf-7"  onclick="setAgendaDays(7,this)">1 uge</button>
+          <button class="view-toggle" id="tf-14" onclick="setAgendaDays(14,this)">2 uger</button>
+          <button class="view-toggle" id="tf-30" onclick="setAgendaDays(30,this)">1 måned</button>
+        </div>
+      </div>
+
+      <!-- AGENDA VIEW -->
+      <div id="dash-view-agenda" style="display:grid;grid-template-columns:1fr 320px;gap:16px;align-items:start;">
+        <div class="card">
+          <div class="card-header" id="agenda-header">📅 Agenda</div>
+          <div class="card-body" id="dash-agenda" style="padding:14px 16px;max-height:calc(100vh - 300px);overflow-y:auto;"></div>
+        </div>
         <div style="display:flex;flex-direction:column;gap:14px;">
           <div class="card">
-            <div class="card-header">◫ Projekter med deadline snart</div>
+            <div class="card-header">◫ Deadlines snart</div>
             <div class="card-body" id="dash-projects"></div>
           </div>
           <div class="card">
@@ -605,6 +687,11 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
             <div class="card-body" id="dash-some"></div>
           </div>
         </div>
+      </div>
+
+      <!-- KANBAN VIEW -->
+      <div id="dash-view-kanban" style="display:none;">
+        <div class="kanban-board" id="kanban-board"></div>
       </div>
     </div>
 
@@ -1042,6 +1129,30 @@ function applyTemplate(project) {
   });
 }
 
+// ── DASHBOARD VIEW TOGGLE ──
+let dashView   = 'agenda'; // 'agenda' | 'kanban'
+let agendaDays = 30;
+
+function setDashView(v, el) {
+  dashView = v;
+  document.querySelectorAll('.view-toggle[id^="vt-"]').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('dash-view-agenda').style.display = v === 'agenda' ? 'grid' : 'none';
+  document.getElementById('dash-view-kanban').style.display = v === 'kanban' ? 'block' : 'none';
+  document.getElementById('time-filter-group').style.display = v === 'agenda' ? 'flex' : 'none';
+  if(v === 'kanban') renderKanban();
+  else renderAgenda();
+}
+
+function setAgendaDays(n, el) {
+  agendaDays = n;
+  document.querySelectorAll('.view-toggle[id^="tf-"]').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  const labels = { 7:'næste uge', 14:'næste 2 uger', 30:'næste måned' };
+  document.getElementById('agenda-header').textContent = `📅 Agenda – ${labels[n]}`;
+  renderAgenda();
+}
+
 // ── AGENDA ──
 function progressPill(total, done) {
   if(total === 0) return '';
@@ -1060,62 +1171,141 @@ function renderAgenda() {
   const el = document.getElementById('dash-agenda');
   const today = new Date(); today.setHours(0,0,0,0);
   const days = [];
-  for(let i = 0; i < 31; i++) {
+  for(let i = 0; i < agendaDays + 1; i++) {
     const d = new Date(today); d.setDate(today.getDate() + i);
     days.push(d);
-  }
-
-  const dayEvents = days.map(d => {
-    const ds = d.toISOString().split('T')[0];
-    const events = [];
-    state.projects.filter(p => !p.done && p.deadline === ds).forEach(p => {
-      const total = p.subtasks.filter(s=>!s.skipped).length;
-      const done  = p.subtasks.filter(s=>s.done).length;
-      events.push({ type:'deadline', title:p.title, sub:'Projektdeadline', color:p.color, projId:p.id, time:'', total, done });
-    });
-    state.projects.forEach(p => {
-      const total = p.subtasks.filter(s=>!s.skipped).length;
-      const done  = p.subtasks.filter(s=>s.done).length;
-      p.subtasks.filter(s => !s.skipped && s.deadline === ds).forEach(s => {
-        events.push({ type:'subtask', title:s.title, sub:p.title, color:p.color, projId:p.id, stId:s.id, done:s.done, time:s.time||'', total, doneProg:done });
-      });
-    });
-    return { date:d, ds, events };
-  });
-
-  const hasAnything = dayEvents.some(d => d.events.length > 0);
-  if(!hasAnything) {
-    el.innerHTML = '<div class="empty"><div class="emoji">🎉</div>Ingen deadlines de næste 30 dage</div>';
-    return;
   }
 
   const DA_DAYS   = ['Søndag','Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag'];
   const DA_MONTHS = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
 
-  el.innerHTML = dayEvents.map(({ date, events }) => {
-    if(!events.length) return '';
+  // Group by day – each day shows projects that have subtasks due that day,
+  // plus the project's own deadline. Projects are shown faded as header,
+  // their subtasks are shown below.
+  const dayBlocks = days.map(d => {
+    const ds = d.toISOString().split('T')[0];
+
+    // Find projects that have at least one subtask due this day OR their own deadline
+    const projectsThisDay = new Map();
+
+    // Project deadline itself
+    state.projects.filter(p => !p.done && p.deadline === ds).forEach(p => {
+      if(!projectsThisDay.has(p.id)) projectsThisDay.set(p.id, { proj:p, subtasks:[], showDeadline:true });
+      else projectsThisDay.get(p.id).showDeadline = true;
+    });
+
+    // Subtasks due this day
+    state.projects.filter(p => !p.done).forEach(p => {
+      p.subtasks.filter(s => !s.skipped && s.deadline === ds).forEach(s => {
+        if(!projectsThisDay.has(p.id)) projectsThisDay.set(p.id, { proj:p, subtasks:[], showDeadline: p.deadline === ds });
+        projectsThisDay.get(p.id).subtasks.push(s);
+      });
+    });
+
+    return { date:d, ds, groups:[...projectsThisDay.values()] };
+  });
+
+  const hasAnything = dayBlocks.some(d => d.groups.length > 0);
+  if(!hasAnything) {
+    el.innerHTML = `<div class="empty"><div class="emoji">🎉</div>Ingen deadlines de næste ${agendaDays} dage</div>`;
+    return;
+  }
+
+  el.innerHTML = dayBlocks.map(({ date, groups }) => {
+    if(!groups.length) return '';
     const isToday    = date.toDateString() === new Date().toDateString();
     const isTomorrow = date.toDateString() === new Date(Date.now()+86400000).toDateString();
     const label = isToday ? 'I dag' : isTomorrow ? 'I morgen'
       : `${DA_DAYS[date.getDay()]} ${date.getDate()}. ${DA_MONTHS[date.getMonth()]}`;
+
     return `<div class="agenda-section">
       <div class="agenda-date-header ${isToday?'today-header':''}">${label}</div>
-      ${events.map(ev => `
-        <div class="agenda-item ${ev.done?'done-item':''}">
-          <div class="agenda-color-bar" style="background:${ev.color};"></div>
-          ${ev.type==='subtask'
-            ? `<div class="agenda-check ${ev.done?'done':''}" onclick="toggleSubtask(${ev.projId},${ev.stId})">${ev.done?'✓':''}</div>`
-            : '<div style="width:16px;flex-shrink:0;"></div>'}
-          <div class="agenda-body">
-            <div class="agenda-title ${ev.done?'done':''}">${esc(ev.title)}</div>
-            <div class="agenda-sub">${esc(ev.sub)}</div>
+      ${groups.map(({ proj:p, subtasks, showDeadline }) => {
+        const total = p.subtasks.filter(s=>!s.skipped).length;
+        const done  = p.subtasks.filter(s=>s.done).length;
+        const pill  = progressPill(total, done);
+        const dlClass = getDeadlineClass(p.deadline);
+        return `<div class="agenda-project-group">
+          <!-- Project row (faded) -->
+          <div class="agenda-project-row">
+            <div class="agenda-color-bar" style="background:${p.color};width:3px;height:14px;border-radius:2px;flex-shrink:0;"></div>
+            <span class="agenda-project-label">📁 ${esc(p.title)}</span>
+            ${pill}
+            ${showDeadline ? `<span class="project-deadline ${dlClass}" style="font-size:10px;">⏰ Deadline ${formatDate(p.deadline)}</span>` : ''}
           </div>
-          ${ev.time ? `<div class="agenda-time">${ev.time}</div>` : ''}
-          ${progressPill(ev.total, ev.type==='deadline' ? ev.done : ev.doneProg)}
-          <span class="agenda-type ${ev.type}">${ev.type==='deadline'?'Deadline':'Delopgave'}</span>
-        </div>`).join('')}
+          <!-- Subtask rows -->
+          ${subtasks.map(s => `
+            <div class="agenda-subtask-row ${s.done?'done-item':''}">
+              <div class="agenda-color-bar" style="background:${p.color};width:3px;height:14px;border-radius:2px;flex-shrink:0;"></div>
+              <div class="agenda-check ${s.done?'done':''}" onclick="toggleSubtask(${p.id},${s.id})">${s.done?'✓':''}</div>
+              <div style="flex:1;">
+                <div style="font-size:12px;font-weight:500;${s.done?'text-decoration:line-through;color:var(--text-muted);':''}">${esc(s.title)}</div>
+              </div>
+              ${s.time ? `<div class="agenda-time">${s.time}</div>` : ''}
+              <span class="agenda-type subtask">Delopgave</span>
+            </div>`).join('')}
+          ${showDeadline && !subtasks.length ? `
+            <div class="agenda-subtask-row" style="border-style:dashed;border-color:var(--danger);background:var(--danger-light);">
+              <div style="width:3px;"></div>
+              <div style="font-size:11px;color:var(--danger);font-weight:500;flex:1;">🏁 Endelig deadline for projektet</div>
+            </div>` : ''}
+        </div>`;
+      }).join('')}
     </div>`;
   }).join('');
+}
+
+// ── KANBAN ──
+function renderKanban() {
+  const board = document.getElementById('kanban-board');
+
+  // Columns: Ikke startet (0%), I gang (1-74%), Næsten færdig (75-99%), Færdig
+  const cols = [
+    { id:'notstarted', label:'Ikke startet', color:'var(--text-muted)', projects:[] },
+    { id:'inprogress', label:'I gang',       color:'var(--accent)',     projects:[] },
+    { id:'almostdone', label:'Næsten færdig',color:'var(--warning)',    projects:[] },
+    { id:'done',       label:'Færdig',        color:'var(--accent2)',    projects:[] },
+  ];
+
+  state.projects.forEach(p => {
+    const total = p.subtasks.filter(s=>!s.skipped).length;
+    const done  = p.subtasks.filter(s=>s.done).length;
+    const pct   = total ? done/total : 0;
+    if(p.done || pct === 1)      cols[3].projects.push({ p, total, done, pct });
+    else if(pct >= 0.75)         cols[2].projects.push({ p, total, done, pct });
+    else if(pct > 0)             cols[1].projects.push({ p, total, done, pct });
+    else                         cols[0].projects.push({ p, total, done, pct });
+  });
+
+  board.innerHTML = cols.map(col => `
+    <div class="kanban-col">
+      <div class="kanban-col-header" style="border-top:3px solid ${col.color};">
+        ${col.label}
+        <span class="col-count">${col.projects.length}</span>
+      </div>
+      <div class="kanban-col-body">
+        ${col.projects.length === 0
+          ? `<div style="font-size:11px;color:var(--text-muted);text-align:center;padding:16px 0;">Tom</div>`
+          : col.projects.map(({ p, total, done }) => {
+              const dlClass = getDeadlineClass(p.deadline);
+              const dlLabel = p.deadline ? formatDate(p.deadline) : '';
+              const nextSub = p.subtasks.find(s=>!s.done&&!s.skipped);
+              return `<div class="kanban-card" onclick="nav('projects')">
+                <div class="kanban-card-top">
+                  <div class="kanban-dot" style="background:${p.color};"></div>
+                  <div class="kanban-card-title">${esc(p.title)}</div>
+                  ${progressPill(total, done)}
+                </div>
+                <div class="kanban-card-meta">
+                  <span class="prio-badge ${p.prio}" style="font-size:9px;">${p.prio==='high'?'Høj':p.prio==='mid'?'Middel':'Lav'}</span>
+                  ${dlLabel ? `<span class="kanban-card-dl ${dlClass}">⏰ ${dlLabel}</span>` : ''}
+                </div>
+                ${nextSub ? `<div style="margin-top:7px;font-size:10px;color:var(--text-muted);padding-top:6px;border-top:1px solid var(--border);">▶ ${esc(nextSub.title)}</div>` : ''}
+              </div>`;
+            }).join('')
+        }
+      </div>
+    </div>`).join('');
 }
 
 // ── DEADLINE WIZARD ──
@@ -1390,7 +1580,7 @@ function renderDashboard() {
   document.getElementById('stat-deadlines').textContent = dlSoon;
   document.getElementById('stat-some').textContent = someWait;
 
-  renderAgenda();
+  if(dashView === 'agenda') renderAgenda(); else renderKanban();
 
   const projEl = document.getElementById('dash-projects');
   const soon = state.projects.filter(p=>!p.done&&p.deadline).sort((a,b)=>a.deadline.localeCompare(b.deadline)).slice(0,5);
