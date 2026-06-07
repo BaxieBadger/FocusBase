@@ -1158,27 +1158,41 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
 
 <!-- DEADLINE WIZARD MODAL -->
 <div class="modal-overlay" id="modal-wizard">
-  <div class="modal" style="width:420px;">
+  <div class="modal" style="width:460px;">
     <div class="modal-header">
-      <div class="modal-title">Sæt deadline for delopgave</div>
+      <div class="modal-title">Sæt deadlines for delopgaver</div>
       <div style="font-size:11px;color:var(--text-muted);margin-left:auto;margin-right:16px;" id="wiz-step">1 / 1</div>
     </div>
     <div class="modal-body">
-      <div style="font-size:15px;font-weight:600;color:var(--accent);padding:4px 0 14px;" id="wiz-title"></div>
-      <div class="row2">
-        <div class="field">
-          <label>Deadline</label>
-          <input type="date" id="wiz-date" style="width:100%;"
-            onkeydown="if(event.key==='Enter') wizardNext()">
+      <!-- Same-day shortcut (shown first) -->
+      <div id="wiz-sameday-panel" style="background:var(--accent-light);border:1px solid rgba(108,99,255,0.25);border-radius:var(--radius);padding:14px;margin-bottom:16px;">
+        <div style="font-size:12px;font-weight:600;margin-bottom:6px;">⚡ Hurtig opsætning</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;">Sæt alle delopgaver til samme dato – evalueringer sættes til dagen efter projektets deadline.</div>
+        <div class="field" style="margin-bottom:8px;">
+          <label>Fælles dato for alle delopgaver</label>
+          <input type="date" id="wiz-sameday-date" style="width:100%;">
         </div>
-        <div class="field">
-          <label>Tidspunkt (valgfrit)</label>
-          <input type="time" id="wiz-time" style="width:100%;">
-        </div>
+        <button class="btn" onclick="wizardSameDay()" style="width:100%;">Brug samme dato for alle →</button>
       </div>
-      <div class="flex gap8" style="margin-top:4px;">
-        <button class="btn" onclick="wizardNext()" style="flex:1;">Næste →</button>
-        <button class="btn secondary" onclick="wizardSkip()">Spring over</button>
+      <div style="text-align:center;font-size:11px;color:var(--text-muted);margin-bottom:14px;">— eller sæt individuelle datoer nedenfor —</div>
+      <!-- Individual step -->
+      <div id="wiz-individual-panel">
+        <div style="font-size:15px;font-weight:600;color:var(--accent);padding:4px 0 14px;" id="wiz-title"></div>
+        <div class="row2">
+          <div class="field">
+            <label>Deadline</label>
+            <input type="date" id="wiz-date" style="width:100%;"
+              onkeydown="if(event.key==='Enter') wizardNext()">
+          </div>
+          <div class="field">
+            <label>Tidspunkt (valgfrit)</label>
+            <input type="time" id="wiz-time" style="width:100%;">
+          </div>
+        </div>
+        <div class="flex gap8" style="margin-top:4px;">
+          <button class="btn" onclick="wizardNext()" style="flex:1;">Næste →</button>
+          <button class="btn secondary" onclick="wizardSkip()">Spring over</button>
+        </div>
       </div>
     </div>
   </div>
@@ -1767,25 +1781,70 @@ function renderKanban() {
 let _wizardProject = null;
 let _wizardIndex   = 0;
 
+// Evaluation keywords – these subtasks get deadline AFTER project deadline
+const EVAL_KEYWORDS = ['evaluering','evaluering –','opfølgning'];
+function isEvalSubtask(title) {
+  return EVAL_KEYWORDS.some(k => title.toLowerCase().includes(k));
+}
+
 function startDeadlineWizard(project) {
   const subs = project.subtasks.filter(s => !s.skipped);
   if(!subs.length) { finaliseProject(project); return; }
   _wizardProject = project;
   _wizardIndex   = 0;
-  showWizardStep();
+
+  // Pre-fill same-day date with project deadline if set
+  const sameDayInput = document.getElementById('wiz-sameday-date');
+  sameDayInput.value = project.deadline || '';
+
+  // Reset to show same-day panel first
+  document.getElementById('wiz-sameday-panel').style.display = 'block';
+  document.getElementById('wiz-individual-panel').style.display = 'block';
+
+  document.getElementById('wiz-step').textContent = `0 / ${subs.length}`;
+  document.getElementById('wiz-title').textContent = subs[0].title;
+  document.getElementById('wiz-date').value = '';
+  document.getElementById('wiz-time').value = '';
+  document.getElementById('modal-wizard').classList.add('open');
+  setTimeout(()=>sameDayInput.focus(), 80);
+}
+
+function wizardSameDay() {
+  const baseDate = document.getElementById('wiz-sameday-date').value;
+  if(!baseDate) { alert('Vælg en dato først'); return; }
+
+  // Calculate day-after for evaluations
+  const base = new Date(baseDate+'T12:00:00');
+  const dayAfter = new Date(base); dayAfter.setDate(base.getDate()+1);
+  const dayAfterStr = dayAfter.toISOString().split('T')[0];
+
+  // Use project deadline for evaluations if set, otherwise day after base
+  const evalDate = _wizardProject.deadline || dayAfterStr;
+
+  _wizardProject.subtasks.filter(s=>!s.skipped).forEach(s => {
+    s.deadline = isEvalSubtask(s.title) ? evalDate : baseDate;
+    s.time = '';
+  });
+
+  document.getElementById('modal-wizard').classList.remove('open');
+  finaliseProject(_wizardProject);
+  toast(`✓ Alle delopgaver sat til ${formatDate(baseDate)} · Evalueringer til ${formatDate(evalDate)}`);
 }
 
 function showWizardStep() {
   const subs = _wizardProject.subtasks.filter(s => !s.skipped);
-  if(_wizardIndex >= subs.length) { finaliseProject(_wizardProject); return; }
+  if(_wizardIndex >= subs.length) {
+    document.getElementById('modal-wizard').classList.remove('open');
+    finaliseProject(_wizardProject);
+    return;
+  }
   const s = subs[_wizardIndex];
-
-  // Build modal content dynamically
   document.getElementById('wiz-step').textContent  = `${_wizardIndex + 1} / ${subs.length}`;
   document.getElementById('wiz-title').textContent  = s.title;
-  document.getElementById('wiz-date').value         = '';
-  document.getElementById('wiz-time').value         = '';
-  document.getElementById('modal-wizard').classList.add('open');
+  document.getElementById('wiz-date').value = isEvalSubtask(s.title) ? (_wizardProject.deadline||'') : '';
+  document.getElementById('wiz-time').value = '';
+  // Hide same-day panel after first individual step is taken
+  document.getElementById('wiz-sameday-panel').style.display = 'none';
   setTimeout(()=>document.getElementById('wiz-date').focus(), 80);
 }
 
@@ -1795,15 +1854,12 @@ function wizardNext() {
   s.deadline = document.getElementById('wiz-date').value;
   s.time     = document.getElementById('wiz-time').value;
   _wizardIndex++;
-  if(_wizardIndex < subs.length) { showWizardStep(); }
-  else { document.getElementById('modal-wizard').classList.remove('open'); finaliseProject(_wizardProject); }
+  showWizardStep();
 }
 
 function wizardSkip() {
   _wizardIndex++;
-  const subs = _wizardProject.subtasks.filter(s => !s.skipped);
-  if(_wizardIndex < subs.length) { showWizardStep(); }
-  else { document.getElementById('modal-wizard').classList.remove('open'); finaliseProject(_wizardProject); }
+  showWizardStep();
 }
 
 function finaliseProject(project) {
@@ -2126,7 +2182,7 @@ function renderDashboard() {
   const weekEnd = new Date(now); weekEnd.setDate(now.getDate()+7);
   const todayStr = now.toISOString().split('T')[0];
 
-  // Check overdue
+  // Check overdue – based on projects only
   const overdue = openProjects.filter(p=>p.deadline && p.deadline < todayStr);
   const hasOverdue = overdue.length > 0;
 
@@ -2144,22 +2200,23 @@ function renderDashboard() {
     updateTopbarColor();
   }
 
-  // Stat 1: Åbne projekter – colored by dominant cat
+  // Stat 1: Åbne projekter – dominant cat by project count
   const dominantProj = dominantCatAmong(openProjects);
   document.getElementById('stat-proj').textContent = openProjects.length;
   document.getElementById('sc-proj-sub').textContent = dominantProj ? `Flest: ${dominantProj}` : '';
   styleStatCard('sc-proj', dominantProj, null, null);
 
-  // Stat 2: Åbne delopgaver – colored by dominant cat of projects with open subs
+  // Stat 2: Åbne delopgaver – dominant cat by PROJECT count (not subtask count)
+  // Count which projects have open subtasks, group by their category
   const projsWithOpenSubs = openProjects.filter(p=>p.subtasks.some(s=>!s.done&&!s.skipped));
-  const dominantSubs = dominantCatAmong(projsWithOpenSubs);
+  const dominantSubs = dominantCatAmong(projsWithOpenSubs); // one vote per PROJECT
   document.getElementById('stat-done').textContent = openSubs.length;
   document.getElementById('sc-subs-sub').textContent = dominantSubs ? `Flest: ${dominantSubs}` : '';
   styleStatCard('sc-subs', dominantSubs, null, null);
 
-  // Stat 3: Deadlines denne uge
+  // Stat 3: Deadlines denne uge – dominant cat by project count
   const dlSoon = openProjects.filter(p=>p.deadline&&new Date(p.deadline+'T23:59:59')<=weekEnd);
-  const dominantDl = dominantCatAmong(dlSoon);
+  const dominantDl = dominantCatAmong(dlSoon); // one vote per PROJECT
   document.getElementById('stat-deadlines').textContent = dlSoon.length;
   document.getElementById('sc-dl-sub').textContent = hasOverdue ? `⚠️ ${overdue.length} overskredet` : (dominantDl||'');
   const scDl = document.getElementById('sc-dl');
@@ -2175,13 +2232,12 @@ function renderDashboard() {
     styleStatCard('sc-dl', dominantDl, null, null);
   }
 
-  // Stat 4: SoMe afventer – show dominant platform
+  // Stat 4: SoMe afventer – dominant platform by post count (unchanged – this IS about posts)
   const pending = state.some.filter(s=>s.status==='ready');
   document.getElementById('stat-some').textContent = pending.length;
   const platCounts = {};
   pending.forEach(s=>{ platCounts[s.platform]=(platCounts[s.platform]||0)+1; });
   const topPlat = Object.entries(platCounts).sort((a,b)=>b[1]-a[1])[0];
-  const pcLabel = document.getElementById('sc-some-label');
   document.getElementById('sc-some-sub').textContent = topPlat ? topPlat[0] : '';
   if(topPlat) {
     const pc = platColor(topPlat[0]);
@@ -2196,7 +2252,6 @@ function renderDashboard() {
 
   if(dashView === 'agenda') renderAgenda(); else renderKanban();
 
-  // Overdue notice + workday warning
   checkWorkdayWarnings();
 
   const projEl = document.getElementById('dash-projects');
