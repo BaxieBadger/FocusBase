@@ -1488,6 +1488,13 @@ async function syncToSupabase() {
   }});
 }
 
+function parseSupabaseData(r) {
+  // Handle both proper JSON objects and escaped strings from Make
+  if(!r || !r.data) return null;
+  if(typeof r.data === 'object') return r.data;
+  try { return JSON.parse(r.data); } catch(e) { return null; }
+}
+
 async function loadFromSupabase() {
   if(!sbReady) return false;
   try {
@@ -1500,17 +1507,32 @@ async function loadFromSupabase() {
       sbSelect('system_state'),
     ]);
 
-    if(projects?.length)  state.projects      = projects.map(r=>r.data);
-    if(some?.length)      state.some          = some.map(r=>r.data);
-    if(notes?.length)     state.notes         = notes.map(r=>r.data);
-    if(diary?.length)     diary.forEach(r=>{ state.diaryEntries[r.project_id] = r.data; });
+    if(projects?.length) {
+      const parsed = projects.map(r=>parseSupabaseData(r)).filter(Boolean);
+      if(parsed.length) state.projects = parsed;
+    }
+    if(some?.length) {
+      const parsed = some.map(r=>parseSupabaseData(r)).filter(Boolean);
+      if(parsed.length) state.some = parsed;
+    }
+    if(notes?.length) {
+      const parsed = notes.map(r=>parseSupabaseData(r)).filter(Boolean);
+      if(parsed.length) state.notes = parsed;
+    }
+    if(diary?.length) {
+      diary.forEach(r=>{ 
+        const d = typeof r.data === 'string' ? JSON.parse(r.data) : r.data;
+        if(d) state.diaryEntries[r.project_id] = d;
+      });
+    }
     if(sys?.length) {
       const meta = sys.find(r=>r.key==='meta')?.value;
       if(meta) {
-        state.nextId        = meta.nextId        || state.nextId;
-        state.streakDays    = meta.streakDays    || state.streakDays;
-        state.offDays       = meta.offDays       || state.offDays;
-        state.currentStreak = meta.currentStreak || state.currentStreak;
+        const m = typeof meta === 'string' ? JSON.parse(meta) : meta;
+        state.nextId        = m.nextId        || state.nextId;
+        state.streakDays    = m.streakDays    || state.streakDays;
+        state.offDays       = m.offDays       || state.offDays;
+        state.currentStreak = m.currentStreak || state.currentStreak;
       }
     }
     hideSyncIndicator();
