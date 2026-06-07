@@ -1259,53 +1259,61 @@ function renderAgenda() {
 function renderKanban() {
   const board = document.getElementById('kanban-board');
 
-  // Columns: Ikke startet (0%), I gang (1-74%), Næsten færdig (75-99%), Færdig
-  const cols = [
-    { id:'notstarted', label:'Ikke startet', color:'var(--text-muted)', projects:[] },
-    { id:'inprogress', label:'I gang',       color:'var(--accent)',     projects:[] },
-    { id:'almostdone', label:'Næsten færdig',color:'var(--warning)',    projects:[] },
-    { id:'done',       label:'Færdig',        color:'var(--accent2)',    projects:[] },
-  ];
+  // Collect all categories in use + fixed ones
+  const fixedCats = ['SoMe','Presse','Artikel','Møde','Admin','Generelt'];
+  const usedCats  = [...new Set(state.projects.map(p => p.cat))];
+  const allCats   = [...new Set([...fixedCats, ...usedCats])];
 
-  state.projects.forEach(p => {
-    const total = p.subtasks.filter(s=>!s.skipped).length;
-    const done  = p.subtasks.filter(s=>s.done).length;
-    const pct   = total ? done/total : 0;
-    if(p.done || pct === 1)      cols[3].projects.push({ p, total, done, pct });
-    else if(pct >= 0.75)         cols[2].projects.push({ p, total, done, pct });
-    else if(pct > 0)             cols[1].projects.push({ p, total, done, pct });
-    else                         cols[0].projects.push({ p, total, done, pct });
-  });
+  // Only show cols that have projects OR are fixed
+  const cols = allCats.map(cat => ({
+    cat,
+    projects: state.projects.filter(p => p.cat === cat)
+  })).filter(col => col.projects.length > 0 || fixedCats.includes(col.cat));
 
-  board.innerHTML = cols.map(col => `
-    <div class="kanban-col">
-      <div class="kanban-col-header" style="border-top:3px solid ${col.color};">
-        ${col.label}
-        <span class="col-count">${col.projects.length}</span>
+  const catColors = {
+    'SoMe':'var(--accent3)', 'Presse':'var(--accent)', 'Artikel':'var(--accent2)',
+    'Møde':'var(--warning)', 'Admin':'var(--text-muted)', 'Generelt':'var(--border2)'
+  };
+
+  board.style.gridTemplateColumns = `repeat(${Math.min(cols.length, 4)}, 1fr)`;
+
+  board.innerHTML = cols.map(({ cat, projects }) => {
+    const open = projects.filter(p => !p.done);
+    const done = projects.filter(p => p.done);
+    const colColor = catColors[cat] || 'var(--accent)';
+
+    return `<div class="kanban-col">
+      <div class="kanban-col-header" style="border-top:3px solid ${colColor};">
+        ${cat}
+        <span class="col-count">${open.length}</span>
       </div>
       <div class="kanban-col-body">
-        ${col.projects.length === 0
+        ${open.length === 0 && done.length === 0
           ? `<div style="font-size:11px;color:var(--text-muted);text-align:center;padding:16px 0;">Tom</div>`
-          : col.projects.map(({ p, total, done }) => {
+          : [...open, ...done].map(p => {
+              const total   = p.subtasks.filter(s=>!s.skipped).length;
+              const doneN   = p.subtasks.filter(s=>s.done).length;
               const dlClass = getDeadlineClass(p.deadline);
               const dlLabel = p.deadline ? formatDate(p.deadline) : '';
               const nextSub = p.subtasks.find(s=>!s.done&&!s.skipped);
-              return `<div class="kanban-card" onclick="nav('projects')">
+              return `<div class="kanban-card ${p.done?'':''}\" onclick="nav('projects')" style="${p.done?'opacity:0.45;':''}" title="${esc(p.title)}">
                 <div class="kanban-card-top">
                   <div class="kanban-dot" style="background:${p.color};"></div>
                   <div class="kanban-card-title">${esc(p.title)}</div>
-                  ${progressPill(total, done)}
+                  ${progressPill(total, doneN)}
                 </div>
                 <div class="kanban-card-meta">
-                  <span class="prio-badge ${p.prio}" style="font-size:9px;">${p.prio==='high'?'Høj':p.prio==='mid'?'Middel':'Lav'}</span>
+                  <span class="prio-badge ${p.prio}">${p.prio==='high'?'Høj':p.prio==='mid'?'Middel':'Lav'}</span>
                   ${dlLabel ? `<span class="kanban-card-dl ${dlClass}">⏰ ${dlLabel}</span>` : ''}
                 </div>
                 ${nextSub ? `<div style="margin-top:7px;font-size:10px;color:var(--text-muted);padding-top:6px;border-top:1px solid var(--border);">▶ ${esc(nextSub.title)}</div>` : ''}
+                ${p.done ? `<div style="margin-top:6px;font-size:10px;color:var(--accent2);font-weight:500;">✓ Færdig</div>` : ''}
               </div>`;
             }).join('')
         }
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 // ── DEADLINE WIZARD ──
