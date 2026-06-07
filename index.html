@@ -811,6 +811,109 @@
   }
   .ai-suggestion:hover { color: var(--accent2); border-color: var(--accent2); }
 
+  /* ── CAPTURE BUTTON ── */
+  .capture-btn {
+    position: fixed;
+    top: 50%;
+    right: 0;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 6px 0 0 6px;
+    padding: 14px 8px;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    writing-mode: vertical-rl;
+    transform: translateY(-50%) rotate(180deg);
+    z-index: 80;
+    transition: padding 0.2s;
+    box-shadow: -2px 0 12px rgba(232,197,71,0.2);
+  }
+  .capture-btn:hover { padding: 14px 12px; }
+  .capture-modal {
+    position: fixed;
+    top: 50%;
+    right: 20px;
+    transform: translateY(-50%);
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    padding: 16px;
+    width: 300px;
+    z-index: 81;
+    display: none;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+  .capture-modal.open { display: block; }
+  .capture-modal h3 { font-family: var(--font-display); font-size: 15px; margin-bottom:10px; color: var(--accent); }
+  .capture-modal input { width: 100%; margin-bottom: 8px; font-size: 14px; padding: 10px 12px; }
+  .capture-modal .hint { font-size: 10px; color: var(--text-muted); margin-bottom:10px; }
+
+  /* ── STREAK ── */
+  .streak-display { display:flex; align-items:center; gap:6px; margin-bottom:6px; }
+  .streak-flame { font-size: 16px; }
+  .streak-count { font-family: var(--font-display); font-size: 20px; font-weight:700; color: var(--accent); }
+  .streak-label { font-size: 10px; color: var(--text-muted); }
+  .streak-off-btn {
+    margin-top: 4px; font-size: 9px; color: var(--text-muted);
+    background: none; border: 1px solid var(--border); border-radius: 3px;
+    padding: 2px 6px; cursor: pointer; font-family: var(--font-mono);
+    transition: color 0.15s; width: 100%;
+  }
+  .streak-off-btn:hover { color: var(--accent2); border-color: var(--accent2); }
+
+  /* ── COMPLETION RITUAL ── */
+  .ritual-overlay {
+    position: fixed; inset:0; display:none;
+    align-items:center; justify-content:center;
+    z-index: 300; pointer-events:none;
+  }
+  .ritual-overlay.show { display:flex; }
+  .ritual-burst { font-size:60px; animation: burst 0.8s ease forwards; }
+  @keyframes burst {
+    0%  { transform:scale(0.3); opacity:0; }
+    50% { transform:scale(1.3); opacity:1; }
+    100%{ transform:scale(1);   opacity:0; }
+  }
+  .ritual-msg {
+    position:fixed; top:50%; left:50%;
+    transform: translate(-50%,-60px);
+    font-family: var(--font-display); font-size:22px; font-weight:700;
+    color: var(--accent); text-shadow: 0 2px 20px rgba(232,197,71,0.5);
+    animation: msgPop 0.9s ease forwards; pointer-events:none; white-space:nowrap;
+  }
+  @keyframes msgPop {
+    0%  { opacity:0; transform:translate(-50%,-40px) scale(0.8); }
+    40% { opacity:1; transform:translate(-50%,-60px) scale(1.05); }
+    80% { opacity:1; }
+    100%{ opacity:0; transform:translate(-50%,-85px); }
+  }
+
+  /* ── UGERAPPORT ── */
+  .report-overlay {
+    position:fixed; inset:0; background:rgba(0,0,0,0.75);
+    display:none; align-items:center; justify-content:center;
+    z-index:150; backdrop-filter:blur(4px);
+  }
+  .report-overlay.open { display:flex; }
+  .report-modal {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:8px; width:480px; max-width:95vw;
+    max-height:85vh; overflow-y:auto; padding:28px;
+  }
+  .report-modal h2 { font-family:var(--font-display); font-size:22px; color:var(--accent); margin-bottom:4px; }
+  .report-modal .report-sub { font-size:11px; color:var(--text-muted); margin-bottom:20px; }
+  .report-stat-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:20px; }
+  .report-stat { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:12px; text-align:center; }
+  .report-stat .val { font-family:var(--font-display); font-size:26px; font-weight:700; color:var(--accent); }
+  .report-stat .lbl { font-size:10px; color:var(--text-muted); margin-top:2px; }
+  .report-section { margin-bottom:16px; }
+  .report-section h3 { font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--text-muted); margin-bottom:8px; }
+  .report-item { font-size:12px; padding:5px 0; border-bottom:1px solid var(--border); color:var(--text-dim); }
+
   /* API key setup */
   .api-setup {
     padding: 16px;
@@ -869,9 +972,17 @@
       </div>
     </div>
     <div class="sidebar-footer">
-      <div id="focus-label">Fokus-score i dag</div>
-      <div class="focus-meter">
-        <div class="focus-meter-fill" id="focus-fill" style="width:0%"></div>
+      <div class="streak-display">
+        <span class="streak-flame">🔥</span>
+        <span class="streak-count" id="streak-count">0</span>
+        <span class="streak-label">dages streak</span>
+      </div>
+      <button class="streak-off-btn" onclick="markDayOff()">📅 Markér fridag / afspadsering</button>
+      <div style="margin-top:10px;">
+        <div id="focus-label">Fokus-score i dag</div>
+        <div class="focus-meter">
+          <div class="focus-meter-fill" id="focus-fill" style="width:0%"></div>
+        </div>
       </div>
     </div>
   </nav>
@@ -882,6 +993,7 @@
       <div class="topbar-title" id="page-title">Dashboard</div>
       <div class="topbar-time" id="clock">--:--</div>
       <button class="btn secondary" onclick="startPomodoro()" id="pomo-btn">⏱ Pomodoro</button>
+      <button class="btn secondary" onclick="generateWeekReport()">📊 Ugerapport</button>
       <button class="btn" onclick="openNewModal()" id="new-btn">+ Ny opgave</button>
     </div>
 
@@ -1116,6 +1228,45 @@
 <!-- Toasts -->
 <div class="toasts" id="toasts"></div>
 
+<!-- CAPTURE BUTTON -->
+<button class="capture-btn" onclick="toggleCapture()" title="Hurtig opgave">+ CAPTURE</button>
+<div class="capture-modal" id="capture-modal">
+  <h3>⚡ Hurtig capture</h3>
+  <input type="text" id="capture-input" placeholder="Hvad skal huskes?" onkeydown="if(event.key==='Enter') doCapture(); if(event.key==='Escape') toggleCapture();">
+  <div class="hint">Tryk Enter for at gemme · Esc for at lukke</div>
+  <button class="btn" onclick="doCapture()" style="width:100%;font-size:11px;">Gem og fortsæt →</button>
+</div>
+
+<!-- COMPLETION RITUAL -->
+<div class="ritual-overlay" id="ritual-overlay">
+  <div class="ritual-burst" id="ritual-burst">✓</div>
+</div>
+<div class="ritual-msg" id="ritual-msg" style="display:none;"></div>
+
+<!-- UGERAPPORT -->
+<div class="report-overlay" id="report-overlay">
+  <div class="report-modal">
+    <h2>Ugerapport 📊</h2>
+    <div class="report-sub" id="report-sub"></div>
+    <div class="report-stat-row">
+      <div class="report-stat"><div class="val" id="rep-done">0</div><div class="lbl">Opgaver færdige</div></div>
+      <div class="report-stat"><div class="val" id="rep-streak">0</div><div class="lbl">Dages streak</div></div>
+      <div class="report-stat"><div class="val" id="rep-best">-</div><div class="lbl">Bedste dag</div></div>
+    </div>
+    <div class="report-section">
+      <h3>Færdiggjort denne uge</h3>
+      <div id="rep-done-list"></div>
+    </div>
+    <div class="report-section">
+      <h3>Stadig åbne</h3>
+      <div id="rep-open-list"></div>
+    </div>
+    <div style="margin-top:16px;">
+      <button class="btn" onclick="closeReport()" style="width:100%;">Luk rapport</button>
+    </div>
+  </div>
+</div>
+
 <!-- AI ASSISTANT -->
 <div class="ai-bubble" id="ai-bubble">
   <div class="ai-panel" id="ai-panel">
@@ -1315,6 +1466,7 @@ function toggleTodo(id) {
   t.done = !t.done;
   t.doneAt = t.done ? new Date().toISOString() : null;
   save();
+  if(t.done) { showRitual(); checkAndUpdateStreak(); }
   renderTodos();
   renderDashboard();
   updateBadge();
@@ -1739,6 +1891,195 @@ function formatDate(d){ if(!d) return ''; const p=d.split('-'); return `${p[2]}/
 function formatDate(d){ if(!d) return ''; try{ const dt=new Date(d+'T12:00:00'); return dt.toLocaleDateString('da-DK',{day:'numeric',month:'short'}); } catch(e){ return d; } }
 function formatDatetime(s){ try{ return new Date(s).toLocaleString('da-DK',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}); } catch(e){ return s; } }
 
+// ── CAPTURE ──
+let captureOpen = false;
+function toggleCapture() {
+  captureOpen = !captureOpen;
+  document.getElementById('capture-modal').classList.toggle('open', captureOpen);
+  if(captureOpen) setTimeout(()=>document.getElementById('capture-input').focus(), 50);
+}
+function doCapture() {
+  const inp = document.getElementById('capture-input');
+  const title = inp.value.trim();
+  if(!title) return;
+  state.todos.push({
+    id: state.nextId++,
+    title,
+    desc:'', prio:'mid', cat:'generelt',
+    deadline:'', time:'',
+    done:false,
+    createdAt: new Date().toISOString(),
+    doneAt: null
+  });
+  inp.value = '';
+  save();
+  renderTodos(); renderDashboard(); updateBadge(); renderDiary();
+  toast(`⚡ Fanget: "${title}"`);
+  toggleCapture();
+  updateStreakForToday();
+}
+
+// ── STREAK ──
+function getTodayStr() { return new Date().toISOString().split('T')[0]; }
+
+function updateStreakForToday() {
+  const today = getTodayStr();
+  if(!state.streakDays) state.streakDays = [];
+  if(!state.offDays) state.offDays = [];
+  if(!state.streakDays.includes(today)) {
+    state.streakDays.push(today);
+    save();
+  }
+  renderStreak();
+}
+
+function markDayOff() {
+  const today = getTodayStr();
+  if(!state.offDays) state.offDays = [];
+  if(!state.streakDays) state.streakDays = [];
+  if(!state.offDays.includes(today)) {
+    state.offDays.push(today);
+    // Count as active day so streak continues
+    if(!state.streakDays.includes(today)) state.streakDays.push(today);
+    save();
+    toast('📅 Fridag markeret – din streak fortsætter ✓');
+    renderStreak();
+  } else {
+    toast('Denne dag er allerede markeret som fridag');
+  }
+}
+
+function renderStreak() {
+  if(!state.streakDays) state.streakDays = [];
+  if(!state.offDays) state.offDays = [];
+
+  // Calculate consecutive streak ending today
+  let streak = 0;
+  let d = new Date();
+  for(let i = 0; i < 365; i++) {
+    const ds = d.toISOString().split('T')[0];
+    const dow = d.getDay();
+    // Skip weekends
+    if(dow === 0 || dow === 6) { d.setDate(d.getDate()-1); continue; }
+    if(state.streakDays.includes(ds) || state.offDays.includes(ds)) {
+      streak++;
+      d.setDate(d.getDate()-1);
+    } else {
+      break;
+    }
+  }
+  document.getElementById('streak-count').textContent = streak;
+  // Update streak in state
+  state.currentStreak = streak;
+}
+
+// Check if today is a workday and update streak when tasks are completed
+function checkAndUpdateStreak() {
+  const dow = new Date().getDay();
+  if(dow >= 1 && dow <= 5) updateStreakForToday();
+}
+
+// ── COMPLETION RITUAL ──
+const RITUAL_MSGS = [
+  'Godt klaret! 💪', 'En ned! 🎯', 'Du er på! ⚡',
+  'Fremad! 🚀', 'Skarpt! ✨', 'Ét skridt tættere! 🏆',
+  'Det sidder! 🎉', 'Knusende! 💥'
+];
+function showRitual() {
+  const overlay = document.getElementById('ritual-overlay');
+  const msgEl = document.getElementById('ritual-msg');
+  const burst = document.getElementById('ritual-burst');
+
+  const msg = RITUAL_MSGS[Math.floor(Math.random()*RITUAL_MSGS.length)];
+  const emojis = ['✓','⭐','🎯','💪','✨'];
+  burst.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+
+  overlay.classList.add('show');
+  msgEl.style.display = 'block';
+  msgEl.textContent = msg;
+
+  // Re-trigger animation
+  burst.style.animation = 'none';
+  msgEl.style.animation = 'none';
+  requestAnimationFrame(()=>{
+    burst.style.animation = 'burst 0.8s ease forwards';
+    msgEl.style.animation = 'msgPop 0.9s ease forwards';
+  });
+
+  setTimeout(()=>{
+    overlay.classList.remove('show');
+    msgEl.style.display = 'none';
+  }, 900);
+}
+
+// ── UGERAPPORT ──
+function generateWeekReport() {
+  const now = new Date();
+  const dayOfWeek = now.getDay();
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - (dayOfWeek===0?6:dayOfWeek-1));
+  monday.setHours(0,0,0,0);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate()+6);
+  sunday.setHours(23,59,59,999);
+
+  const weekDone = state.todos.filter(t =>
+    t.done && t.doneAt && new Date(t.doneAt) >= monday && new Date(t.doneAt) <= sunday
+  );
+  const weekOpen = state.todos.filter(t => !t.done);
+
+  // Best day
+  const dayCounts = {};
+  weekDone.forEach(t => {
+    const d = new Date(t.doneAt).toLocaleDateString('da-DK',{weekday:'long'});
+    dayCounts[d] = (dayCounts[d]||0)+1;
+  });
+  const bestDay = Object.entries(dayCounts).sort((a,b)=>b[1]-a[1])[0];
+
+  const weekStr = `${monday.toLocaleDateString('da-DK',{day:'numeric',month:'short'})} – ${sunday.toLocaleDateString('da-DK',{day:'numeric',month:'short'})}`;
+  document.getElementById('report-sub').textContent = `Uge ${getWeekNumber(now)} · ${weekStr}`;
+  document.getElementById('rep-done').textContent = weekDone.length;
+  document.getElementById('rep-streak').textContent = state.currentStreak||0;
+  document.getElementById('rep-best').textContent = bestDay ? bestDay[0].charAt(0).toUpperCase()+bestDay[0].slice(1) : '–';
+
+  document.getElementById('rep-done-list').innerHTML = weekDone.length
+    ? weekDone.map(t=>`<div class="report-item">✓ ${esc(t.title)}</div>`).join('')
+    : '<div class="report-item" style="color:var(--text-muted);">Ingen færdige opgaver denne uge</div>';
+
+  document.getElementById('rep-open-list').innerHTML = weekOpen.slice(0,8).length
+    ? weekOpen.slice(0,8).map(t=>`<div class="report-item">◻ ${esc(t.title)} <span style="color:var(--accent3);font-size:10px;">${t.prio==='high'?'· Høj prioritet':''}</span></div>`).join('')
+    : '<div class="report-item" style="color:var(--success);">Ingen åbne opgaver 🎉</div>';
+
+  document.getElementById('report-overlay').classList.add('open');
+}
+
+function closeReport() {
+  document.getElementById('report-overlay').classList.remove('open');
+}
+
+function getWeekNumber(d) {
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const dayNum = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(),0,1));
+  return Math.ceil((((date - yearStart) / 86400000) + 1)/7);
+}
+
+// Show report on Fridays automatically (once per week)
+function checkFridayReport() {
+  const now = new Date();
+  if(now.getDay() === 5) { // Friday
+    const lastReport = localStorage.getItem('fb_last_report');
+    const thisWeek = getWeekNumber(now) + '-' + now.getFullYear();
+    if(lastReport !== thisWeek) {
+      setTimeout(()=>{
+        localStorage.setItem('fb_last_report', thisWeek);
+        toast('📊 Det er fredag – din ugerapport er klar!');
+      }, 3000);
+    }
+  }
+}
+
 // ── AI ASSISTANT ──
 let aiOpen = false;
 let aiHistory = [];
@@ -1939,6 +2280,9 @@ renderSome();
 renderNotes();
 renderDiary();
 renderTodos();
+renderStreak();
+checkAndUpdateStreak();
+checkFridayReport();
 </script>
 </body>
 </html>
