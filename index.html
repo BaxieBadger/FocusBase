@@ -714,7 +714,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   <div class="sidebar-logo">
     <div style="font-size:10px;color:var(--sidebar-text);opacity:0.6;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
     <h1>FocusBase</h1>
-    <span>Dit system · Din flow · v1.13</span>
+    <span>Dit system · Din flow · v1.14</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
@@ -2084,29 +2084,32 @@ function renderAgenda() {
         const done  = ( p.subtasks||[] ).filter(s=>s.done).length;
         const pill  = progressPill(total, done);
         const dlClass = getDeadlineClass(p.deadline);
+        const darkBgs = ['#2A5DB0','#C15A1A','#265E3A','#6B3FA0','#1B8BB0','#7A8088','#0a2d6e','#004225','#5b3fa0','#9099a8'];
+        const tc = darkBgs.some(c=>(p.color||'').toLowerCase()===c.toLowerCase()) ? '#ffffff' : '#1a1400';
+        const mc = tc==='#ffffff' ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.45)';
+        const subtaskBg = tc==='#ffffff' ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.35)';
         return `<div class="agenda-project-group">
-          <!-- Project row (faded) -->
-          <div class="agenda-project-row">
-            <div class="agenda-color-bar" style="background:${p.color};width:3px;height:14px;border-radius:2px;flex-shrink:0;"></div>
-            <span class="agenda-project-label">📁 ${esc(p.title)}</span>
+          <!-- Project row – fully colored -->
+          <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:var(--radius);background:${p.color};margin-bottom:3px;">
+            <span style="font-size:11px;font-weight:600;color:${tc};flex:1;">📁 ${esc(p.title)}</span>
             ${pill}
-            ${showDeadline ? `<span class="project-deadline ${dlClass}" style="font-size:10px;">⏰ Deadline ${formatDate(p.deadline)}</span>` : ''}
+            ${showDeadline ? `<span style="font-size:10px;font-weight:500;padding:2px 7px;border-radius:10px;background:rgba(0,0,0,0.15);color:${tc};white-space:nowrap;">⏰ ${formatDate(p.deadline)}</span>` : ''}
           </div>
           <!-- Subtask rows -->
           ${subtasks.map(s => `
-            <div class="agenda-subtask-row ${s.done?'done-item':''}">
+            <div class="agenda-subtask-row ${s.done?'done-item':''}" style="background:${subtaskBg};border-color:${p.color};margin-left:10px;">
               <div class="agenda-color-bar" style="background:${p.color};width:3px;height:14px;border-radius:2px;flex-shrink:0;"></div>
-              <div class="agenda-check ${s.done?'done':''}" onclick="toggleSubtask(${p.id},${s.id})">${s.done?'✓':''}</div>
+              <div class="agenda-check ${s.done?'done':''}" onclick="toggleSubtask(${p.id},${s.id})" style="${s.done?'':'border-color:'+p.color+';'}">${s.done?'✓':''}</div>
               <div style="flex:1;">
                 <div style="font-size:12px;font-weight:500;${s.done?'text-decoration:line-through;color:var(--text-muted);':''}">${esc(s.title)}</div>
               </div>
-              ${s.time ? `<div class="agenda-time">${s.time}</div>` : ''}
-              <span class="agenda-type subtask">Delopgave</span>
+              ${s.time ? `<div style="font-size:10px;color:${p.color};font-weight:500;">${s.time}</div>` : ''}
+              <span class="agenda-type subtask" style="background:${p.color};color:${tc};opacity:0.85;">Delopgave</span>
             </div>`).join('')}
           ${showDeadline && !subtasks.length ? `
-            <div class="agenda-subtask-row" style="border-style:dashed;border-color:var(--danger);background:var(--danger-light);">
+            <div class="agenda-subtask-row" style="border-style:dashed;border-color:${p.color};background:rgba(0,0,0,0.06);margin-left:10px;">
               <div style="width:3px;"></div>
-              <div style="font-size:11px;color:var(--danger);font-weight:500;flex:1;">🏁 Endelig deadline for projektet</div>
+              <div style="font-size:11px;color:${p.color};font-weight:600;flex:1;">🏁 Endelig deadline for projektet</div>
             </div>` : ''}
         </div>`;
       }).join('')}
@@ -2464,6 +2467,7 @@ function renderProjectCard(p) {
   const dlText  = p.deadline ? formatDate(p.deadline) : 'Ingen deadline';
 
   const darkBgs = ['#2A5DB0','#C15A1A','#265E3A','#6B3FA0','#1B8BB0','#7A8088','#0a2d6e','#004225','#5b3fa0','#9099a8'];
+  const lightBgs = ['#C9A800','#C09060']; // Nyhedsbrev gul og Møde sand → mørk tekst
   const tc  = (!p.done && darkBgs.some(c => p.color?.toLowerCase()===c.toLowerCase())) ? '#ffffff' : p.done ? 'var(--text-muted)' : '#1a1400';
   const mc  = tc==='#ffffff' ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.5)';
   const bs  = p.done ? '' : tc==='#ffffff'
