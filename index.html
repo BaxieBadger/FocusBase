@@ -714,7 +714,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   <div class="sidebar-logo">
     <div style="font-size:10px;color:var(--sidebar-text);opacity:0.6;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
     <h1>FocusBase</h1>
-    <span>Dit system · Din flow · v1.11</span>
+    <span>Dit system · Din flow · v1.12</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
@@ -1951,9 +1951,9 @@ function showTemplatePreview() {
 
   // Auto-set matching category color
   const catColorMap = {
-    'SoMe':'#0a2d6e', 'Presse':'#F47920', 'Nyhedsbrev':'#c8960c',
-    'Artikel':'#004225', 'Møde':'#c8a97e', 'Admin':'#5b3fa0',
-    'Projekt':'#00AEEF', 'Andet':'#9099a8'
+    'SoMe':'#2A5DB0', 'Presse':'#C15A1A', 'Nyhedsbrev':'#C9A800',
+    'Artikel':'#265E3A', 'Møde':'#C09060', 'Admin':'#6B3FA0',
+    'Projekt':'#1B8BB0', 'Andet':'#7A8088'
   };  if(catColorMap[cat] && !state.editingProjectId) {
     state.selectedColor = catColorMap[cat];
     document.querySelectorAll('.color-dot').forEach(d => {
@@ -2130,14 +2130,14 @@ function renderKanban() {
   })).filter(col => col.projects.length > 0 || fixedCats.includes(col.cat));
 
   const catColors = {
-    'SoMe':        '#0a2d6e',
-    'Presse':      '#F47920',
-    'Nyhedsbrev':  '#c8960c',
-    'Artikel':     '#004225',
-    'Møde':        '#c8a97e',
-    'Admin':       '#5b3fa0',
-    'Projekt':     '#00AEEF',
-    'Andet':       '#9099a8',
+    'SoMe':        '#2A5DB0',
+    'Presse':      '#C15A1A',
+    'Nyhedsbrev':  '#C9A800',
+    'Artikel':     '#265E3A',
+    'Møde':        '#C09060',
+    'Admin':       '#6B3FA0',
+    'Projekt':     '#1B8BB0',
+    'Andet':       '#7A8088',
     'Generelt':    '#9099a8',
   };
 
@@ -2292,15 +2292,15 @@ function finaliseProject(project) {
 
 // ── DYNAMIC TOPBAR COLOR ──
 const CAT_COLORS = {
-  'SoMe':       { bg:'#0a2d6e', text:'#ffffff', muted:'rgba(255,255,255,0.6)', btnBg:'rgba(255,255,255,0.15)', btnBorder:'rgba(255,255,255,0.3)', btnText:'#ffffff' },
-  'Presse':     { bg:'#F47920', text:'#ffffff', muted:'rgba(255,255,255,0.7)', btnBg:'rgba(255,255,255,0.2)',  btnBorder:'rgba(255,255,255,0.4)', btnText:'#ffffff' },
-  'Nyhedsbrev': { bg:'#c8960c', text:'#2a1c00', muted:'rgba(42,28,0,0.55)',   btnBg:'rgba(42,28,0,0.12)',    btnBorder:'rgba(42,28,0,0.25)',    btnText:'#2a1c00' },
-  'Artikel':    { bg:'#004225', text:'#ffffff', muted:'rgba(255,255,255,0.6)', btnBg:'rgba(255,255,255,0.15)', btnBorder:'rgba(255,255,255,0.3)', btnText:'#ffffff' },
-  'Møde':       { bg:'#c8a97e', text:'#2a1f0e', muted:'rgba(42,31,14,0.55)',  btnBg:'rgba(42,31,14,0.12)',   btnBorder:'rgba(42,31,14,0.25)',   btnText:'#2a1f0e' },
-  'Admin':      { bg:'#5b3fa0', text:'#ffffff', muted:'rgba(255,255,255,0.6)', btnBg:'rgba(255,255,255,0.15)', btnBorder:'rgba(255,255,255,0.3)', btnText:'#ffffff' },
-  'Projekt':    { bg:'#00AEEF', text:'#012a3a', muted:'rgba(1,42,58,0.6)',    btnBg:'rgba(1,42,58,0.12)',    btnBorder:'rgba(1,42,58,0.25)',    btnText:'#012a3a' },
-  'Andet':      { bg:'#9099a8', text:'#ffffff', muted:'rgba(255,255,255,0.6)', btnBg:'rgba(255,255,255,0.15)', btnBorder:'rgba(255,255,255,0.3)', btnText:'#ffffff' },
-  'Generelt':   { bg:'#9099a8', text:'#ffffff', muted:'rgba(255,255,255,0.6)', btnBg:'rgba(255,255,255,0.15)', btnBorder:'rgba(255,255,255,0.3)', btnText:'#ffffff' },
+  'SoMe':       { bg:'#2A5DB0', text:'#ffffff', muted:'rgba(255,255,255,0.6)', btnBg:'rgba(255,255,255,0.15)', btnBorder:'rgba(255,255,255,0.3)', btnText:'#ffffff' },
+  'Presse':     { bg:'#C15A1A', text:'#ffffff', muted:'rgba(255,255,255,0.7)', btnBg:'rgba(255,255,255,0.2)',  btnBorder:'rgba(255,255,255,0.4)', btnText:'#ffffff' },
+  'Nyhedsbrev': { bg:'#C9A800', text:'#1a1400', muted:'rgba(26,20,0,0.6)',    btnBg:'rgba(26,20,0,0.12)',    btnBorder:'rgba(26,20,0,0.25)',    btnText:'#1a1400' },
+  'Artikel':    { bg:'#265E3A', text:'#ffffff', muted:'rgba(255,255,255,0.6)', btnBg:'rgba(255,255,255,0.15)', btnBorder:'rgba(255,255,255,0.3)', btnText:'#ffffff' },
+  'Møde':       { bg:'#C09060', text:'#1a0e00', muted:'rgba(26,14,0,0.6)',    btnBg:'rgba(26,14,0,0.12)',    btnBorder:'rgba(26,14,0,0.25)',    btnText:'#1a0e00' },
+  'Admin':      { bg:'#6B3FA0', text:'#ffffff', muted:'rgba(255,255,255,0.6)', btnBg:'rgba(255,255,255,0.15)', btnBorder:'rgba(255,255,255,0.3)', btnText:'#ffffff' },
+  'Projekt':    { bg:'#1B8BB0', text:'#ffffff', muted:'rgba(255,255,255,0.6)', btnBg:'rgba(255,255,255,0.15)', btnBorder:'rgba(255,255,255,0.3)', btnText:'#ffffff' },
+  'Andet':      { bg:'#7A8088', text:'#ffffff', muted:'rgba(255,255,255,0.6)', btnBg:'rgba(255,255,255,0.15)', btnBorder:'rgba(255,255,255,0.3)', btnText:'#ffffff' },
+  'Generelt':   { bg:'#7A8088', text:'#ffffff', muted:'rgba(255,255,255,0.6)', btnBg:'rgba(255,255,255,0.15)', btnBorder:'rgba(255,255,255,0.3)', btnText:'#ffffff' },
 };
 
 function updateTopbarColor() {
@@ -2455,36 +2455,45 @@ function renderProjects() {
 }
 
 function renderProjectCard(p) {
-  const total = (p.subtasks||[]).length;
-  const done = ( p.subtasks||[] ).filter(s=>s.done).length;
-  const pct = total ? Math.round(done/total*100) : 0;
+  const total = (p.subtasks||[]).filter(s=>!s.skipped).length;
+  const done  = (p.subtasks||[]).filter(s=>s.done).length;
+  const pct   = total ? Math.round(done/total*100) : 0;
   const dlClass = getDeadlineClass(p.deadline);
-  const dlText = p.deadline ? formatDate(p.deadline) : 'Ingen deadline';
-  return `<div class="project-card" id="pcard-${p.id}">
-    <div class="project-header" onclick="toggleProjectExpand(${p.id})">
-      <span class="project-expand" id="arrow-${p.id}">▶</span>
-      <span class="project-color" style="background:${p.color};"></span>
-      <span class="project-name ${p.done?'':''}">
-        ${p.done?'<span style="text-decoration:line-through;color:var(--text-muted);">'+esc(p.title)+'</span>':esc(p.title)}
+  const dlText  = p.deadline ? formatDate(p.deadline) : 'Ingen deadline';
+
+  const darkBgs = ['#2A5DB0','#C15A1A','#265E3A','#6B3FA0','#1B8BB0','#7A8088','#0a2d6e','#004225','#5b3fa0','#9099a8'];
+  const tc  = (!p.done && darkBgs.some(c => p.color?.toLowerCase()===c.toLowerCase())) ? '#ffffff' : p.done ? 'var(--text-muted)' : '#1a1400';
+  const mc  = tc==='#ffffff' ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.5)';
+  const bs  = p.done ? '' : tc==='#ffffff'
+    ? 'background:rgba(255,255,255,0.18);color:#fff;border-color:rgba(255,255,255,0.35);'
+    : 'background:rgba(0,0,0,0.12);color:#1a1400;border-color:rgba(0,0,0,0.22);';
+  const bg  = p.done ? 'var(--surface)' : (p.color||'#7A8088');
+  const pf  = tc==='#ffffff' ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.55)';
+
+  return `<div class="project-card" id="pcard-${p.id}" style="background:${bg};border-color:${p.done?'var(--border)':bg};">
+    <div class="project-header" onclick="toggleProjectExpand(${p.id})" style="color:${tc};">
+      <span class="project-expand" id="arrow-${p.id}" style="color:${mc};">▶</span>
+      <span class="project-name" style="${p.done?'text-decoration:line-through;':''}">
+        ${esc(p.title)}
       </span>
       <div class="project-meta">
-        <span class="prio-badge ${p.prio}">${p.prio==='high'?'Høj':p.prio==='mid'?'Middel':'Lav'}</span>
-        ${total>0?`<div class="project-progress">
-          <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+        <span style="font-size:9px;font-weight:600;padding:2px 7px;border-radius:10px;text-transform:uppercase;letter-spacing:0.3px;background:rgba(0,0,0,0.18);color:${tc};">${p.prio==='high'?'Høj':p.prio==='mid'?'Middel':'Lav'}</span>
+        ${total>0?`<div class="project-progress" style="color:${mc};">
+          <div class="progress-bar" style="background:rgba(0,0,0,0.2);"><div class="progress-fill" style="width:${pct}%;background:${pf};"></div></div>
           <span>${done}/${total}</span>
         </div>`:''}
-        <span class="project-deadline ${dlClass}">⏰ ${dlText}</span>
-        <button class="btn secondary sm" onclick="event.stopPropagation();openProjectModal(${p.id})" style="font-size:10px;padding:3px 8px;">✎</button>
-        ${(p.cat==='Presse'||p.cat==='Nyhedsbrev'||p.cat==='Artikel') ? `<button class="btn secondary sm" onclick="event.stopPropagation();openArticleLinksModal(${p.id})" style="font-size:10px;padding:3px 8px;" title="Artikellinks">📰 ${(p.articleLinks||[]).length}</button>` : ''}
-        ${p.cat==='Nyhedsbrev' ? `<button class="btn secondary sm" onclick="event.stopPropagation();openNewsletterStatsModal(${p.id})" style="font-size:10px;padding:3px 8px;" title="Nyhedsbrev-statistik">📧</button>` : ''}
-        <button class="btn secondary sm" onclick="event.stopPropagation();toggleProjectDone(${p.id})" style="font-size:10px;padding:3px 8px;">${p.done?'↺ Genåbn':'✓ Færdig'}</button>
+        <span style="font-size:11px;font-weight:500;padding:3px 9px;border-radius:12px;white-space:nowrap;background:rgba(0,0,0,0.15);color:${tc};">⏰ ${dlText}</span>
+        <button class="btn secondary sm" onclick="event.stopPropagation();openProjectModal(${p.id})" style="font-size:10px;padding:3px 8px;${bs}">✎</button>
+        ${(p.cat==='Presse'||p.cat==='Nyhedsbrev'||p.cat==='Artikel') ? `<button class="btn secondary sm" onclick="event.stopPropagation();openArticleLinksModal(${p.id})" style="font-size:10px;padding:3px 8px;${bs}" title="Artikellinks">📰 ${(p.articleLinks||[]).length}</button>` : ''}
+        ${p.cat==='Nyhedsbrev' ? `<button class="btn secondary sm" onclick="event.stopPropagation();openNewsletterStatsModal(${p.id})" style="font-size:10px;padding:3px 8px;${bs}">📧</button>` : ''}
+        <button class="btn secondary sm" onclick="event.stopPropagation();toggleProjectDone(${p.id})" style="font-size:10px;padding:3px 8px;${bs}">${p.done?'↺ Genåbn':'✓ Færdig'}</button>
         <button class="btn sm danger" onclick="event.stopPropagation();deleteProject(${p.id})" style="font-size:10px;padding:3px 8px;">✕</button>
       </div>
     </div>
-    <div class="subtask-list" id="subtasks-${p.id}">
+    <div class="subtask-list" id="subtasks-${p.id}" style="background:rgba(0,0,0,0.1);">
       <div class="subtask-add-row">
-        <input class="subtask-quick" id="sq-${p.id}" placeholder="+ Tilføj delopgave, tryk Enter..." onkeydown="if(event.key==='Enter') quickAddSubtask(${p.id})">
-        <button class="btn sm" onclick="quickAddSubtask(${p.id})">Tilføj</button>
+        <input class="subtask-quick" id="sq-${p.id}" placeholder="+ Tilføj delopgave, tryk Enter..." onkeydown="if(event.key==='Enter') quickAddSubtask(${p.id})" style="color:${tc};">
+        <button class="btn sm" onclick="quickAddSubtask(${p.id})" style="${bs}">Tilføj</button>
       </div>
       ${(p.subtasks||[]).map(s=>renderSubtask(p.id, s)).join('')}
     </div>
@@ -2715,9 +2724,9 @@ function updateCatWidget() {
 
 // ── DASHBOARD ──
 const CAT_HEX = {
-  'SoMe':'#0a2d6e','Presse':'#F47920','Nyhedsbrev':'#c8960c',
-  'Artikel':'#004225','Møde':'#c8a97e','Admin':'#5b3fa0',
-  'Projekt':'#00AEEF','Andet':'#9099a8','Generelt':'#9099a8'
+  'SoMe':'#2A5DB0','Presse':'#C15A1A','Nyhedsbrev':'#C9A800',
+  'Artikel':'#265E3A','Møde':'#C09060','Admin':'#6B3FA0',
+  'Projekt':'#1B8BB0','Andet':'#7A8088','Generelt':'#7A8088'
 };
 
 function hexToRgba(hex, a) {
