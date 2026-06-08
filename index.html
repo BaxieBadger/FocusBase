@@ -714,7 +714,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   <div class="sidebar-logo">
     <div style="font-size:10px;color:var(--sidebar-text);opacity:0.6;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
     <h1>FocusBase</h1>
-    <span>Dit system · Din flow · v1.10</span>
+    <span>Dit system · Din flow · v1.11</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
@@ -1553,9 +1553,29 @@ function parseSupabaseData(r) {
   if(typeof obj !== 'object' || Array.isArray(obj)) return null;
   obj.id = r.id;
   if(!Array.isArray(obj.subtasks)) obj.subtasks = [];
+
+  // Try to parse structured task format from desc
+  if(obj.desc) {
+    const parsed = parseEmailTask(obj.desc);
+    if(parsed) {
+      obj.title = parsed.title;
+      if(parsed.deadline) obj.deadline = parsed.deadline;
+      if(parsed.subtasks.length > 0) {
+        obj.subtasks = parsed.subtasks.map((t, i) => ({
+          id: Date.now() + i,
+          title: t,
+          deadline: parsed.deadline || '',
+          time: '', note: '', done: false, doneAt: null,
+          skippable: false, skipped: false,
+        }));
+      }
+      obj.desc = ''; // clean up since we've parsed it
+    } else {
+      obj.desc = cleanEmailContent(obj.desc);
+    }
+  }
+
   if(!obj.title) obj.title = obj.subject || '(ingen titel)';
-  // Clean email content from signatures and quoted text
-  if(obj.desc) obj.desc = cleanEmailContent(obj.desc);
   if(!obj.prio)  obj.prio  = 'mid';
   if(!obj.cat)   obj.cat   = 'Generelt';
   if(!obj.color) obj.color = '#9099a8';
@@ -1766,7 +1786,44 @@ function previewSmartDate(inputId, previewId) {
   }
 }
 
-// ── EMAIL RENSNING ──
+// ── EMAIL OPGAVE-PARSER ──
+// Parses structured task format from email body:
+// O: Titel / Opgave: Titel
+// DO1: Delopgave 1 / D1: ...
+// DL: 15/6 / Deadline: 15/6
+function parseEmailTask(text) {
+  if(!text) return null;
+
+  // Strip HTML first
+  text = text.replace(/<[^>]*>/g, ' ');
+  text = text.replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g,'<').replace(/&gt;/g,'>');
+
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+
+  let title = null;
+  let deadline = '';
+  const subtasks = [];
+
+  for(const line of lines) {
+    // Stop at signature markers
+    if(/^De bedste hilsner|^Med venlig hilsen|^Mvh |Landsforeningen|^Fra:|^From:|^-{3,}/.test(line)) break;
+
+    // Opgave / O:
+    const titleMatch = line.match(/^(?:Opgave|O)\s*:\s*(.+)/i);
+    if(titleMatch) { title = titleMatch[1].trim(); continue; }
+
+    // DO1, DO2, D1, D2, Delopgave 1 etc.
+    const subMatch = line.match(/^(?:DO?\d+|Delopgave\s*\d*|D\d+)\s*:\s*(.+)/i);
+    if(subMatch) { subtasks.push(subMatch[1].trim()); continue; }
+
+    // Deadline / DL:
+    const dlMatch = line.match(/^(?:Deadline|DL)\s*:\s*(.+)/i);
+    if(dlMatch) { deadline = parseSmartDate(dlMatch[1].trim()); continue; }
+  }
+
+  if(!title) return null;
+  return { title, subtasks, deadline };
+}
 function cleanEmailContent(text) {
   if(!text) return '';
 
