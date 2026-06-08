@@ -714,7 +714,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   <div class="sidebar-logo">
     <div style="font-size:10px;color:var(--sidebar-text);opacity:0.6;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
     <h1>FocusBase</h1>
-    <span>Dit system · Din flow · v1.12</span>
+    <span>Dit system · Din flow · v1.13</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
@@ -2414,6 +2414,8 @@ function deleteProject(id) {
   state.projects = state.projects.filter(x=>x.id!==id);
   delete state.diaryEntries[id];
   save(); renderProjects(); renderDashboard(); updateBadge(); renderDiary();
+  // Delete from Supabase
+  if(sbReady) fetch(`${SUPABASE_URL}/rest/v1/projects?id=eq.${id}`, { method:'DELETE', headers:sbHeaders() }).catch(e=>console.warn('Supabase delete error:',e));
 }
 
 function toggleProjectDone(id) {
@@ -3539,7 +3541,12 @@ function toggleSomeCheck(id,idx,val){
   save();renderSome();renderDashboard();
 }
 function markPosted(id){const s=state.some.find(x=>x.id===id);if(s){s.status='posted';save();renderSome();renderDashboard();toast('Opslaget er markeret som postet ✓');}}
-function deleteSome(id){if(!confirm('Slet opslag?'))return;state.some=state.some.filter(x=>x.id!==id);save();renderSome();}
+function deleteSome(id){
+  if(!confirm('Slet opslag?'))return;
+  state.some=state.some.filter(x=>x.id!==id);
+  save();renderSome();
+  if(sbReady) fetch(`${SUPABASE_URL}/rest/v1/some_posts?id=eq.${id}`, { method:'DELETE', headers:sbHeaders() }).catch(e=>console.warn(e));
+}
 
 // ── NOTES ──
 function renderNotes(){
