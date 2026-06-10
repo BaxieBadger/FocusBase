@@ -714,7 +714,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   <div class="sidebar-logo">
     <div style="font-size:10px;color:var(--sidebar-text);opacity:0.6;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
     <h1>FocusBase</h1>
-    <span>Dit system · Din flow · v1.16</span>
+    <span>Dit system · Din flow · v1.19</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
@@ -796,6 +796,10 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
           <button class="view-toggle active" id="tf-7"  onclick="setAgendaDays(7,this)">1 uge</button>
           <button class="view-toggle" id="tf-14" onclick="setAgendaDays(14,this)">2 uger</button>
           <button class="view-toggle" id="tf-30" onclick="setAgendaDays(30,this)">1 måned</button>
+        </div>
+        <div style="display:flex;gap:4px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:3px;" id="agenda-detail-group">
+          <button class="view-toggle active" id="ad-tasks" onclick="setAgendaDetail('tasks',this)">Opgaver</button>
+          <button class="view-toggle" id="ad-all" onclick="setAgendaDetail('all',this)">Opgaver + Delopgaver</button>
         </div>
       </div>
 
@@ -990,6 +994,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
             <option>Admin</option>
             <option>Projekt</option>
             <option>Kommunikationsflow</option>
+            <option>Event</option>
             <option>Andet</option>
           </select>
         </div>
@@ -998,8 +1003,20 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
         <strong>Delopgaver tilføjes automatisk:</strong>
         <span id="template-preview-list"></span>
       </div>
+      <!-- EVENT FIELDS – only shown when cat = Event -->
+      <div id="event-fields" style="display:none;">
+        <hr class="divider">
+        <div style="font-size:11px;font-weight:600;color:#D4520A;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">🎪 Event-detaljer</div>
+        <div class="field"><label>Beskrivelse</label><textarea id="ev-desc" placeholder="Hvad sker der?" style="min-height:60px;"></textarea></div>
+        <div class="field"><label>Adresse / Sted</label><input type="text" id="ev-address" placeholder="fx Rådhuspladsen 1, København"></div>
+        <div class="row2">
+          <div class="field"><label>Start-tidspunkt</label><input type="time" id="ev-start" style="width:100%;"></div>
+          <div class="field"><label>Slut-tidspunkt</label><input type="time" id="ev-end" style="width:100%;"></div>
+        </div>
+        <div class="field"><label>Ansvarlig</label><input type="text" id="ev-responsible" placeholder="Navn på ansvarlig"></div>
+      </div>
       <div class="field">
-        <label>Endegyldig deadline</label>
+        <label>Dato / Deadline</label>
         <input type="text" id="p-deadline-smart" placeholder="fx 15/6 eller 3.8" style="width:100%;"
           oninput="previewSmartDate('p-deadline-smart','p-deadline-preview')"
           onkeydown="if(event.key==='Enter') document.getElementById('p-title').focus()">
@@ -2064,8 +2081,14 @@ function showTemplatePreview() {
     'SoMe':'#2A5DB0', 'Presse':'#C15A1A', 'Nyhedsbrev':'#C9A800',
     'Artikel':'#265E3A', 'Møde':'#C09060', 'Admin':'#6B3FA0',
     'Projekt':'#1B8BB0', 'Andet':'#7A8088',
-    'Kommunikationsflow':'#B04A8A'
-  };  if(catColorMap[cat] && !state.editingProjectId) {
+    'Kommunikationsflow':'#B04A8A', 'Event':'#D4520A'
+  };
+
+  // Show/hide event fields
+  const eventFields = document.getElementById('event-fields');
+  if(eventFields) eventFields.style.display = cat === 'Event' ? 'block' : 'none';
+
+  if(catColorMap[cat] && !state.editingProjectId) {
     state.selectedColor = catColorMap[cat];
     document.querySelectorAll('.color-dot').forEach(d => {
       d.classList.toggle('selected', d.dataset.color === state.selectedColor);
@@ -2100,8 +2123,16 @@ function applyTemplate(project) {
 }
 
 // ── DASHBOARD VIEW TOGGLE ──
-let dashView   = 'agenda'; // 'agenda' | 'kanban'
+let dashView   = 'agenda';
 let agendaDays = 30;
+let agendaDetail = 'tasks'; // 'tasks' | 'all'
+
+function setAgendaDetail(v, el) {
+  agendaDetail = v;
+  document.querySelectorAll('.view-toggle[id^="ad-"]').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  renderAgenda();
+}
 
 function setDashView(v, el) {
   dashView = v;
@@ -2149,29 +2180,84 @@ function renderAgenda() {
   const DA_DAYS   = ['Søndag','Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag'];
   const DA_MONTHS = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
 
-  // Group by day – each day shows projects that have subtasks due that day,
-  // plus the project's own deadline. Projects are shown faded as header,
-  // their subtasks are shown below.
+  if(agendaDetail === 'tasks') {
+    // TASKS-ONLY MODE: show each project on its nearest upcoming date
+    // (earliest subtask deadline, or project deadline if no subtasks)
+    const projectEvents = [];
+    state.projects.filter(p=>!p.done).forEach(p => {
+      const subtaskDates = (p.subtasks||[]).filter(s=>!s.done&&!s.skipped&&s.deadline).map(s=>s.deadline).sort();
+      const nearestDate = subtaskDates[0] || p.deadline;
+      if(!nearestDate) return;
+      const d = new Date(nearestDate+'T12:00:00');
+      if(d < today) return; // skip past
+      const cutoff = new Date(today); cutoff.setDate(today.getDate()+agendaDays);
+      if(d > cutoff) return;
+      projectEvents.push({ p, date: nearestDate, d });
+    });
+    projectEvents.sort((a,b)=>a.date.localeCompare(b.date));
+
+    // Group by date
+    const byDate = {};
+    projectEvents.forEach(({p, date}) => {
+      if(!byDate[date]) byDate[date] = [];
+      byDate[date].push(p);
+    });
+
+    if(!Object.keys(byDate).length) {
+      el.innerHTML = `<div class="empty"><div class="emoji">🎉</div>Ingen kommende opgaver de næste ${agendaDays} dage</div>`;
+      return;
+    }
+
+    const darkBgsSet = new Set(['#2A5DB0','#C15A1A','#265E3A','#6B3FA0','#1B8BB0','#7A8088','#B04A8A','#D4520A','#0a2d6e','#004225','#5b3fa0','#9099a8']);
+
+    el.innerHTML = Object.entries(byDate).sort(([a],[b])=>a.localeCompare(b)).map(([date, projects]) => {
+      const d = new Date(date+'T12:00:00');
+      const isToday    = d.toDateString() === new Date().toDateString();
+      const isTomorrow = d.toDateString() === new Date(Date.now()+86400000).toDateString();
+      const label = isToday ? 'I dag' : isTomorrow ? 'I morgen'
+        : `${DA_DAYS[d.getDay()]} ${d.getDate()}. ${DA_MONTHS[d.getMonth()]}`;
+      return `<div class="agenda-section">
+        <div class="agenda-date-header ${isToday?'today-header':''}">${label}</div>
+        ${projects.map(p => {
+          const tc = darkBgsSet.has(p.color||'') ? '#ffffff' : '#1a1400';
+          const mc = tc==='#ffffff' ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.5)';
+          const total = (p.subtasks||[]).filter(s=>!s.skipped).length;
+          const done  = (p.subtasks||[]).filter(s=>s.done).length;
+          const pill  = progressPill(total, done);
+          // Show event details if applicable
+          const eventInfo = p.cat==='Event' ? `
+            ${p.evStart||p.evEnd?`<span style="font-size:10px;color:${mc};">🕐 ${p.evStart||''}${p.evEnd?' – '+p.evEnd:''}</span>`:''}
+            ${p.evAddress?`<span style="font-size:10px;color:${mc};">📍 ${esc(p.evAddress)}</span>`:''}
+            ${p.evResponsible?`<span style="font-size:10px;color:${mc};">👤 ${esc(p.evResponsible)}</span>`:''}` : '';
+          return `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--radius);background:${p.color};color:${tc};margin-bottom:5px;">
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:600;">${esc(p.title)}</div>
+              <div style="display:flex;gap:8px;margin-top:3px;flex-wrap:wrap;">${eventInfo}</div>
+            </div>
+            ${pill}
+            <span style="font-size:9px;font-weight:600;padding:2px 7px;border-radius:10px;background:rgba(0,0,0,0.15);color:${tc};">${esc(p.cat)}</span>
+            <button onclick="toggleProjectDone(${p.id})" style="background:rgba(255,255,255,0.2);border:none;color:${tc};cursor:pointer;border-radius:4px;padding:3px 8px;font-size:11px;">✓</button>
+          </div>`;
+        }).join('')}
+      </div>`;
+    }).join('');
+    return;
+  }
+
+  // ALL MODE: show projects + subtasks grouped by day
   const dayBlocks = days.map(d => {
     const ds = d.toISOString().split('T')[0];
-
-    // Find projects that have at least one subtask due this day OR their own deadline
     const projectsThisDay = new Map();
-
-    // Project deadline itself
     state.projects.filter(p => !p.done && p.deadline === ds).forEach(p => {
       if(!projectsThisDay.has(p.id)) projectsThisDay.set(p.id, { proj:p, subtasks:[], showDeadline:true });
       else projectsThisDay.get(p.id).showDeadline = true;
     });
-
-    // Subtasks due this day
     state.projects.filter(p => !p.done).forEach(p => {
-      ( p.subtasks||[] ).filter(s => !s.skipped && s.deadline === ds).forEach(s => {
+      (p.subtasks||[]).filter(s => !s.skipped && s.deadline === ds).forEach(s => {
         if(!projectsThisDay.has(p.id)) projectsThisDay.set(p.id, { proj:p, subtasks:[], showDeadline: p.deadline === ds });
         projectsThisDay.get(p.id).subtasks.push(s);
       });
     });
-
     return { date:d, ds, groups:[...projectsThisDay.values()] };
   });
 
@@ -2191,29 +2277,25 @@ function renderAgenda() {
     return `<div class="agenda-section">
       <div class="agenda-date-header ${isToday?'today-header':''}">${label}</div>
       ${groups.map(({ proj:p, subtasks, showDeadline }) => {
-        const total = ( p.subtasks||[] ).filter(s=>!s.skipped).length;
-        const done  = ( p.subtasks||[] ).filter(s=>s.done).length;
+        const total = (p.subtasks||[]).filter(s=>!s.skipped).length;
+        const done  = (p.subtasks||[]).filter(s=>s.done).length;
         const pill  = progressPill(total, done);
         const dlClass = getDeadlineClass(p.deadline);
-        const darkBgs = ['#2A5DB0','#C15A1A','#265E3A','#6B3FA0','#1B8BB0','#7A8088','#0a2d6e','#004225','#5b3fa0','#9099a8'];
-        const tc = darkBgs.some(c=>(p.color||'').toLowerCase()===c.toLowerCase()) ? '#ffffff' : '#1a1400';
+        const darkBgsSet2 = new Set(['#2A5DB0','#C15A1A','#265E3A','#6B3FA0','#1B8BB0','#7A8088','#B04A8A','#D4520A','#0a2d6e','#004225','#5b3fa0','#9099a8']);
+        const tc = darkBgsSet2.has(p.color||'') ? '#ffffff' : '#1a1400';
         const mc = tc==='#ffffff' ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.45)';
         const subtaskBg = tc==='#ffffff' ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.35)';
         return `<div class="agenda-project-group">
-          <!-- Project row – fully colored -->
           <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:var(--radius);background:${p.color};margin-bottom:3px;">
             <span style="font-size:11px;font-weight:600;color:${tc};flex:1;">📁 ${esc(p.title)}</span>
             ${pill}
             ${showDeadline ? `<span style="font-size:10px;font-weight:500;padding:2px 7px;border-radius:10px;background:rgba(0,0,0,0.15);color:${tc};white-space:nowrap;">⏰ ${formatDate(p.deadline)}</span>` : ''}
           </div>
-          <!-- Subtask rows -->
           ${subtasks.map(s => `
             <div class="agenda-subtask-row ${s.done?'done-item':''}" style="background:${subtaskBg};border-color:${p.color};margin-left:10px;">
               <div class="agenda-color-bar" style="background:${p.color};width:3px;height:14px;border-radius:2px;flex-shrink:0;"></div>
               <div class="agenda-check ${s.done?'done':''}" onclick="toggleSubtask(${p.id},${s.id})" style="${s.done?'':'border-color:'+p.color+';'}">${s.done?'✓':''}</div>
-              <div style="flex:1;">
-                <div style="font-size:12px;font-weight:500;${s.done?'text-decoration:line-through;color:var(--text-muted);':''}">${esc(s.title)}</div>
-              </div>
+              <div style="flex:1;"><div style="font-size:12px;font-weight:500;${s.done?'text-decoration:line-through;color:var(--text-muted);':''}">${esc(s.title)}</div></div>
               ${s.time ? `<div style="font-size:10px;color:${p.color};font-weight:500;">${s.time}</div>` : ''}
               <span class="agenda-type subtask" style="background:${p.color};color:${tc};opacity:0.85;">Delopgave</span>
             </div>`).join('')}
@@ -2233,7 +2315,7 @@ function renderKanban() {
   const board = document.getElementById('kanban-board');
 
   // Collect all categories in use + fixed ones
-  const fixedCats = ['SoMe','Presse','Nyhedsbrev','Artikel','Møde','Admin','Projekt','Kommunikationsflow','Andet'];
+  const fixedCats = ['SoMe','Presse','Nyhedsbrev','Artikel','Møde','Admin','Projekt','Kommunikationsflow','Event','Andet'];
   const usedCats  = [...new Set(state.projects.map(p => p.cat))];
   const allCats   = [...new Set([...fixedCats, ...usedCats])];
 
@@ -2416,6 +2498,7 @@ const CAT_COLORS = {
   'Andet':      { bg:'#7A8088', text:'#ffffff', muted:'rgba(255,255,255,0.6)', btnBg:'rgba(255,255,255,0.15)', btnBorder:'rgba(255,255,255,0.3)', btnText:'#ffffff' },
   'Generelt':   { bg:'#7A8088', text:'#ffffff', muted:'rgba(255,255,255,0.6)', btnBg:'rgba(255,255,255,0.15)', btnBorder:'rgba(255,255,255,0.3)', btnText:'#ffffff' },
   'Kommunikationsflow': { bg:'#B04A8A', text:'#ffffff', muted:'rgba(255,255,255,0.6)', btnBg:'rgba(255,255,255,0.15)', btnBorder:'rgba(255,255,255,0.3)', btnText:'#ffffff' },
+  'Event':              { bg:'#D4520A', text:'#ffffff', muted:'rgba(255,255,255,0.6)', btnBg:'rgba(255,255,255,0.15)', btnBorder:'rgba(255,255,255,0.3)', btnText:'#ffffff' },
 };
 
 function updateTopbarColor() {
@@ -2473,11 +2556,11 @@ function openProjectModal(id=null) {
   const p = id ? state.projects.find(x=>x.id===id) : null;
   document.getElementById('modal-project-title').textContent = p ? 'Rediger opgave' : 'Ny opgave';
   document.getElementById('p-title').value = p?.title||'';
-  document.getElementById('p-desc').value = p?.desc||'';
-  document.getElementById('p-prio').value = p?.prio||'mid';
-  document.getElementById('p-cat').value = p?.cat||'Generelt';
+  document.getElementById('p-desc').value  = p?.desc||'';
+  document.getElementById('p-prio').value  = p?.prio||'mid';
+  document.getElementById('p-cat').value   = p?.cat||'Generelt';
   document.getElementById('p-deadline').value = p?.deadline||'';
-  // Populate smart date display if editing
+  // Smart date
   const smartInp = document.getElementById('p-deadline-smart');
   const smartPrev = document.getElementById('p-deadline-preview');
   if(p?.deadline) {
@@ -2485,9 +2568,16 @@ function openProjectModal(id=null) {
     smartInp.value = `${d.getDate()}/${d.getMonth()+1}`;
     smartPrev.textContent = `→ ${d.getDate()}. ${DA_MONTHS_SHORT[d.getMonth()]} ${d.getFullYear()}`;
     smartPrev.style.color = 'var(--accent2)';
-  } else {
-    smartInp.value = '';
-    smartPrev.textContent = '';
+  } else { smartInp.value=''; smartPrev.textContent=''; }
+  // Event fields
+  const evFields = document.getElementById('event-fields');
+  if(evFields) evFields.style.display = p?.cat==='Event' ? 'block' : 'none';
+  if(p?.cat==='Event') {
+    document.getElementById('ev-desc').value        = p.evDesc||'';
+    document.getElementById('ev-address').value     = p.evAddress||'';
+    document.getElementById('ev-start').value       = p.evStart||'';
+    document.getElementById('ev-end').value         = p.evEnd||'';
+    document.getElementById('ev-responsible').value = p.evResponsible||'';
   }
   document.getElementById('template-preview').classList.remove('visible');
   state.selectedColor = p?.color||'#6c63ff';
@@ -2498,26 +2588,47 @@ function openProjectModal(id=null) {
   setTimeout(()=>document.getElementById('p-title').focus(),80);
 }
 
+function getEventFields() {
+  return {
+    evDesc:        document.getElementById('ev-desc')?.value || '',
+    evAddress:     document.getElementById('ev-address')?.value || '',
+    evStart:       document.getElementById('ev-start')?.value || '',
+    evEnd:         document.getElementById('ev-end')?.value || '',
+    evResponsible: document.getElementById('ev-responsible')?.value || '',
+  };
+}
+
 function saveProject() {
   const title = document.getElementById('p-title').value.trim();
   if(!title) { alert('Giv opgaven et navn'); return; }
+  const cat = document.getElementById('p-cat').value;
+  const isEvent = cat === 'Event';
   if(state.editingProjectId) {
     const p = state.projects.find(x=>x.id===state.editingProjectId);
-    if(p) { p.title=title; p.desc=document.getElementById('p-desc').value; p.prio=document.getElementById('p-prio').value; p.cat=document.getElementById('p-cat').value; p.deadline=document.getElementById('p-deadline').value; p.color=state.selectedColor; }
-    save(); closeModal('modal-project'); renderProjects(); renderDashboard(); updateBadge(); renderDiary();  } else {
-    const newProj = { id:state.nextId++, title, desc:document.getElementById('p-desc').value, prio:document.getElementById('p-prio').value, cat:document.getElementById('p-cat').value, deadline:document.getElementById('p-deadline').value, color:state.selectedColor, done:false, subtasks:[], createdAt:new Date().toISOString() };
+    if(p) {
+      p.title=title; p.desc=document.getElementById('p-desc').value;
+      p.prio=document.getElementById('p-prio').value; p.cat=cat;
+      p.deadline=document.getElementById('p-deadline').value; p.color=state.selectedColor;
+      if(isEvent) Object.assign(p, getEventFields());
+    }
+    save(); closeModal('modal-project'); renderProjects(); renderDashboard(); updateBadge(); renderDiary();
+  } else {
+    const newProj = {
+      id:state.nextId++, title, desc:document.getElementById('p-desc').value,
+      prio:document.getElementById('p-prio').value, cat,
+      deadline:document.getElementById('p-deadline').value, color:state.selectedColor,
+      done:false, subtasks:[], createdAt:new Date().toISOString(),
+      ...(isEvent ? getEventFields() : {}),
+    };
     applyTemplate(newProj);
     closeModal('modal-project');
-    // Apply project deadline to all subtasks automatically, evalueringer get +1/+7 days
     if(newProj.subtasks.length > 0 && newProj.deadline) {
-      const base = newProj.deadline;
-      const evalDate1 = offsetDate(base, 1);
-      const evalDate7 = offsetDate(base, 7);
+      const base=newProj.deadline, evalDate1=offsetDate(base,1), evalDate7=offsetDate(base,7);
       newProj.subtasks.forEach(s => {
-        if(s.evalOffset === 1)      s.deadline = evalDate1;
-        else if(s.evalOffset === 7) s.deadline = evalDate7;
-        else if(isEvalSubtask(s.title) && !s.evalOffset) s.deadline = evalDate1;
-        else                        s.deadline = base;
+        if(s.evalOffset===1) s.deadline=evalDate1;
+        else if(s.evalOffset===7) s.deadline=evalDate7;
+        else if(isEvalSubtask(s.title)&&!s.evalOffset) s.deadline=evalDate1;
+        else s.deadline=base;
       });
     }
     finaliseProject(newProj);
@@ -2594,6 +2705,11 @@ function renderProjectCard(p) {
       <span class="project-name" style="${p.done?'text-decoration:line-through;':''}">
         ${esc(p.title)}${p.flowName ? ` <span style="font-size:9px;font-weight:600;padding:1px 6px;border-radius:8px;background:rgba(176,74,138,0.2);color:#B04A8A;margin-left:4px;">📣 ${esc(p.flowName)}</span>` : ''}
       </span>
+      ${p.cat==='Event' ? `<div style="font-size:10px;color:${mc};margin-top:2px;display:flex;gap:10px;flex-wrap:wrap;">
+        ${p.evStart||p.evEnd ? `<span>🕐 ${p.evStart||''}${p.evEnd?' – '+p.evEnd:''}</span>` : ''}
+        ${p.evAddress ? `<span>📍 ${esc(p.evAddress)}</span>` : ''}
+        ${p.evResponsible ? `<span>👤 ${esc(p.evResponsible)}</span>` : ''}
+      </div>` : ''}
       <div class="project-meta">
         <span style="font-size:9px;font-weight:600;padding:2px 7px;border-radius:10px;text-transform:uppercase;letter-spacing:0.3px;background:rgba(0,0,0,0.18);color:${tc};">${p.prio==='high'?'Høj':p.prio==='mid'?'Middel':'Lav'}</span>
         ${total>0?`<div class="project-progress" style="color:${mc};">
@@ -2610,9 +2726,15 @@ function renderProjectCard(p) {
       </div>
     </div>
     <div class="subtask-list" id="subtasks-${p.id}" style="background:rgba(0,0,0,0.1);">
-      <div class="subtask-add-row">
-        <input class="subtask-quick" id="sq-${p.id}" placeholder="+ Tilføj delopgave, tryk Enter..." onkeydown="if(event.key==='Enter') quickAddSubtask(${p.id})" style="color:${tc};">
-        <button class="btn sm" onclick="quickAddSubtask(${p.id})" style="${bs}">Tilføj</button>
+      <div class="subtask-add-row" style="background:rgba(0,0,0,0.12);gap:6px;">
+        <input class="subtask-quick" id="sq-${p.id}" placeholder="+ Tilføj delopgave..." onkeydown="if(event.key==='Enter') quickAddSubtask(${p.id})"
+          style="color:${tc};background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.35);border-radius:var(--radius);padding:5px 8px;flex:1;outline:none;font-family:var(--font);font-size:12px;">
+        <input type="text" id="sq-date-${p.id}" placeholder="dato" onkeydown="if(event.key==='Enter') quickAddSubtask(${p.id})"
+          style="width:60px;background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.35);border-radius:var(--radius);padding:5px 8px;color:${tc};font-family:var(--font);font-size:11px;text-align:center;outline:none;" title="Deadline fx 15/6">
+        <button onclick="quickAddSubtask(${p.id})"
+          style="background:rgba(255,255,255,0.25);border:1px solid rgba(255,255,255,0.4);color:${tc};font-family:var(--font);font-size:11px;font-weight:600;padding:5px 10px;border-radius:var(--radius);cursor:pointer;white-space:nowrap;">Tilføj</button>
+        <button onclick="openSubtaskBuilder(${p.id})"
+          style="background:rgba(255,255,255,0.25);border:1px solid rgba(255,255,255,0.4);color:${tc};font-family:var(--font);font-size:11px;padding:5px 10px;border-radius:var(--radius);cursor:pointer;white-space:nowrap;" title="Åbn bibliotek">⊕</button>
       </div>
       ${(p.subtasks||[]).map(s=>renderSubtask(p.id, s)).join('')}
     </div>
@@ -2673,15 +2795,17 @@ function unskipSubtask(projId, stId) {
 }
 
 function quickAddSubtask(projId) {
-  const inp = document.getElementById('sq-'+projId);
+  const inp  = document.getElementById('sq-'+projId);
+  const dateInp = document.getElementById('sq-date-'+projId);
   const title = inp?.value.trim();
   if(!title) return;
   const p = state.projects.find(x=>x.id===projId);
   if(!p) return;
-  p.subtasks.push({ id:state.nextId++, title, deadline:'', time:'', note:'', done:false, doneAt:null });
+  const deadline = dateInp?.value ? parseSmartDate(dateInp.value) || '' : '';
+  p.subtasks.push({ id:state.nextId++, title, deadline, time:'', note:'', done:false, doneAt:null });
   inp.value='';
+  if(dateInp) dateInp.value='';
   save(); renderProjects(); renderDashboard();
-  // Keep subtask list open
   setTimeout(()=>{ const list=document.getElementById('subtasks-'+projId); const arrow=document.getElementById('arrow-'+projId); if(list){list.classList.add('open');} if(arrow){arrow.classList.add('open');} const i=document.getElementById('sq-'+projId); if(i)i.focus(); },50);
 }
 
@@ -2847,7 +2971,7 @@ const CAT_HEX = {
   'SoMe':'#2A5DB0','Presse':'#C15A1A','Nyhedsbrev':'#C9A800',
   'Artikel':'#265E3A','Møde':'#C09060','Admin':'#6B3FA0',
   'Projekt':'#1B8BB0','Andet':'#7A8088','Generelt':'#7A8088',
-  'Kommunikationsflow':'#B04A8A'
+  'Kommunikationsflow':'#B04A8A','Event':'#D4520A'
 };
 
 function hexToRgba(hex, a) {
@@ -3520,6 +3644,8 @@ function moveSbItem(idx, dir) {
   renderSbSelected();
 }
 
+let dragSbIdx = null;
+
 function renderSbSelected() {
   const el = document.getElementById('sb-selected-list');
   if(!sbItems.length) {
@@ -3527,21 +3653,27 @@ function renderSbSelected() {
     return;
   }
   el.innerHTML = sbItems.map((s,i) => `
-    <div style="display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:var(--radius);
-      background:${s.color};color:#fff;margin-bottom:6px;">
-      <span style="font-size:16px;">${s.emoji}</span>
+    <div draggable="true"
+      ondragstart="dragSbIdx=${i};this.style.opacity='0.5';"
+      ondragend="this.style.opacity='1';"
+      ondragover="event.preventDefault();"
+      ondrop="event.preventDefault();if(dragSbIdx!==null&&dragSbIdx!==${i}){const tmp=sbItems.splice(dragSbIdx,1)[0];sbItems.splice(${i},0,tmp);dragSbIdx=null;renderSbSelected();}"
+      style="display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:var(--radius);
+      background:${s.color};color:#fff;margin-bottom:6px;cursor:grab;user-select:none;">
+      <span style="font-size:16px;cursor:grab;">⠿</span>
+      <span style="font-size:15px;">${s.emoji||'◻'}</span>
       <input type="text" value="${esc(s.title)}"
         onchange="sbItems[${i}].title=this.value"
         style="flex:1;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);
         color:#fff;font-size:12px;padding:4px 8px;border-radius:4px;outline:none;font-family:var(--font);">
-      <input type="text" placeholder="dato" value="${s.deadline?s.deadline.substring(5).split('-').reverse().join('/'):''}"
+      <input type="text" placeholder="dato"
+        value="${s.deadline ? (()=>{const d=new Date(s.deadline+'T12:00:00');return d.getDate()+'/'+(d.getMonth()+1);})() : ''}"
         onchange="sbItems[${i}].deadline=parseSmartDate(this.value)||''"
-        style="width:60px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);
+        style="width:58px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);
         color:#fff;font-size:10px;padding:3px 6px;border-radius:4px;outline:none;text-align:center;font-family:var(--font);"
-        title="Deadline (fx 15/6)">
-      <button onclick="moveSbItem(${i},-1)" ${i===0?'disabled':''} style="background:rgba(255,255,255,0.2);border:none;color:#fff;cursor:pointer;border-radius:4px;padding:3px 6px;font-size:11px;">↑</button>
-      <button onclick="moveSbItem(${i},1)"  ${i===sbItems.length-1?'disabled':''} style="background:rgba(255,255,255,0.2);border:none;color:#fff;cursor:pointer;border-radius:4px;padding:3px 6px;font-size:11px;">↓</button>
-      <button onclick="removeSbItem(${i})" style="background:rgba(255,255,255,0.2);border:none;color:#fff;cursor:pointer;border-radius:4px;padding:3px 6px;font-size:11px;">✕</button>
+        title="Deadline fx 15/6">
+      <button onclick="removeSbItem(${i})"
+        style="background:rgba(255,255,255,0.2);border:none;color:#fff;cursor:pointer;border-radius:4px;padding:3px 8px;font-size:12px;">✕</button>
     </div>`).join('');
 }
 
@@ -3589,6 +3721,7 @@ const FLOW_TYPES = [
   { cat:'Admin',      label:'Admin-opgave',     color:'#6B3FA0', emoji:'⚙️' },
   { cat:'Projekt',    label:'Projekt',          color:'#1B8BB0', emoji:'◫'  },
   { cat:'Andet',      label:'Anden opgave',     color:'#7A8088', emoji:'📌' },
+  { cat:'Event',      label:'Event',             color:'#D4520A', emoji:'🎪' },
 ];
 
 let flowItems = [];
@@ -4398,6 +4531,19 @@ function checkDeadlines(){
   state.projects.filter(p=>!p.done&&p.deadline).forEach(p=>{
     if(p.deadline===today) toast(`⚑ Deadline i dag: ${p.title}`);
     if(p.deadline===tomorrow) toast(`⏰ Deadline i morgen: ${p.title}`);
+    // Auto-prompt to mark Event done when date has passed
+    if(p.cat==='Event' && p.deadline < today) {
+      const key = `event-done-prompt-${p.id}`;
+      if(!sessionStorage.getItem(key)) {
+        sessionStorage.setItem(key,'1');
+        setTimeout(()=>{
+          if(confirm(`🎪 "${p.title}" er nu forbi.\n\nVil du markere eventet som afsluttet?`)) {
+            p.done=true; save(); renderProjects(); renderDashboard(); updateBadge();
+            toast(`✓ Event "${p.title}" markeret som afsluttet`);
+          }
+        }, 1500);
+      }
+    }
   });
 }
 setTimeout(checkDeadlines,2000);
