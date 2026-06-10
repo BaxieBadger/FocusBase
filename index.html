@@ -714,7 +714,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   <div class="sidebar-logo">
     <div style="font-size:10px;color:var(--sidebar-text);opacity:0.6;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
     <h1>FocusBase</h1>
-    <span>Dit system · Din flow · v1.19</span>
+    <span>Dit system · Din flow · v1.20</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
@@ -1861,6 +1861,37 @@ function nav(id) {
   updateBadge();
 }
 
+// ── CENTRAL KONTRAST-FUNKTION ──
+// Beregner luminans og returnerer altid '#ffffff' eller '#1a1400'
+function getContrastText(hex) {
+  if(!hex || hex.startsWith('var(')) return '#1a1400';
+  const h = hex.replace('#','');
+  if(h.length < 6) return '#1a1400';
+  const r=parseInt(h.substring(0,2),16)/255;
+  const g=parseInt(h.substring(2,4),16)/255;
+  const b=parseInt(h.substring(4,6),16)/255;
+  const lum = 0.2126*r + 0.7152*g + 0.0722*b;
+  return lum > 0.35 ? '#1a1400' : '#ffffff';
+}
+function getMuted(hex) {
+  const tc = getContrastText(hex);
+  return tc === '#ffffff' ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.50)';
+}
+function getBtnStyle(hex) {
+  const tc = getContrastText(hex);
+  return tc === '#ffffff'
+    ? 'background:rgba(255,255,255,0.18);color:#fff;border:1px solid rgba(255,255,255,0.35);'
+    : 'background:rgba(0,0,0,0.10);color:#1a1400;border:1px solid rgba(0,0,0,0.20);';
+}
+
+// ── NÆSTE DELOPGAVE ──
+function getNextSubtaskLabel(p) {
+  if(!p || p.done) return '';
+  const next = (p.subtasks||[]).find(s=>!s.done&&!s.skipped);
+  if(!next) return '';
+  return next.title;
+}
+
 // ── SMART DATO INPUT ──
 // Accepterer: "15/6", "15-6", "15.6", "15 6", "156" → YYYY-MM-DD
 function parseSmartDate(str) {
@@ -2219,11 +2250,12 @@ function renderAgenda() {
       return `<div class="agenda-section">
         <div class="agenda-date-header ${isToday?'today-header':''}">${label}</div>
         ${projects.map(p => {
-          const tc = darkBgsSet.has(p.color||'') ? '#ffffff' : '#1a1400';
-          const mc = tc==='#ffffff' ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.5)';
+          const tc = getContrastText(p.color||'#7A8088');
+          const mc = getMuted(p.color||'#7A8088');
           const total = (p.subtasks||[]).filter(s=>!s.skipped).length;
           const done  = (p.subtasks||[]).filter(s=>s.done).length;
           const pill  = progressPill(total, done);
+          const nextSub = getNextSubtaskLabel(p);
           // Show event details if applicable
           const eventInfo = p.cat==='Event' ? `
             ${p.evStart||p.evEnd?`<span style="font-size:10px;color:${mc};">🕐 ${p.evStart||''}${p.evEnd?' – '+p.evEnd:''}</span>`:''}
@@ -2231,12 +2263,12 @@ function renderAgenda() {
             ${p.evResponsible?`<span style="font-size:10px;color:${mc};">👤 ${esc(p.evResponsible)}</span>`:''}` : '';
           return `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--radius);background:${p.color};color:${tc};margin-bottom:5px;">
             <div style="flex:1;">
-              <div style="font-size:13px;font-weight:600;">${esc(p.title)}</div>
+              <div style="font-size:13px;font-weight:600;">${esc(p.title)}${nextSub?`<span style="font-size:10px;font-weight:400;color:${mc};margin-left:8px;">→ ${esc(nextSub)}</span>`:''}</div>
               <div style="display:flex;gap:8px;margin-top:3px;flex-wrap:wrap;">${eventInfo}</div>
             </div>
             ${pill}
             <span style="font-size:9px;font-weight:600;padding:2px 7px;border-radius:10px;background:rgba(0,0,0,0.15);color:${tc};">${esc(p.cat)}</span>
-            <button onclick="toggleProjectDone(${p.id})" style="background:rgba(255,255,255,0.2);border:none;color:${tc};cursor:pointer;border-radius:4px;padding:3px 8px;font-size:11px;">✓</button>
+            <button onclick="toggleProjectDone(${p.id})" style="${getBtnStyle(p.color)}border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;">✓</button>
           </div>`;
         }).join('')}
       </div>`;
@@ -2281,13 +2313,13 @@ function renderAgenda() {
         const done  = (p.subtasks||[]).filter(s=>s.done).length;
         const pill  = progressPill(total, done);
         const dlClass = getDeadlineClass(p.deadline);
-        const darkBgsSet2 = new Set(['#2A5DB0','#C15A1A','#265E3A','#6B3FA0','#1B8BB0','#7A8088','#B04A8A','#D4520A','#0a2d6e','#004225','#5b3fa0','#9099a8']);
-        const tc = darkBgsSet2.has(p.color||'') ? '#ffffff' : '#1a1400';
-        const mc = tc==='#ffffff' ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.45)';
+        const tc = getContrastText(p.color||'#7A8088');
+        const mc = getMuted(p.color||'#7A8088');
         const subtaskBg = tc==='#ffffff' ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.35)';
+        const nextSub = getNextSubtaskLabel(p);
         return `<div class="agenda-project-group">
           <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:var(--radius);background:${p.color};margin-bottom:3px;">
-            <span style="font-size:11px;font-weight:600;color:${tc};flex:1;">📁 ${esc(p.title)}</span>
+            <span style="font-size:11px;font-weight:600;color:${tc};flex:1;">📁 ${esc(p.title)}${nextSub?`<span style="font-size:10px;font-weight:400;color:${mc};margin-left:8px;">→ ${esc(nextSub)}</span>`:''}</span>
             ${pill}
             ${showDeadline ? `<span style="font-size:10px;font-weight:500;padding:2px 7px;border-radius:10px;background:rgba(0,0,0,0.15);color:${tc};white-space:nowrap;">⏰ ${formatDate(p.deadline)}</span>` : ''}
           </div>
@@ -2622,6 +2654,15 @@ function saveProject() {
     };
     applyTemplate(newProj);
     closeModal('modal-project');
+    // If template gave subtasks, ask: use template or build custom?
+    if(newProj.subtasks.length > 0) {
+      if(!confirm(`Brug standard-template for ${cat}?\n\nOK = Brug template med ${newProj.subtasks.length} delopgaver\nAnnuller = Byg selv i biblioteket`)) {
+        newProj.subtasks = [];
+        finaliseProject(newProj);
+        setTimeout(()=>openSubtaskBuilder(newProj.id), 200);
+        return;
+      }
+    }
     if(newProj.subtasks.length > 0 && newProj.deadline) {
       const base=newProj.deadline, evalDate1=offsetDate(base,1), evalDate7=offsetDate(base,7);
       newProj.subtasks.forEach(s => {
@@ -2688,22 +2729,19 @@ function renderProjectCard(p) {
   const pct   = total ? Math.round(done/total*100) : 0;
   const dlClass = getDeadlineClass(p.deadline);
   const dlText  = p.deadline ? formatDate(p.deadline) : 'Ingen deadline';
-
-  const darkBgs = ['#2A5DB0','#C15A1A','#265E3A','#6B3FA0','#1B8BB0','#7A8088','#0a2d6e','#004225','#5b3fa0','#9099a8'];
-  const lightBgs = ['#C9A800','#C09060']; // Nyhedsbrev gul og Møde sand → mørk tekst
-  const tc  = (!p.done && darkBgs.some(c => p.color?.toLowerCase()===c.toLowerCase())) ? '#ffffff' : p.done ? 'var(--text-muted)' : '#1a1400';
-  const mc  = tc==='#ffffff' ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.5)';
-  const bs  = p.done ? '' : tc==='#ffffff'
-    ? 'background:rgba(255,255,255,0.18);color:#fff;border-color:rgba(255,255,255,0.35);'
-    : 'background:rgba(0,0,0,0.12);color:#1a1400;border-color:rgba(0,0,0,0.22);';
   const bg  = p.done ? 'var(--surface)' : (p.color||'#7A8088');
+  const tc  = p.done ? 'var(--text-muted)' : getContrastText(bg);
+  const mc  = p.done ? 'var(--text-dim)'   : getMuted(bg);
+  const bs  = p.done ? '' : getBtnStyle(bg);
   const pf  = tc==='#ffffff' ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.55)';
+  const nextSub = getNextSubtaskLabel(p);
 
   return `<div class="project-card" id="pcard-${p.id}" style="background:${bg};border-color:${p.done?'var(--border)':bg};">
     <div class="project-header" onclick="toggleProjectExpand(${p.id})" style="color:${tc};">
       <span class="project-expand" id="arrow-${p.id}" style="color:${mc};">▶</span>
       <span class="project-name" style="${p.done?'text-decoration:line-through;':''}">
         ${esc(p.title)}${p.flowName ? ` <span style="font-size:9px;font-weight:600;padding:1px 6px;border-radius:8px;background:rgba(176,74,138,0.2);color:#B04A8A;margin-left:4px;">📣 ${esc(p.flowName)}</span>` : ''}
+        ${nextSub&&!p.done ? `<span style="font-size:10px;color:${mc};font-weight:400;margin-left:8px;">→ ${esc(nextSub)}</span>` : ''}
       </span>
       ${p.cat==='Event' ? `<div style="font-size:10px;color:${mc};margin-top:2px;display:flex;gap:10px;flex-wrap:wrap;">
         ${p.evStart||p.evEnd ? `<span>🕐 ${p.evStart||''}${p.evEnd?' – '+p.evEnd:''}</span>` : ''}
@@ -2732,9 +2770,9 @@ function renderProjectCard(p) {
         <input type="text" id="sq-date-${p.id}" placeholder="dato" onkeydown="if(event.key==='Enter') quickAddSubtask(${p.id})"
           style="width:60px;background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.35);border-radius:var(--radius);padding:5px 8px;color:${tc};font-family:var(--font);font-size:11px;text-align:center;outline:none;" title="Deadline fx 15/6">
         <button onclick="quickAddSubtask(${p.id})"
-          style="background:rgba(255,255,255,0.25);border:1px solid rgba(255,255,255,0.4);color:${tc};font-family:var(--font);font-size:11px;font-weight:600;padding:5px 10px;border-radius:var(--radius);cursor:pointer;white-space:nowrap;">Tilføj</button>
+          style="${getBtnStyle(bg)}font-family:var(--font);font-size:11px;font-weight:600;padding:5px 10px;border-radius:var(--radius);cursor:pointer;white-space:nowrap;">Tilføj</button>
         <button onclick="openSubtaskBuilder(${p.id})"
-          style="background:rgba(255,255,255,0.25);border:1px solid rgba(255,255,255,0.4);color:${tc};font-family:var(--font);font-size:11px;padding:5px 10px;border-radius:var(--radius);cursor:pointer;white-space:nowrap;" title="Åbn bibliotek">⊕</button>
+          style="${getBtnStyle(bg)}font-family:var(--font);font-size:11px;padding:5px 10px;border-radius:var(--radius);cursor:pointer;white-space:nowrap;" title="Åbn bibliotek">⊕</button>
       </div>
       ${(p.subtasks||[]).map(s=>renderSubtask(p.id, s)).join('')}
     </div>
@@ -3330,12 +3368,20 @@ function renderCalendar() {
   document.getElementById('cal-body').innerHTML=cells.map(c=>{
     const ds=c.other?'':`${y}-${String(m+1).padStart(2,'0')}-${String(c.day).padStart(2,'0')}`;
     const isToday=!c.other&&today.getFullYear()===y&&today.getMonth()===m&&today.getDate()===c.day;
-    const events=c.other?[]:state.projects.filter(p=>p.deadline===ds);
-    const subs=c.other?[]:state.projects.flatMap(p=>( p.subtasks||[] ).filter(s=>s.deadline===ds));
+    const events=c.other?[]:state.projects.filter(p=>p.deadline===ds&&!p.done);
+    const subs=c.other?[]:state.projects.flatMap(p=>(!p.done?(p.subtasks||[]).filter(s=>s.deadline===ds).map(s=>({s,p})):[]));
     return `<div class="cal-day ${isToday?'today':''} ${c.other?'other-month':''}" onclick="${c.other?'':'openTaskModal()'}">
       <div class="cal-day-num">${c.day}</div>
-      ${events.map(e=>`<div class="cal-event deadline">📁 ${esc(e.title)}</div>`).join('')}
-      ${subs.slice(0,2).map(s=>`<div class="cal-event task">◻ ${esc(s.title)}</div>`).join('')}
+      ${events.map(e=>{
+        const tc=getContrastText(e.color||'#7A8088');
+        const ns=getNextSubtaskLabel(e);
+        return `<div style="font-size:10px;padding:2px 5px;border-radius:3px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:${e.color||'#7A8088'};color:${tc};">📁 ${esc(e.title)}${ns?` → ${esc(ns)}`:''}
+        </div>`;
+      }).join('')}
+      ${subs.slice(0,2).map(({s,p})=>{
+        const tc=getContrastText(p.color||'#7A8088');
+        return `<div style="font-size:10px;padding:2px 5px;border-radius:3px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:${p.color||'#7A8088'};color:${tc};opacity:0.85;">◻ ${esc(s.title)}</div>`;
+      }).join('')}
     </div>`;
   }).join('');
 }
