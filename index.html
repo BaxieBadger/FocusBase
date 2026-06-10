@@ -714,7 +714,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   <div class="sidebar-logo">
     <div style="font-size:10px;color:var(--sidebar-text);opacity:0.6;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
     <h1>FocusBase</h1>
-    <span>Dit system · Din flow · v1.15</span>
+    <span>Dit system · Din flow · v1.16</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
@@ -1072,6 +1072,75 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
       <div class="flex gap8">
         <button class="btn" onclick="saveSome()" style="flex:1;">Gem opslag</button>
         <button class="btn secondary" onclick="closeModal('modal-some')">Annuller</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SUBTASK BUILDER OVERLAY -->
+<div id="subtask-builder" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:200;overflow:hidden;flex-direction:column;">
+  <div style="background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;gap:14px;">
+    <div>
+      <div style="font-size:16px;font-weight:600;" id="sb-proj-title">Byg delopgaver</div>
+      <div style="font-size:11px;color:var(--text-muted);" id="sb-proj-sub">Træk fra puljen til højre</div>
+    </div>
+    <div style="margin-left:auto;display:flex;gap:8px;">
+      <button class="btn secondary sm" onclick="closeSubtaskBuilder()">Annuller</button>
+      <button class="btn sm" onclick="saveSubtaskBuilder()">Gem delopgaver →</button>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;flex:1;overflow:hidden;">
+    <!-- LEFT: Library pool -->
+    <div style="border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;">
+      <div style="padding:14px 18px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;">
+        <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;flex:1;">Pulje</div>
+        <button class="btn sm" onclick="openNewSubtaskType()" style="font-size:10px;padding:4px 10px;">+ Ny type</button>
+      </div>
+      <!-- Category filter -->
+      <div style="padding:8px 16px;display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--border);" id="sb-cat-filters"></div>
+      <div style="flex:1;overflow-y:auto;padding:12px 16px;" id="sb-library-list"></div>
+    </div>
+    <!-- RIGHT: Flow being built -->
+    <div style="display:flex;flex-direction:column;overflow:hidden;">
+      <div style="padding:14px 18px 10px;border-bottom:1px solid var(--border);">
+        <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;">Delopgaver i opgaven</div>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:12px 16px;" id="sb-selected-list">
+        <div style="font-size:12px;color:var(--text-muted);text-align:center;padding:40px 20px;">← Klik på en delopgave for at tilføje den</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NEW SUBTASK TYPE MODAL -->
+<div class="modal-overlay" id="modal-new-subtype">
+  <div class="modal" style="width:420px;">
+    <div class="modal-header">
+      <div class="modal-title">Ny delopgavetype</div>
+      <button class="modal-close" onclick="closeModal('modal-new-subtype')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="row2">
+        <div class="field"><label>Emoji</label><input type="text" id="nst-emoji" placeholder="fx 📸" style="width:100%;font-size:18px;" maxlength="2"></div>
+        <div class="field"><label>Navn</label><input type="text" id="nst-title" placeholder="fx Tag billeder"></div>
+      </div>
+      <div class="field">
+        <label>Kategori</label>
+        <select id="nst-cat" style="width:100%;">
+          <option value="Generelt">Generelt</option>
+          <option value="SoMe">SoMe</option>
+          <option value="Presse">Presse</option>
+          <option value="Artikel">Artikel</option>
+          <option value="Nyhedsbrev">Nyhedsbrev</option>
+          <option value="Møde">Møde</option>
+          <option value="Admin">Admin</option>
+          <option value="Projekt">Projekt</option>
+          <option value="Kommunikationsflow">Kommunikationsflow</option>
+        </select>
+      </div>
+      <div class="flex gap8">
+        <button class="btn" onclick="saveNewSubtaskType()" style="flex:1;">Gem type</button>
+        <button class="btn secondary" onclick="closeModal('modal-new-subtype')">Annuller</button>
       </div>
     </div>
   </div>
@@ -1495,6 +1564,7 @@ let state = {
   editingProjectId: null,
   editingSubtaskId: null,
   mediaList: [], // brugerens faste medieliste til presse-opgaver
+  subtaskLibrary: [], // {id, title, emoji, color, category} – brugerdefinerede delopgavetyper
 };
 
 // ── SUPABASE CONFIG ──
@@ -2532,6 +2602,7 @@ function renderProjectCard(p) {
         </div>`:''}
         <span style="font-size:11px;font-weight:500;padding:3px 9px;border-radius:12px;white-space:nowrap;background:rgba(0,0,0,0.15);color:${tc};">⏰ ${dlText}</span>
         <button class="btn secondary sm" onclick="event.stopPropagation();openProjectModal(${p.id})" style="font-size:10px;padding:3px 8px;${bs}">✎</button>
+        <button class="btn secondary sm" onclick="event.stopPropagation();openSubtaskBuilder(${p.id})" style="font-size:10px;padding:3px 8px;${bs}" title="Byg delopgaver">⊕ Delopgaver</button>
         ${(p.cat==='Presse'||p.cat==='Nyhedsbrev'||p.cat==='Artikel') ? `<button class="btn secondary sm" onclick="event.stopPropagation();openArticleLinksModal(${p.id})" style="font-size:10px;padding:3px 8px;${bs}" title="Artikellinks">📰 ${(p.articleLinks||[]).length}</button>` : ''}
         ${p.cat==='Nyhedsbrev' ? `<button class="btn secondary sm" onclick="event.stopPropagation();openNewsletterStatsModal(${p.id})" style="font-size:10px;padding:3px 8px;${bs}">📧</button>` : ''}
         <button class="btn secondary sm" onclick="event.stopPropagation();toggleProjectDone(${p.id})" style="font-size:10px;padding:3px 8px;${bs}">${p.done?'↺ Genåbn':'✓ Færdig'}</button>
@@ -2712,6 +2783,7 @@ function renderInbox() {
       <div style="width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0;"></div>
       <span style="font-size:12px;flex:1;color:var(--text);">${esc(p.title)}</span>
       <button class="btn sm" onclick="processInboxItem(${p.id})" style="font-size:10px;padding:3px 10px;white-space:nowrap;">Planlæg →</button>
+      <button class="btn secondary sm" onclick="openSubtaskBuilder(${p.id})" style="font-size:10px;padding:3px 8px;" title="Byg delopgaver">⊕</button>
       <button class="btn sm danger" onclick="deleteInboxItem(${p.id})" style="font-size:10px;padding:3px 8px;">✕</button>
     </div>`).join('');
 }
@@ -3285,7 +3357,229 @@ function renderDashboardInterviews() {
       </div>`).join('')}`;
 }
 
-// ── KOMMUNIKATIONSFLOW ──
+// ── DELOPGAVE BIBLIOTEK ──
+
+// Built-in subtask types from all templates
+const BUILTIN_SUBTASK_TYPES = [
+  // SoMe
+  { id:'bt_1',  title:'Skriv tekst',           emoji:'✍️',  cat:'SoMe',       color:'#2A5DB0' },
+  { id:'bt_2',  title:'Skaf billeder',          emoji:'📸',  cat:'SoMe',       color:'#2A5DB0', skippable:true },
+  { id:'bt_3',  title:'Send til godkendelse',   emoji:'✅',  cat:'Generelt',   color:'#7A8088' },
+  { id:'bt_4',  title:'Planlæg publicering',    emoji:'📅',  cat:'SoMe',       color:'#2A5DB0' },
+  { id:'bt_5',  title:'Opfølgning',             emoji:'🔄',  cat:'Generelt',   color:'#7A8088' },
+  { id:'bt_6',  title:'Evaluering',             emoji:'📊',  cat:'Generelt',   color:'#7A8088' },
+  // Presse
+  { id:'bt_7',  title:'Indsaml info',           emoji:'🔍',  cat:'Presse',     color:'#C15A1A' },
+  { id:'bt_8',  title:'Vælg medier',            emoji:'📻',  cat:'Presse',     color:'#C15A1A' },
+  { id:'bt_9',  title:'Skriv citat-udkast',     emoji:'💬',  cat:'Presse',     color:'#C15A1A' },
+  { id:'bt_10', title:'Juster citat',           emoji:'✏️',  cat:'Presse',     color:'#C15A1A' },
+  { id:'bt_11', title:'Gør klar til afsendelse',emoji:'📦',  cat:'Generelt',   color:'#7A8088' },
+  { id:'bt_12', title:'Send',                   emoji:'📤',  cat:'Generelt',   color:'#7A8088' },
+  // Nyhedsbrev
+  { id:'bt_13', title:'Indsaml idéer',          emoji:'💡',  cat:'Nyhedsbrev', color:'#C9A800' },
+  { id:'bt_14', title:'Opsæt nyhedsbrev',       emoji:'🔧',  cat:'Nyhedsbrev', color:'#C9A800' },
+  { id:'bt_15', title:'Send til korrektur',     emoji:'🔤',  cat:'Nyhedsbrev', color:'#C9A800' },
+  // Artikel
+  { id:'bt_16', title:'Læg fast på vinkel',     emoji:'🎯',  cat:'Artikel',    color:'#265E3A' },
+  { id:'bt_17', title:'Research',               emoji:'📚',  cat:'Artikel',    color:'#265E3A' },
+  { id:'bt_18', title:'Udvælg kilder',          emoji:'👥',  cat:'Artikel',    color:'#265E3A' },
+  { id:'bt_19', title:'Arranger interviews',    emoji:'🗓️', cat:'Artikel',    color:'#265E3A' },
+  { id:'bt_20', title:'Interviews',             emoji:'🎙️', cat:'Artikel',    color:'#265E3A' },
+  { id:'bt_21', title:'Publicer',               emoji:'🌐',  cat:'Artikel',    color:'#265E3A' },
+  // Møde
+  { id:'bt_22', title:'Definer dagsorden',      emoji:'📋',  cat:'Møde',       color:'#C09060' },
+  { id:'bt_23', title:'Hvem deltager',          emoji:'👤',  cat:'Møde',       color:'#C09060' },
+  { id:'bt_24', title:'Forbered materialer',    emoji:'📂',  cat:'Møde',       color:'#C09060' },
+  { id:'bt_25', title:'Afhold møde',            emoji:'🤝',  cat:'Møde',       color:'#C09060' },
+  { id:'bt_26', title:'Skriv referat',          emoji:'📝',  cat:'Møde',       color:'#C09060' },
+];
+
+let sbProjId = null;
+let sbItems  = []; // current flow being built [{id, title, emoji, color, deadline, time}]
+let sbCatFilter = 'Alle';
+
+function getAllSubtaskTypes() {
+  const custom = (state.subtaskLibrary||[]).map(s=>({...s, custom:true}));
+  return [...BUILTIN_SUBTASK_TYPES, ...custom];
+}
+
+function openSubtaskBuilder(projId) {
+  sbProjId = projId;
+  const p = state.projects.find(x=>x.id===projId);
+  if(!p) return;
+
+  document.getElementById('sb-proj-title').textContent = p.title;
+  document.getElementById('sb-proj-sub').textContent   = `${p.cat} · Byg delopgaver fra puljen`;
+
+  // Pre-populate with existing subtasks
+  sbItems = (p.subtasks||[]).map(s => ({
+    id: s.id,
+    title: s.title,
+    emoji: '◻',
+    color: p.color || '#7A8088',
+    deadline: s.deadline||'',
+    time: s.time||'',
+    existing: true,
+  }));
+
+  sbCatFilter = 'Alle';
+  renderSbLibrary();
+  renderSbSelected();
+  renderSbCatFilters();
+
+  const overlay = document.getElementById('subtask-builder');
+  overlay.style.display = 'flex';
+}
+
+function closeSubtaskBuilder() {
+  document.getElementById('subtask-builder').style.display = 'none';
+}
+
+function saveSubtaskBuilder() {
+  const p = state.projects.find(x=>x.id===sbProjId);
+  if(!p) return;
+  p.subtasks = sbItems.map((s, i) => ({
+    id: typeof s.id === 'number' ? s.id : state.nextId++,
+    title: s.title,
+    deadline: s.deadline||'',
+    time: s.time||'',
+    note: '',
+    done: s.done||false,
+    doneAt: s.doneAt||null,
+    skippable: s.skippable||false,
+    skipped: s.skipped||false,
+  }));
+  save();
+  closeSubtaskBuilder();
+  renderProjects(); renderDashboard();
+  toast(`✓ ${p.subtasks.length} delopgaver gemt`);
+}
+
+function renderSbCatFilters() {
+  const cats = ['Alle', ...new Set(getAllSubtaskTypes().map(t=>t.cat))];
+  document.getElementById('sb-cat-filters').innerHTML = cats.map(c => `
+    <button onclick="setSbCatFilter('${c}',this)"
+      style="font-size:10px;padding:3px 10px;border-radius:12px;border:1px solid var(--border);
+      background:${sbCatFilter===c?'var(--accent)':'transparent'};
+      color:${sbCatFilter===c?'#fff':'var(--text-muted)'};
+      cursor:pointer;font-family:var(--font);">${c}</button>`).join('');
+}
+
+function setSbCatFilter(cat, el) {
+  sbCatFilter = cat;
+  renderSbCatFilters();
+  renderSbLibrary();
+}
+
+function renderSbLibrary() {
+  const all = getAllSubtaskTypes();
+  const filtered = sbCatFilter==='Alle' ? all : all.filter(t=>t.cat===sbCatFilter);
+  const el = document.getElementById('sb-library-list');
+  el.innerHTML = filtered.map(t => `
+    <div onclick="addSbItem('${t.id}')"
+      style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius);
+      border:1.5px solid ${t.color}22;background:${t.color}0d;margin-bottom:6px;cursor:pointer;
+      transition:all 0.15s;"
+      onmouseover="this.style.background='${t.color}22';this.style.borderColor='${t.color}'"
+      onmouseout="this.style.background='${t.color}0d';this.style.borderColor='${t.color}22'">
+      <span style="font-size:20px;width:28px;text-align:center;">${t.emoji||'◻'}</span>
+      <div style="flex:1;">
+        <div style="font-size:12px;font-weight:500;">${esc(t.title)}</div>
+        <div style="font-size:10px;color:var(--text-muted);">${t.cat}${t.skippable?' · kan frafaldes':''}</div>
+      </div>
+      <span style="font-size:11px;color:${t.color};font-weight:600;">+</span>
+      ${t.custom?`<button onclick="event.stopPropagation();deleteCustomSubtaskType('${t.id}')"
+        style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:11px;padding:2px 4px;">✕</button>`:''}
+    </div>`).join('');
+}
+
+function addSbItem(typeId) {
+  const t = getAllSubtaskTypes().find(x=>x.id===typeId);
+  if(!t) return;
+  sbItems.push({
+    id: Date.now() + Math.random(),
+    title: t.title,
+    emoji: t.emoji||'◻',
+    color: t.color,
+    skippable: t.skippable||false,
+    deadline: '',
+    time: '',
+  });
+  renderSbSelected();
+}
+
+function removeSbItem(idx) {
+  sbItems.splice(idx, 1);
+  renderSbSelected();
+}
+
+function moveSbItem(idx, dir) {
+  const newIdx = idx+dir;
+  if(newIdx<0||newIdx>=sbItems.length) return;
+  [sbItems[idx],sbItems[newIdx]]=[sbItems[newIdx],sbItems[idx]];
+  renderSbSelected();
+}
+
+function renderSbSelected() {
+  const el = document.getElementById('sb-selected-list');
+  if(!sbItems.length) {
+    el.innerHTML = '<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:40px 20px;">← Klik på en delopgave for at tilføje den</div>';
+    return;
+  }
+  el.innerHTML = sbItems.map((s,i) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:var(--radius);
+      background:${s.color};color:#fff;margin-bottom:6px;">
+      <span style="font-size:16px;">${s.emoji}</span>
+      <input type="text" value="${esc(s.title)}"
+        onchange="sbItems[${i}].title=this.value"
+        style="flex:1;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);
+        color:#fff;font-size:12px;padding:4px 8px;border-radius:4px;outline:none;font-family:var(--font);">
+      <input type="text" placeholder="dato" value="${s.deadline?s.deadline.substring(5).split('-').reverse().join('/'):''}"
+        onchange="sbItems[${i}].deadline=parseSmartDate(this.value)||''"
+        style="width:60px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);
+        color:#fff;font-size:10px;padding:3px 6px;border-radius:4px;outline:none;text-align:center;font-family:var(--font);"
+        title="Deadline (fx 15/6)">
+      <button onclick="moveSbItem(${i},-1)" ${i===0?'disabled':''} style="background:rgba(255,255,255,0.2);border:none;color:#fff;cursor:pointer;border-radius:4px;padding:3px 6px;font-size:11px;">↑</button>
+      <button onclick="moveSbItem(${i},1)"  ${i===sbItems.length-1?'disabled':''} style="background:rgba(255,255,255,0.2);border:none;color:#fff;cursor:pointer;border-radius:4px;padding:3px 6px;font-size:11px;">↓</button>
+      <button onclick="removeSbItem(${i})" style="background:rgba(255,255,255,0.2);border:none;color:#fff;cursor:pointer;border-radius:4px;padding:3px 6px;font-size:11px;">✕</button>
+    </div>`).join('');
+}
+
+// ── NY DELOPGAVETYPE ──
+function openNewSubtaskType() {
+  document.getElementById('nst-emoji').value = '';
+  document.getElementById('nst-title').value = '';
+  document.getElementById('nst-cat').value   = 'Generelt';
+  document.getElementById('modal-new-subtype').classList.add('open');
+  setTimeout(()=>document.getElementById('nst-title').focus(), 80);
+}
+
+function saveNewSubtaskType() {
+  const title = document.getElementById('nst-title').value.trim();
+  if(!title) { alert('Giv typen et navn'); return; }
+  if(!state.subtaskLibrary) state.subtaskLibrary = [];
+  const newType = {
+    id: 'custom_' + Date.now(),
+    title,
+    emoji: document.getElementById('nst-emoji').value.trim() || '◻',
+    cat:   document.getElementById('nst-cat').value,
+    color: CAT_HEX[document.getElementById('nst-cat').value] || '#7A8088',
+    custom: true,
+  };
+  state.subtaskLibrary.push(newType);
+  save();
+  closeModal('modal-new-subtype');
+  renderSbLibrary();
+  renderSbCatFilters();
+  toast(`✓ "${title}" tilføjet til biblioteket`);
+}
+
+function deleteCustomSubtaskType(id) {
+  if(!confirm('Slet denne delopgavetype?')) return;
+  state.subtaskLibrary = (state.subtaskLibrary||[]).filter(x=>x.id!==id);
+  save();
+  renderSbLibrary();
+}
 const FLOW_TYPES = [
   { cat:'SoMe',       label:'SoMe post',       color:'#2A5DB0', emoji:'📱' },
   { cat:'Presse',     label:'Pressemeddelelse', color:'#C15A1A', emoji:'📰' },
