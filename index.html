@@ -714,7 +714,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   <div class="sidebar-logo">
     <div style="font-size:10px;color:var(--sidebar-text);opacity:0.6;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
     <h1>FocusBase</h1>
-    <span>Dit system · Din flow · v1.20</span>
+    <span>Dit system · Din flow · v1.21</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
@@ -991,7 +991,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
             <option>Nyhedsbrev</option>
             <option>Artikel</option>
             <option>Møde</option>
-            <option>Admin</option>
+            <option>Website</option>
             <option>Projekt</option>
             <option>Kommunikationsflow</option>
             <option>Event</option>
@@ -1150,7 +1150,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
           <option value="Artikel">Artikel</option>
           <option value="Nyhedsbrev">Nyhedsbrev</option>
           <option value="Møde">Møde</option>
-          <option value="Admin">Admin</option>
+          <option value="Website">Website</option>
           <option value="Projekt">Projekt</option>
           <option value="Kommunikationsflow">Kommunikationsflow</option>
         </select>
@@ -1166,9 +1166,9 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
 <!-- KOMMUNIKATIONSFLOW MODAL -->
 <div class="modal-overlay" id="modal-flow">
   <div class="modal" style="width:560px;">
-    <div class="modal-header" style="background:#B04A8A;border-radius:var(--radius-lg) var(--radius-lg) 0 0;">
-      <div class="modal-title" style="color:#fff;">📣 Kommunikationsflow</div>
-      <button class="modal-close" onclick="closeModal('modal-flow')" style="color:#fff;">✕</button>
+    <div class="modal-header" style="background:#f5f5f5;border-radius:var(--radius-lg) var(--radius-lg) 0 0;border-bottom:2px solid #B04A8A;">
+      <div class="modal-title" style="color:#1a1400;">📣 Kommunikationsflow</div>
+      <button class="modal-close" onclick="closeModal('modal-flow')" style="color:#1a1400;">✕</button>
     </div>
     <div class="modal-body">
       <div class="field">
@@ -1194,7 +1194,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
       </div>
 
       <div class="flex gap8" style="margin-top:16px;">
-        <button class="btn" onclick="saveFlow()" style="flex:1;background:#B04A8A;">Opret flow →</button>
+        <button class="btn" onclick="saveFlow()" style="flex:1;background:#B04A8A;color:#fff;">Opret flow →</button>
         <button class="btn secondary" onclick="closeModal('modal-flow')">Annuller</button>
       </div>
     </div>
@@ -1862,7 +1862,6 @@ function nav(id) {
 }
 
 // ── CENTRAL KONTRAST-FUNKTION ──
-// Beregner luminans og returnerer altid '#ffffff' eller '#1a1400'
 function getContrastText(hex) {
   if(!hex || hex.startsWith('var(')) return '#1a1400';
   const h = hex.replace('#','');
@@ -1871,7 +1870,9 @@ function getContrastText(hex) {
   const g=parseInt(h.substring(2,4),16)/255;
   const b=parseInt(h.substring(4,6),16)/255;
   const lum = 0.2126*r + 0.7152*g + 0.0722*b;
-  return lum > 0.35 ? '#1a1400' : '#ffffff';
+  // Lower threshold so more colors get white text
+  // Only very light colors (Nyhedsbrev gul, Møde sand, Projekt cyan, Andet grå, hvid) get dark text
+  return lum > 0.28 ? '#1a1400' : '#ffffff';
 }
 function getMuted(hex) {
   const tc = getContrastText(hex);
@@ -1898,32 +1899,44 @@ function parseSmartDate(str) {
   if(!str || !str.trim()) return '';
   str = str.trim().replace(/\s+/g, '');
 
-  let day, month;
+  let day, month, year = null;
 
-  // Formats: 15/6, 15-6, 15.6
-  const m1 = str.match(/^(\d{1,2})[\/\-\.](\d{1,2})$/);
-  if(m1) { day = parseInt(m1[1]); month = parseInt(m1[2]); }
+  // Format with year: 12/5/2026, 12.5.2026, 12-5-2026
+  const mYear = str.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
+  if(mYear) { day = parseInt(mYear[1]); month = parseInt(mYear[2]); year = parseInt(mYear[3]); }
+
+  // Formats without year: 15/6, 15-6, 15.6
+  if(!mYear) {
+    const m1 = str.match(/^(\d{1,2})[\/\-\.](\d{1,2})$/);
+    if(m1) { day = parseInt(m1[1]); month = parseInt(m1[2]); }
+  }
 
   // Format: 156 or 1506 (ddm or ddmm)
-  const m2 = str.match(/^(\d{1,2})(\d{2})$/);
-  if(!m1 && m2) { day = parseInt(m2[1]); month = parseInt(m2[2]); }
-
-  const m3 = str.match(/^(\d{1,2})(\d{1})$/);
-  if(!m1 && !m2 && m3) { day = parseInt(m3[1]); month = parseInt(m3[2]); }
+  if(!day) {
+    const m2 = str.match(/^(\d{1,2})(\d{2})$/);
+    if(m2) { day = parseInt(m2[1]); month = parseInt(m2[2]); }
+    const m3 = str.match(/^(\d{1,2})(\d{1})$/);
+    if(!m2 && m3) { day = parseInt(m3[1]); month = parseInt(m3[2]); }
+  }
 
   if(!day || !month || day < 1 || day > 31 || month < 1 || month > 12) return '';
 
+  if(year) {
+    // Explicit year – use as-is (allows backdating)
+    const mm = String(month).padStart(2,'0');
+    const dd = String(day).padStart(2,'0');
+    return `${year}-${mm}-${dd}`;
+  }
+
+  // No year – pick current or next year
   const now = new Date();
-  let year = now.getFullYear();
-  const candidate = new Date(year, month-1, day);
+  let y = now.getFullYear();
+  const candidate = new Date(y, month-1, day);
+  if(candidate < now) y++;
 
-  // If date has passed, use next year
-  if(candidate < now) year++;
-
-  const yyyy = year;
   const mm = String(month).padStart(2,'0');
   const dd = String(day).padStart(2,'0');
-  return `${yyyy}-${mm}-${dd}`;
+  return `${y}-${mm}-${dd}`;
 }
 
 const DA_MONTHS_SHORT = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
@@ -1936,10 +1949,14 @@ function previewSmartDate(inputId, previewId) {
   const result = parseSmartDate(val);
   if(result) {
     const d = new Date(result+'T12:00:00');
-    if(preview) { preview.textContent = `→ ${d.getDate()}. ${DA_MONTHS_SHORT[d.getMonth()]} ${d.getFullYear()}`; preview.style.color = 'var(--accent2)'; }
+    const isPast = d < new Date();
+    if(preview) {
+      preview.textContent = `→ ${d.getDate()}. ${DA_MONTHS_SHORT[d.getMonth()]} ${d.getFullYear()}${isPast?' (baguddat.)':''}`;
+      preview.style.color = isPast ? 'var(--warning,#f59e0b)' : 'var(--accent2)';
+    }
     if(hidden) hidden.value = result;
   } else {
-    if(preview) { preview.textContent = val ? 'Ugyldigt format – prøv fx 15/6' : ''; preview.style.color = 'var(--danger)'; }
+    if(preview) { preview.textContent = val ? 'Ugyldigt format – prøv fx 15/6 eller 15/6/2025' : ''; preview.style.color = 'var(--danger)'; }
     if(hidden) hidden.value = '';
   }
 }
@@ -2095,7 +2112,7 @@ const TEMPLATES = {
     { title: 'Afhold møde', skippable: false },
     { title: 'Opfølgning på referat', skippable: true },
   ],
-  'Admin': [
+  'Website': [
     { title: 'Planlægning', skippable: false },
     { title: 'Evaluering', skippable: false },
   ],
@@ -2110,9 +2127,9 @@ function showTemplatePreview() {
   // Auto-set matching category color
   const catColorMap = {
     'SoMe':'#2A5DB0', 'Presse':'#C15A1A', 'Nyhedsbrev':'#C9A800',
-    'Artikel':'#265E3A', 'Møde':'#C09060', 'Admin':'#6B3FA0',
+    'Artikel':'#265E3A', 'Møde':'#C09060', 'Website':'#6B3FA0',
     'Projekt':'#1B8BB0', 'Andet':'#7A8088',
-    'Kommunikationsflow':'#B04A8A', 'Event':'#D4520A'
+    'Kommunikationsflow':'#ffffff', 'Event':'#B04A8A'
   };
 
   // Show/hide event fields
@@ -2347,7 +2364,7 @@ function renderKanban() {
   const board = document.getElementById('kanban-board');
 
   // Collect all categories in use + fixed ones
-  const fixedCats = ['SoMe','Presse','Nyhedsbrev','Artikel','Møde','Admin','Projekt','Kommunikationsflow','Event','Andet'];
+  const fixedCats = ['SoMe','Presse','Nyhedsbrev','Artikel','Møde','Website','Projekt','Kommunikationsflow','Event','Andet'];
   const usedCats  = [...new Set(state.projects.map(p => p.cat))];
   const allCats   = [...new Set([...fixedCats, ...usedCats])];
 
@@ -2363,7 +2380,7 @@ function renderKanban() {
     'Nyhedsbrev':  '#C9A800',
     'Artikel':     '#265E3A',
     'Møde':        '#C09060',
-    'Admin':       '#6B3FA0',
+    'Website':     '#6B3FA0',
     'Projekt':     '#1B8BB0',
     'Andet':       '#7A8088',
     'Generelt':    '#9099a8',
@@ -2525,12 +2542,12 @@ const CAT_COLORS = {
   'Nyhedsbrev': { bg:'#C9A800', text:'#1a1400', muted:'rgba(26,20,0,0.6)',    btnBg:'rgba(26,20,0,0.12)',    btnBorder:'rgba(26,20,0,0.25)',    btnText:'#1a1400' },
   'Artikel':    { bg:'#265E3A', text:'#ffffff', muted:'rgba(255,255,255,0.6)', btnBg:'rgba(255,255,255,0.15)', btnBorder:'rgba(255,255,255,0.3)', btnText:'#ffffff' },
   'Møde':       { bg:'#C09060', text:'#1a0e00', muted:'rgba(26,14,0,0.6)',    btnBg:'rgba(26,14,0,0.12)',    btnBorder:'rgba(26,14,0,0.25)',    btnText:'#1a0e00' },
-  'Admin':      { bg:'#6B3FA0', text:'#ffffff', muted:'rgba(255,255,255,0.6)', btnBg:'rgba(255,255,255,0.15)', btnBorder:'rgba(255,255,255,0.3)', btnText:'#ffffff' },
+  'Website':    { bg:'#6B3FA0', text:'#ffffff', muted:'rgba(255,255,255,0.6)', btnBg:'rgba(255,255,255,0.15)', btnBorder:'rgba(255,255,255,0.3)', btnText:'#ffffff' },
   'Projekt':    { bg:'#1B8BB0', text:'#ffffff', muted:'rgba(255,255,255,0.6)', btnBg:'rgba(255,255,255,0.15)', btnBorder:'rgba(255,255,255,0.3)', btnText:'#ffffff' },
   'Andet':      { bg:'#7A8088', text:'#ffffff', muted:'rgba(255,255,255,0.6)', btnBg:'rgba(255,255,255,0.15)', btnBorder:'rgba(255,255,255,0.3)', btnText:'#ffffff' },
   'Generelt':   { bg:'#7A8088', text:'#ffffff', muted:'rgba(255,255,255,0.6)', btnBg:'rgba(255,255,255,0.15)', btnBorder:'rgba(255,255,255,0.3)', btnText:'#ffffff' },
-  'Kommunikationsflow': { bg:'#B04A8A', text:'#ffffff', muted:'rgba(255,255,255,0.6)', btnBg:'rgba(255,255,255,0.15)', btnBorder:'rgba(255,255,255,0.3)', btnText:'#ffffff' },
-  'Event':              { bg:'#D4520A', text:'#ffffff', muted:'rgba(255,255,255,0.6)', btnBg:'rgba(255,255,255,0.15)', btnBorder:'rgba(255,255,255,0.3)', btnText:'#ffffff' },
+  'Kommunikationsflow': { bg:'#ffffff', text:'#1a1400', muted:'rgba(0,0,0,0.5)', btnBg:'rgba(0,0,0,0.08)', btnBorder:'rgba(0,0,0,0.18)', btnText:'#1a1400' },
+  'Event':              { bg:'#B04A8A', text:'#ffffff', muted:'rgba(255,255,255,0.6)', btnBg:'rgba(255,255,255,0.15)', btnBorder:'rgba(255,255,255,0.3)', btnText:'#ffffff' },
 };
 
 function updateTopbarColor() {
@@ -3007,9 +3024,9 @@ function updateCatWidget() {
 // ── DASHBOARD ──
 const CAT_HEX = {
   'SoMe':'#2A5DB0','Presse':'#C15A1A','Nyhedsbrev':'#C9A800',
-  'Artikel':'#265E3A','Møde':'#C09060','Admin':'#6B3FA0',
+  'Artikel':'#265E3A','Møde':'#C09060','Website':'#6B3FA0',
   'Projekt':'#1B8BB0','Andet':'#7A8088','Generelt':'#7A8088',
-  'Kommunikationsflow':'#B04A8A','Event':'#D4520A'
+  'Kommunikationsflow':'#ffffff','Event':'#B04A8A'
 };
 
 function hexToRgba(hex, a) {
@@ -3767,7 +3784,7 @@ const FLOW_TYPES = [
   { cat:'Admin',      label:'Admin-opgave',     color:'#6B3FA0', emoji:'⚙️' },
   { cat:'Projekt',    label:'Projekt',          color:'#1B8BB0', emoji:'◫'  },
   { cat:'Andet',      label:'Anden opgave',     color:'#7A8088', emoji:'📌' },
-  { cat:'Event',      label:'Event',             color:'#D4520A', emoji:'🎪' },
+  { cat:'Event',      label:'Event',             color:'#B04A8A', emoji:'🎪' },
 ];
 
 let flowItems = [];
