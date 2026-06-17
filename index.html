@@ -714,7 +714,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   <div class="sidebar-logo">
     <div style="font-size:10px;color:var(--sidebar-text);opacity:0.6;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
     <h1>FocusBase</h1>
-    <span>Dit system · Din flow · v1.21</span>
+    <span>Dit system · Din flow · v1.22</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
@@ -3505,43 +3505,98 @@ function renderDashboardInterviews() {
   const el = document.getElementById('dash-interviews');
   if(!el) return;
 
-  // Collect all interviews across all artikel-projects
+  // Collect all interviews across all artikel-projects (including archived)
   const all = [];
-  state.projects.filter(p=>!p.done&&p.cat==='Artikel').forEach(p => {
-    ( p.subtasks||[] ).filter(s=>s.isInterviewStep&&s.interviews?.length).forEach(s => {
-      s.interviews.forEach((iv,i) => { all.push({iv, projId:p.id, stId:s.id, idx:i, projTitle:p.title}); });
+  state.projects.filter(p=>p.cat==='Artikel').forEach(p => {
+    (p.subtasks||[]).filter(s=>s.isInterviewStep&&s.interviews?.length).forEach(s => {
+      s.interviews.forEach((iv,i) => { all.push({iv, projId:p.id, stId:s.id, idx:i, projTitle:p.title, projDone:p.done, archived:p.interviewsArchived}); });
     });
   });
 
-  const afventer  = all.filter(x=>x.iv.status==='afventer').length;
-  const aftalt    = all.filter(x=>x.iv.status==='aftalt').length;
-  const total     = all.filter(x=>x.iv.status!=='aflyst').length;
+  const active   = all.filter(x=>!x.archived);
+  const archived = all.filter(x=>x.archived);
+  const afventer = active.filter(x=>x.iv.status==='afventer').length;
+  const aftalt   = active.filter(x=>x.iv.status==='aftalt').length;
+  const gennemfort = active.filter(x=>x.iv.status==='gennemfort').length;
+  const total    = active.length;
 
-  if(!total) {
+  // Group active by project for Avis udgivet button
+  const byProj = {};
+  active.forEach(x => {
+    if(!byProj[x.projId]) byProj[x.projId] = { title:x.projTitle, items:[] };
+    byProj[x.projId].items.push(x);
+  });
+
+  if(!total && !archived.length) {
     el.innerHTML = '<div class="empty" style="padding:12px 0;"><div class="emoji">🎙</div>Ingen interviews</div>';
     return;
   }
 
+  const showArchived = state.showArchivedInterviews;
+
   el.innerHTML = `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
-      <div style="text-align:center;background:var(--warning-light);border-radius:var(--radius);padding:8px;">
-        <div style="font-size:20px;font-weight:700;color:var(--warning);">${afventer}</div>
-        <div style="font-size:10px;color:var(--warning);">Afventer aftale</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px;">
+      <div style="text-align:center;background:var(--warning-light);border-radius:var(--radius);padding:6px;">
+        <div style="font-size:18px;font-weight:700;color:var(--warning);">${afventer}</div>
+        <div style="font-size:9px;color:var(--warning);">Afventer</div>
       </div>
-      <div style="text-align:center;background:var(--accent2-light);border-radius:var(--radius);padding:8px;">
-        <div style="font-size:20px;font-weight:700;color:var(--accent2);">${aftalt}</div>
-        <div style="font-size:10px;color:var(--accent2);">Aftalt</div>
+      <div style="text-align:center;background:var(--accent2-light);border-radius:var(--radius);padding:6px;">
+        <div style="font-size:18px;font-weight:700;color:var(--accent2);">${aftalt}</div>
+        <div style="font-size:9px;color:var(--accent2);">Aftalt</div>
+      </div>
+      <div style="text-align:center;background:var(--accent-light);border-radius:var(--radius);padding:6px;">
+        <div style="font-size:18px;font-weight:700;color:var(--accent);">${gennemfort}</div>
+        <div style="font-size:9px;color:var(--accent);">Gennemført</div>
       </div>
     </div>
-    ${all.filter(x=>x.iv.status==='afventer'||x.iv.status==='aftalt').slice(0,4).map(({iv,projId,stId,idx,projTitle})=>`
-      <div style="padding:6px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;">
-        <span class="interview-status iv-${iv.status}" style="flex-shrink:0;">${iv.status==='afventer'?'?':'✓'}</span>
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:11px;font-weight:500;">${esc(iv.person||'Unavngivet')}</div>
-          <div style="font-size:10px;color:var(--text-muted);">${esc(projTitle)}</div>
+
+    ${Object.entries(byProj).map(([projId, {title, items}]) => `
+      <div style="margin-bottom:8px;padding:8px;background:var(--surface2);border-radius:var(--radius);border:1px solid var(--border);">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+          <span style="font-size:11px;font-weight:600;flex:1;">✍️ ${esc(title)}</span>
+          <button onclick="archiveProjectInterviews(${projId})"
+            style="font-size:9px;padding:3px 8px;background:#265E3A;color:#fff;border:none;border-radius:var(--radius);cursor:pointer;font-family:var(--font);white-space:nowrap;">
+            📰 Avis udgivet
+          </button>
         </div>
-        <button class="icon-btn" onclick="openInterviewModal(${projId},${stId},${idx})" style="font-size:11px;color:var(--accent);">✎</button>
-      </div>`).join('')}`;
+        ${items.map(({iv,projId,stId,idx})=>`
+          <div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-top:1px solid var(--border);">
+            <span class="interview-status iv-${iv.status}" style="flex-shrink:0;font-size:8px;">${{afventer:'?',aftalt:'✓',gennemfort:'✔',aflyst:'✗'}[iv.status]||'?'}</span>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:11px;font-weight:500;">${esc(iv.person||'Unavngivet')}</div>
+              ${iv.role?`<div style="font-size:9px;color:var(--text-muted);">${esc(iv.role)}</div>`:''}
+            </div>
+            <button class="icon-btn" onclick="openInterviewModal(${projId},${stId},${idx})" style="font-size:11px;color:var(--accent);">✎</button>
+          </div>`).join('')}
+      </div>`).join('')}
+
+    ${archived.length ? `
+      <div style="margin-top:8px;">
+        <button onclick="state.showArchivedInterviews=!state.showArchivedInterviews;renderDashboardInterviews();"
+          style="font-size:10px;color:var(--text-muted);background:none;border:none;cursor:pointer;padding:4px 0;font-family:var(--font);">
+          ${showArchived ? '▾' : '▸'} Arkiv (${archived.length} interviews fra ${new Set(archived.map(x=>x.projTitle)).size} aviser)
+        </button>
+        ${showArchived ? `<div style="opacity:0.55;">
+          ${archived.map(({iv,projTitle})=>`
+            <div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-top:1px solid var(--border);">
+              <span style="font-size:9px;color:var(--text-muted);">📰</span>
+              <div style="flex:1;">
+                <div style="font-size:10px;font-weight:500;text-decoration:line-through;">${esc(iv.person||'Unavngivet')}</div>
+                <div style="font-size:9px;color:var(--text-muted);">${esc(projTitle)}</div>
+              </div>
+            </div>`).join('')}
+        </div>` : ''}
+      </div>` : ''}`;
+}
+
+function archiveProjectInterviews(projId) {
+  const p = state.projects.find(x=>x.id===projId);
+  if(!p) return;
+  if(!confirm(`Markér alle interviews for "${p.title}" som arkiveret?\n\nDe forbliver synlige i arkivet.`)) return;
+  p.interviewsArchived = true;
+  save();
+  renderDashboardInterviews();
+  toast(`📰 Interviews for "${p.title}" arkiveret ✓`);
 }
 
 // ── DELOPGAVE BIBLIOTEK ──
