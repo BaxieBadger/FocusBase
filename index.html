@@ -714,7 +714,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   <div class="sidebar-logo">
     <div style="font-size:10px;color:var(--sidebar-text);opacity:0.6;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
     <h1>FocusBase</h1>
-    <span>Dit system · Din flow · v1.27</span>
+    <span>Dit system · Din flow · v1.28</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
@@ -1879,17 +1879,32 @@ function nav(id) {
 }
 
 // ── CENTRAL KONTRAST-FUNKTION ──
+// Hardkodet baseret på Brians valg
+const CAT_TEXT_COLOR = {
+  'SoMe':'#ffffff','Presse':'#ffffff','Nyhedsbrev':'#1a1400',
+  'Artikel':'#ffffff','Møde':'#ffffff','Website':'#ffffff',
+  'Projekt':'#ffffff','Kommunikationsflow':'#1a1400',
+  'Event':'#ffffff','Andet':'#ffffff','Generelt':'#ffffff',
+};
 function getContrastText(hex) {
-  if(!hex || hex.startsWith('var(')) return '#1a1400';
+  if(!hex || hex === '#ffffff') return '#1a1400';
+  if(hex.startsWith('var(')) return '#ffffff';
+  // Match by hex to category
+  const catColors = {
+    '#2A5DB0':'SoMe','#C15A1A':'Presse','#C9A800':'Nyhedsbrev',
+    '#265E3A':'Artikel','#C09060':'Møde','#6B3FA0':'Website',
+    '#1B8BB0':'Projekt','#ffffff':'Kommunikationsflow',
+    '#B04A8A':'Event','#7A8088':'Andet',
+  };
+  const cat = catColors[hex] || catColors[hex.toLowerCase()];
+  if(cat) return CAT_TEXT_COLOR[cat] || '#ffffff';
+  // Luminance fallback
   const h = hex.replace('#','');
-  if(h.length < 6) return '#1a1400';
+  if(h.length < 6) return '#ffffff';
   const r=parseInt(h.substring(0,2),16)/255;
   const g=parseInt(h.substring(2,4),16)/255;
   const b=parseInt(h.substring(4,6),16)/255;
-  const lum = 0.2126*r + 0.7152*g + 0.0722*b;
-  // Lower threshold so more colors get white text
-  // Only very light colors (Nyhedsbrev gul, Møde sand, Projekt cyan, Andet grå, hvid) get dark text
-  return lum > 0.50 ? '#1a1400' : '#ffffff';
+  return (0.2126*r+0.7152*g+0.0722*b) > 0.50 ? '#1a1400' : '#ffffff';
 }
 function getMuted(hex) {
   const tc = getContrastText(hex);
