@@ -714,7 +714,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   <div class="sidebar-logo">
     <div style="font-size:10px;color:var(--sidebar-text);opacity:0.6;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
     <h1>FocusBase</h1>
-    <span>Dit system · Din flow · v1.25</span>
+    <span>Dit system · Din flow · v1.26</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
@@ -1731,12 +1731,17 @@ async function loadFromSupabase() {
 
     if(projects?.length) {
       const parsed = projects.map(r=>parseSupabaseData(r)).filter(Boolean);
-      if(parsed.length) {
-        // Merge: Supabase is authoritative, but keep local projects not yet in Supabase
-        const sbIds = new Set(parsed.map(p=>p.id));
-        const localOnly = state.projects.filter(p=>!sbIds.has(p.id));
+      if(parsed.length > 0) {
+        // Supabase er altid autoritativ – brug Supabase-data direkte
+        // Behold kun lokale projekter der slet ikke er i Supabase (endnu ikke synkroniseret)
+        const sbIds = new Set(parsed.map(p=>String(p.id)));
+        const localOnly = state.projects.filter(p=>!sbIds.has(String(p.id)));
         state.projects = [...parsed, ...localOnly];
+        // Update nextId to avoid collisions
+        const maxId = Math.max(...state.projects.map(p=>Number(p.id)||0), state.nextId);
+        if(maxId >= state.nextId) state.nextId = maxId + 1;
       }
+      // If parsed.length === 0, keep existing state.projects (parse failed)
     }
     if(some?.length) {
       const parsed = some.map(r=>parseSupabaseData(r)).filter(Boolean);
