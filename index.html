@@ -714,7 +714,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   <div class="sidebar-logo">
     <div style="font-size:10px;color:var(--sidebar-text);opacity:0.6;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
     <h1>FocusBase</h1>
-    <span>Dit system · Din flow · v1.23</span>
+    <span>Dit system · Din flow · v1.25</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
@@ -738,6 +738,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
       <div class="streak-info">dages streak<br><span style="font-size:9px;opacity:0.6;">kun hverdage</span></div>
     </div>
     <button class="streak-off-btn" onclick="forceRefreshFromSupabase()" style="margin-top:4px;" id="refresh-btn">☁ Genindlæs fra sky</button>
+    <button class="streak-off-btn" onclick="syncMake()" style="margin-top:4px;" id="make-sync-btn">⚡ Sync Make</button>
     <button class="streak-off-btn" onclick="openOffDaysModal()">📅 Markér fridage / ferie</button>
     <button class="streak-off-btn" onclick="openSupabaseModal()" style="margin-top:4px;" id="sb-btn">☁ Supabase: ikke forbundet</button>
     <div class="focus-bar-label" id="focus-label">Fokus-score: 0%</div>
@@ -1730,7 +1731,12 @@ async function loadFromSupabase() {
 
     if(projects?.length) {
       const parsed = projects.map(r=>parseSupabaseData(r)).filter(Boolean);
-      if(parsed.length) state.projects = parsed;
+      if(parsed.length) {
+        // Merge: Supabase is authoritative, but keep local projects not yet in Supabase
+        const sbIds = new Set(parsed.map(p=>p.id));
+        const localOnly = state.projects.filter(p=>!sbIds.has(p.id));
+        state.projects = [...parsed, ...localOnly];
+      }
     }
     if(some?.length) {
       const parsed = some.map(r=>parseSupabaseData(r)).filter(Boolean);
@@ -1878,7 +1884,7 @@ function getContrastText(hex) {
   const lum = 0.2126*r + 0.7152*g + 0.0722*b;
   // Lower threshold so more colors get white text
   // Only very light colors (Nyhedsbrev gul, Møde sand, Projekt cyan, Andet grå, hvid) get dark text
-  return lum > 0.28 ? '#1a1400' : '#ffffff';
+  return lum > 0.50 ? '#1a1400' : '#ffffff';
 }
 function getMuted(hex) {
   const tc = getContrastText(hex);
@@ -2061,23 +2067,25 @@ function cleanEmailContent(text) {
 // Opdaterer gamle farver til ny palette når data loades
 function migrateColors() {
   const colorMap = {
-    '#D4520A': '#B04A8A', // Event: gammel brændt rød → ny magenta
-    '#B04A8A': '#ffffff', // Kommunikationsflow: gammel magenta → hvid
-    '#9099a8': '#7A8088', // Generelt: normalisér
-    '#0a2d6e': '#2A5DB0', // SoMe gammel
-    '#F47920': '#C15A1A', // Presse gammel
-    '#c8960c': '#C9A800', // Nyhedsbrev gammel
-    '#004225': '#265E3A', // Artikel gammel
-    '#c8a97e': '#C09060', // Møde gammel
-    '#5b3fa0': '#6B3FA0', // Admin/Website gammel
-    '#00AEEF': '#1B8BB0', // Projekt gammel
+    '#d4520a': '#B04A8A', // Event: gammel brændt rød → ny magenta (Event)
+    '#9099a8': '#7A8088',
+    '#0a2d6e': '#2A5DB0',
+    '#f47920': '#C15A1A',
+    '#c8960c': '#C9A800',
+    '#004225': '#265E3A',
+    '#c8a97e': '#C09060',
+    '#5b3fa0': '#6B3FA0',
+    '#00aeef': '#1B8BB0',
   };
+  // Kommunikationsflow gets white separately – based on cat, not color
   let changed = false;
   state.projects.forEach(p => {
-    const newColor = colorMap[p.color?.toLowerCase()] || colorMap[p.color];
-    if(newColor) { p.color = newColor; changed = true; }
-    // Also fix category name Admin → Website
     if(p.cat === 'Admin') { p.cat = 'Website'; changed = true; }
+    if(p.cat === 'Kommunikationsflow' && p.color !== '#ffffff') { p.color = '#ffffff'; changed = true; }
+    else {
+      const newColor = colorMap[p.color?.toLowerCase()];
+      if(newColor) { p.color = newColor; changed = true; }
+    }
   });
   if(changed) save();
 }
@@ -4728,7 +4736,37 @@ function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace
 function formatDate(d){if(!d)return'';try{return new Date(d+'T12:00:00').toLocaleDateString('da-DK',{day:'numeric',month:'short'});}catch(e){return d;}}
 function formatDatetime(s){try{return new Date(s).toLocaleString('da-DK',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});}catch(e){return s;}}
 
-async function forceRefreshFromSupabase() {
+async function syncMake() {
+  // Get stored Make webhook URL, or ask user to set it
+  let webhookUrl = localStorage.getItem('make_webhook_url');
+  if(!webhookUrl) {
+    webhookUrl = prompt('Indsæt din Make webhook-URL (fra dit scenaries webhook-modul):\n\nDu finder den i Make under dit scenarie → Webhook → Copy URL');
+    if(!webhookUrl) return;
+    localStorage.setItem('make_webhook_url', webhookUrl.trim());
+    webhookUrl = webhookUrl.trim();
+  }
+
+  const btn = document.getElementById('make-sync-btn');
+  if(btn) btn.textContent = '⏳ Synkroniserer...';
+
+  try {
+    await fetch(webhookUrl, { method:'POST', mode:'no-cors' });
+    // Wait 3 seconds for Make to process, then refresh from Supabase
+    await new Promise(r=>setTimeout(r,3000));
+    await loadFromSupabase();
+    localStorage.setItem('focusbase_v2', JSON.stringify(state));
+    renderAll();
+    toast('⚡ Make synkroniseret ✓');
+  } catch(e) {
+    toast('Kunne ikke nå Make – tjek webhook-URL');
+  }
+  if(btn) btn.textContent = '⚡ Sync Make';
+}
+
+function resetMakeWebhook() {
+  localStorage.removeItem('make_webhook_url');
+  toast('Make webhook-URL slettet');
+}
   if(!sbReady) { toast('Supabase er ikke forbundet'); return; }
   const btn = document.getElementById('refresh-btn');
   if(btn) btn.textContent = '⏳ Henter...';
