@@ -714,7 +714,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   <div class="sidebar-logo">
     <div style="font-size:10px;color:var(--sidebar-text);opacity:0.6;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
     <h1>FocusBase</h1>
-    <span>Dit system · Din flow · v1.28</span>
+    <span>Dit system · Din flow · v1.29</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
@@ -2856,34 +2856,42 @@ function renderProjectCard(p) {
 }
 
 function renderSubtask(projId, s) {
+  const p = state.projects.find(x=>x.id===projId);
+  const bg = p?.color || '#7A8088';
+  const tc = getContrastText(bg);
+  const mc = tc==='#ffffff' ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.50)';
+  const checkBorder = tc==='#ffffff' ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.3)';
+  const checkDoneBg = tc==='#ffffff' ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)';
+
   if(s.skipped) {
-    return `<div class="subtask-item" id="st-${s.id}" style="opacity:0.35;background:var(--surface2);">
-      <div class="subtask-check" style="border-color:var(--border2);"></div>
-      <span class="subtask-text done" style="font-style:italic;">↷ ${esc(s.title)} <span style="font-size:10px;color:var(--text-muted);">(fravalgt)</span></span>
+    return `<div class="subtask-item" id="st-${s.id}" style="opacity:0.35;">
+      <div class="subtask-check" style="border-color:${checkBorder};"></div>
+      <span class="subtask-text done" style="font-style:italic;color:${mc};">↷ ${esc(s.title)} <span style="font-size:10px;">(fravalgt)</span></span>
       <div class="subtask-meta">
         <div class="subtask-actions" style="opacity:1;">
-          <button class="icon-btn" onclick="unskipSubtask(${projId},${s.id})" title="Genaktiver" style="color:var(--accent2);">↺</button>
+          <button class="icon-btn" onclick="unskipSubtask(${projId},${s.id})" title="Genaktiver" style="color:${mc};">↺</button>
         </div>
       </div>
     </div>`;
   }
-  return `<div class="subtask-item" id="st-${s.id}">
-    <div class="subtask-check ${s.done?'done':''}" onclick="toggleSubtask(${projId},${s.id})">${s.done?'✓':''}</div>
-    <span class="subtask-text ${s.done?'done':''}">${esc(s.title)}${s.skippable&&!s.done?`<span style="font-size:9px;color:var(--text-muted);margin-left:6px;font-style:italic;">kan frafaldes</span>`:''}</span>
+  return `<div class="subtask-item" id="st-${s.id}" style="color:${tc};">
+    <div class="subtask-check ${s.done?'done':''}" onclick="toggleSubtask(${projId},${s.id})"
+      style="border-color:${checkBorder};${s.done?'background:'+checkDoneBg+';color:'+tc+';':''}">${s.done?'✓':''}</div>
+    <span class="subtask-text ${s.done?'done':''}" style="color:${s.done?mc:tc};${s.done?'text-decoration:line-through;':''}">${esc(s.title)}${s.skippable&&!s.done?`<span style="font-size:9px;color:${mc};margin-left:6px;font-style:italic;">kan frafaldes</span>`:''}</span>
     ${s.title.toLowerCase().includes('vælg medier') ? `
-      <div style="margin-top:6px;padding:8px 10px;background:var(--surface2);border-radius:var(--radius);border:1px solid var(--border);width:100%;">
-        <div style="font-size:9px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;display:flex;align-items:center;gap:8px;">
+      <div style="margin-top:6px;padding:8px 10px;background:rgba(0,0,0,0.12);border-radius:var(--radius);border:1px solid ${checkBorder};width:100%;">
+        <div style="font-size:9px;font-weight:600;color:${mc};text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;display:flex;align-items:center;gap:8px;">
           Medier
-          <button class="icon-btn" onclick="openMediaListModal()" style="font-size:10px;color:var(--accent);" title="Rediger medieliste">✎ Rediger liste</button>
+          <button class="icon-btn" onclick="openMediaListModal()" style="font-size:10px;color:${tc};" title="Rediger medieliste">✎ Rediger liste</button>
         </div>
         ${getMediaChecklistHtml(projId, s.id, s.mediaChecked)}
       </div>` : ''}
     ${s.isInterviewStep ? renderInterviewsForSubtask(projId, s.id) : ''}
     <div class="subtask-meta">
-      ${s.deadline?`<span class="subtask-deadline">⏰ ${formatDate(s.deadline)}${s.time?' '+s.time:''}</span>`:''}
+      ${s.deadline?`<span class="subtask-deadline" style="color:${mc};">⏰ ${formatDate(s.deadline)}${s.time?' '+s.time:''}</span>`:''}
       <div class="subtask-actions">
-        ${s.skippable&&!s.done?`<button class="icon-btn" onclick="skipSubtask(${projId},${s.id})" title="Frafaldt – ikke relevant" style="color:var(--text-muted);">↷</button>`:''}
-        <button class="icon-btn" onclick="openSubtaskModal(${projId},${s.id})" title="Rediger">✎</button>
+        ${s.skippable&&!s.done?`<button class="icon-btn" onclick="skipSubtask(${projId},${s.id})" title="Frafaldt – ikke relevant" style="color:${mc};">↷</button>`:''}
+        <button class="icon-btn" onclick="openSubtaskModal(${projId},${s.id})" title="Rediger" style="color:${mc};">✎</button>
         <button class="icon-btn red" onclick="deleteSubtask(${projId},${s.id})" title="Slet">✕</button>
       </div>
     </div>
