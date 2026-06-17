@@ -714,7 +714,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   <div class="sidebar-logo">
     <div style="font-size:10px;color:var(--sidebar-text);opacity:0.6;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
     <h1>FocusBase</h1>
-    <span>Dit system · Din flow · v1.22</span>
+    <span>Dit system · Din flow · v1.23</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
@@ -822,7 +822,12 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
             <div class="card-body" id="dash-projects"></div>
           </div>
           <div class="card">
-            <div class="card-header">🎙 Interviews</div>
+            <div class="card-header">🎙 Interviews
+              <button onclick="archiveAllInterviews()" id="avis-btn"
+                style="margin-left:auto;font-size:10px;padding:3px 10px;background:#265E3A;color:#fff;border:none;border-radius:var(--radius);cursor:pointer;font-family:var(--font);white-space:nowrap;display:none;">
+                📰 Avis udgivet
+              </button>
+            </div>
             <div class="card-body" id="dash-interviews"></div>
           </div>
           <div class="card">
@@ -1819,6 +1824,7 @@ async function initStorage() {
 }
 
 function renderAll() {
+  migrateColors();
   renderDashboard();
   renderCalendar();
   renderSome();
@@ -2049,6 +2055,31 @@ function cleanEmailContent(text) {
   // Clean up empty lines and join
   const result = contentLines.filter(l => l).join(' ').trim();
   return result.substring(0, 300) || '(ingen beskrivelse)';
+}
+
+// ── FARVE MIGRATION ──
+// Opdaterer gamle farver til ny palette når data loades
+function migrateColors() {
+  const colorMap = {
+    '#D4520A': '#B04A8A', // Event: gammel brændt rød → ny magenta
+    '#B04A8A': '#ffffff', // Kommunikationsflow: gammel magenta → hvid
+    '#9099a8': '#7A8088', // Generelt: normalisér
+    '#0a2d6e': '#2A5DB0', // SoMe gammel
+    '#F47920': '#C15A1A', // Presse gammel
+    '#c8960c': '#C9A800', // Nyhedsbrev gammel
+    '#004225': '#265E3A', // Artikel gammel
+    '#c8a97e': '#C09060', // Møde gammel
+    '#5b3fa0': '#6B3FA0', // Admin/Website gammel
+    '#00AEEF': '#1B8BB0', // Projekt gammel
+  };
+  let changed = false;
+  state.projects.forEach(p => {
+    const newColor = colorMap[p.color?.toLowerCase()] || colorMap[p.color];
+    if(newColor) { p.color = newColor; changed = true; }
+    // Also fix category name Admin → Website
+    if(p.cat === 'Admin') { p.cat = 'Website'; changed = true; }
+  });
+  if(changed) save();
 }
 
 // ── MODAL ──
@@ -3503,31 +3534,26 @@ function renderInterviewsForSubtask(projId, stId) {
 
 function renderDashboardInterviews() {
   const el = document.getElementById('dash-interviews');
+  const avisBtn = document.getElementById('avis-btn');
   if(!el) return;
 
-  // Collect all interviews across all artikel-projects (including archived)
   const all = [];
   state.projects.filter(p=>p.cat==='Artikel').forEach(p => {
     (p.subtasks||[]).filter(s=>s.isInterviewStep&&s.interviews?.length).forEach(s => {
-      s.interviews.forEach((iv,i) => { all.push({iv, projId:p.id, stId:s.id, idx:i, projTitle:p.title, projDone:p.done, archived:p.interviewsArchived}); });
+      s.interviews.forEach((iv,i) => { all.push({iv, projId:p.id, stId:s.id, idx:i, projTitle:p.title, archived:p.interviewsArchived}); });
     });
   });
 
   const active   = all.filter(x=>!x.archived);
   const archived = all.filter(x=>x.archived);
-  const afventer = active.filter(x=>x.iv.status==='afventer').length;
-  const aftalt   = active.filter(x=>x.iv.status==='aftalt').length;
+  const afventer   = active.filter(x=>x.iv.status==='afventer').length;
+  const aftalt     = active.filter(x=>x.iv.status==='aftalt').length;
   const gennemfort = active.filter(x=>x.iv.status==='gennemfort').length;
-  const total    = active.length;
 
-  // Group active by project for Avis udgivet button
-  const byProj = {};
-  active.forEach(x => {
-    if(!byProj[x.projId]) byProj[x.projId] = { title:x.projTitle, items:[] };
-    byProj[x.projId].items.push(x);
-  });
+  // Show/hide Avis udgivet button
+  if(avisBtn) avisBtn.style.display = active.length ? 'block' : 'none';
 
-  if(!total && !archived.length) {
+  if(!active.length && !archived.length) {
     el.innerHTML = '<div class="empty" style="padding:12px 0;"><div class="emoji">🎙</div>Ingen interviews</div>';
     return;
   }
@@ -3535,6 +3561,7 @@ function renderDashboardInterviews() {
   const showArchived = state.showArchivedInterviews;
 
   el.innerHTML = `
+    ${active.length ? `
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px;">
       <div style="text-align:center;background:var(--warning-light);border-radius:var(--radius);padding:6px;">
         <div style="font-size:18px;font-weight:700;color:var(--warning);">${afventer}</div>
@@ -3549,39 +3576,28 @@ function renderDashboardInterviews() {
         <div style="font-size:9px;color:var(--accent);">Gennemført</div>
       </div>
     </div>
-
-    ${Object.entries(byProj).map(([projId, {title, items}]) => `
-      <div style="margin-bottom:8px;padding:8px;background:var(--surface2);border-radius:var(--radius);border:1px solid var(--border);">
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
-          <span style="font-size:11px;font-weight:600;flex:1;">✍️ ${esc(title)}</span>
-          <button onclick="archiveProjectInterviews(${projId})"
-            style="font-size:9px;padding:3px 8px;background:#265E3A;color:#fff;border:none;border-radius:var(--radius);cursor:pointer;font-family:var(--font);white-space:nowrap;">
-            📰 Avis udgivet
-          </button>
+    ${active.map(({iv,projId,stId,idx,projTitle})=>`
+      <div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span class="interview-status iv-${iv.status}" style="flex-shrink:0;font-size:8px;">${{afventer:'?',aftalt:'✓',gennemfort:'✔',aflyst:'✗'}[iv.status]||'?'}</span>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:11px;font-weight:500;">${esc(iv.person||'Unavngivet')}</div>
+          <div style="font-size:9px;color:var(--text-muted);">${esc(projTitle)}</div>
         </div>
-        ${items.map(({iv,projId,stId,idx})=>`
-          <div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-top:1px solid var(--border);">
-            <span class="interview-status iv-${iv.status}" style="flex-shrink:0;font-size:8px;">${{afventer:'?',aftalt:'✓',gennemfort:'✔',aflyst:'✗'}[iv.status]||'?'}</span>
-            <div style="flex:1;min-width:0;">
-              <div style="font-size:11px;font-weight:500;">${esc(iv.person||'Unavngivet')}</div>
-              ${iv.role?`<div style="font-size:9px;color:var(--text-muted);">${esc(iv.role)}</div>`:''}
-            </div>
-            <button class="icon-btn" onclick="openInterviewModal(${projId},${stId},${idx})" style="font-size:11px;color:var(--accent);">✎</button>
-          </div>`).join('')}
-      </div>`).join('')}
+        <button class="icon-btn" onclick="openInterviewModal(${projId},${stId},${idx})" style="font-size:11px;color:var(--accent);">✎</button>
+      </div>`).join('')}` : ''}
 
     ${archived.length ? `
       <div style="margin-top:8px;">
         <button onclick="state.showArchivedInterviews=!state.showArchivedInterviews;renderDashboardInterviews();"
           style="font-size:10px;color:var(--text-muted);background:none;border:none;cursor:pointer;padding:4px 0;font-family:var(--font);">
-          ${showArchived ? '▾' : '▸'} Arkiv (${archived.length} interviews fra ${new Set(archived.map(x=>x.projTitle)).size} aviser)
+          ${showArchived ? '▾' : '▸'} Arkiv (${archived.length} interviews)
         </button>
         ${showArchived ? `<div style="opacity:0.55;">
           ${archived.map(({iv,projTitle})=>`
             <div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-top:1px solid var(--border);">
-              <span style="font-size:9px;color:var(--text-muted);">📰</span>
+              <span style="font-size:9px;">📰</span>
               <div style="flex:1;">
-                <div style="font-size:10px;font-weight:500;text-decoration:line-through;">${esc(iv.person||'Unavngivet')}</div>
+                <div style="font-size:10px;text-decoration:line-through;">${esc(iv.person||'Unavngivet')}</div>
                 <div style="font-size:9px;color:var(--text-muted);">${esc(projTitle)}</div>
               </div>
             </div>`).join('')}
@@ -3589,14 +3605,15 @@ function renderDashboardInterviews() {
       </div>` : ''}`;
 }
 
-function archiveProjectInterviews(projId) {
-  const p = state.projects.find(x=>x.id===projId);
-  if(!p) return;
-  if(!confirm(`Markér alle interviews for "${p.title}" som arkiveret?\n\nDe forbliver synlige i arkivet.`)) return;
-  p.interviewsArchived = true;
+function archiveAllInterviews() {
+  const artikels = state.projects.filter(p=>p.cat==='Artikel'&&!p.interviewsArchived&&
+    (p.subtasks||[]).some(s=>s.isInterviewStep&&s.interviews?.length));
+  if(!artikels.length) return;
+  if(!confirm(`Arkiver alle aktive interviews?\n\nDe forbliver synlige i arkivet.`)) return;
+  artikels.forEach(p => { p.interviewsArchived = true; });
   save();
   renderDashboardInterviews();
-  toast(`📰 Interviews for "${p.title}" arkiveret ✓`);
+  toast('📰 Alle interviews arkiveret ✓');
 }
 
 // ── DELOPGAVE BIBLIOTEK ──
