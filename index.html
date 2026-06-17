@@ -714,7 +714,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   <div class="sidebar-logo">
     <div style="font-size:10px;color:var(--sidebar-text);opacity:0.6;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
     <h1>FocusBase</h1>
-    <span>Dit system · Din flow · v1.26</span>
+    <span>Dit system · Din flow · v1.27</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
@@ -4772,6 +4772,8 @@ function resetMakeWebhook() {
   localStorage.removeItem('make_webhook_url');
   toast('Make webhook-URL slettet');
 }
+
+async function forceRefreshFromSupabase() {
   if(!sbReady) { toast('Supabase er ikke forbundet'); return; }
   const btn = document.getElementById('refresh-btn');
   if(btn) btn.textContent = '⏳ Henter...';
