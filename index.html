@@ -714,7 +714,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   <div class="sidebar-logo">
     <div style="font-size:10px;color:var(--sidebar-text);opacity:0.6;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
     <h1>FocusBase</h1>
-    <span>Dit system · Din flow · v1.30</span>
+    <span>Dit system · Din flow · v1.36</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
@@ -1164,6 +1164,49 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
       <div class="flex gap8">
         <button class="btn" onclick="saveNewSubtaskType()" style="flex:1;">Gem type</button>
         <button class="btn secondary" onclick="closeModal('modal-new-subtype')">Annuller</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- POCKET REVIEW MODAL -->
+<div class="modal-overlay" id="modal-pocket-review">
+  <div class="modal" style="width:520px;">
+    <div class="modal-header" style="background:#1a1a2e;border-radius:var(--radius-lg) var(--radius-lg) 0 0;">
+      <div class="modal-title" style="color:#fff;">🎙 Gennemse Pocket-opgave</div>
+      <button class="modal-close" onclick="closeModal('modal-pocket-review')" style="color:#fff;">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Opgavetitel</label>
+        <input type="text" id="pr-title" style="width:100%;">
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Kategori</label>
+          <select id="pr-cat" style="width:100%;" onchange="prUpdateCat()">
+            <option>SoMe</option><option>Presse</option><option>Nyhedsbrev</option>
+            <option>Artikel</option><option>Møde</option><option>Website</option>
+            <option>Projekt</option><option>Kommunikationsflow</option>
+            <option>Event</option><option selected>Andet</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Prioritet</label>
+          <select id="pr-prio" style="width:100%;">
+            <option value="high">Høj</option>
+            <option value="mid" selected>Middel</option>
+            <option value="low">Lav</option>
+          </select>
+        </div>
+      </div>
+      <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;margin-top:4px;">
+        Action items – vælg hvilke der skal med som delopgaver
+      </div>
+      <div id="pr-action-items" style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;"></div>
+      <div class="flex gap8">
+        <button class="btn" onclick="savePocketReview()" style="flex:1;">Opret opgave →</button>
+        <button class="btn secondary" onclick="closeModal('modal-pocket-review')">Annuller</button>
       </div>
     </div>
   </div>
@@ -1687,8 +1730,47 @@ function parseSupabaseData(r) {
   obj.id = r.id;
   if(!Array.isArray(obj.subtasks)) obj.subtasks = [];
 
-  // Try to parse structured task format from desc
-  if(obj.desc) {
+  // Try to parse Pocket summarization JSON from desc
+  if(obj.desc && typeof obj.desc === 'string' && obj.desc.includes('actionItems')) {
+    try {
+      const pocket = JSON.parse(obj.desc);
+      if(pocket.actionItems?.length) {
+        obj.subtasks = pocket.actionItems.map((item, i) => ({
+          id: Date.now() + i,
+          title: item.title || item.task || '',
+          deadline: item.dueDate ? item.dueDate.substring(0,10) : '',
+          time: item.dueDate ? item.dueDate.substring(11,16) : '',
+          note: item.description || '',
+          done: item.isCompleted || false,
+          doneAt: null, skippable: false, skipped: false,
+        })).filter(s=>s.title);
+        // Use first due date as project deadline
+        const firstDue = pocket.actionItems.find(a=>a.dueDate)?.dueDate;
+        if(firstDue && !obj.deadline) obj.deadline = firstDue.substring(0,10);
+        obj.desc = pocket.summary?.markdown || '';
+      }
+    } catch(e) {
+      // Not Pocket data – try email parser
+      const parsed = parseEmailTask(obj.desc);
+      if(parsed) {
+        obj.title = parsed.title;
+        if(parsed.deadline) obj.deadline = parsed.deadline;
+        if(parsed.subtasks.length > 0) {
+          obj.subtasks = parsed.subtasks.map((t, i) => ({
+            id: Date.now() + i,
+            title: t,
+            deadline: parsed.deadline || '',
+            time: '', note: '', done: false, doneAt: null,
+            skippable: false, skipped: false,
+          }));
+        }
+        obj.desc = '';
+      } else {
+        obj.desc = cleanEmailContent(obj.desc);
+      }
+    }
+  } else if(obj.desc) {
+    // Email parser for non-Pocket data
     const parsed = parseEmailTask(obj.desc);
     if(parsed) {
       obj.title = parsed.title;
@@ -1803,6 +1885,15 @@ function scheduleSyncToSupabase() {
 // ── SAVE / LOAD ──
 function save() {
   try {
+    // Sync project deadline to earliest open subtask deadline
+    state.projects.forEach(p => {
+      if(p.done) return;
+      const openSubs = (p.subtasks||[]).filter(s=>!s.done&&!s.skipped&&s.deadline);
+      if(openSubs.length) {
+        const earliest = openSubs.map(s=>s.deadline).sort()[0];
+        p.deadline = earliest;
+      }
+    });
     localStorage.setItem('focusbase_v2', JSON.stringify(state));
     scheduleSyncToSupabase();
     updateTopbarColor();
@@ -2882,7 +2973,14 @@ function renderSubtask(projId, s) {
       </div>
     </div>`;
   }
-  return `<div class="subtask-item" id="st-${s.id}" style="color:${tc};">
+  return `<div class="subtask-item" id="st-${s.id}" style="color:${tc};"
+    draggable="true"
+    ondragstart="event.dataTransfer.setData('subtask',JSON.stringify({projId:${projId},stId:${s.id}}));this.style.opacity='0.5';"
+    ondragend="this.style.opacity='1';"
+    ondragover="event.preventDefault();this.style.background='rgba(255,255,255,0.15)';"
+    ondragleave="this.style.background='';"
+    ondrop="event.preventDefault();this.style.background='';handleSubtaskDrop(event,${projId},${s.id});">
+    <span style="cursor:grab;color:${mc};font-size:12px;padding:0 4px;flex-shrink:0;">⠿</span>
     <div class="subtask-check ${s.done?'done':''}" onclick="toggleSubtask(${projId},${s.id})"
       style="border-color:${checkBorder};${s.done?'background:'+checkDoneBg+';color:'+tc+';':''}">${s.done?'✓':''}</div>
     <span class="subtask-text ${s.done?'done':''}" style="color:${s.done?mc:tc};${s.done?'text-decoration:line-through;':''}">${esc(s.title)}${s.skippable&&!s.done?`<span style="font-size:9px;color:${mc};margin-left:6px;font-style:italic;">kan frafaldes</span>`:''}</span>
@@ -2968,14 +3066,59 @@ function saveSubtask() {
   if(!title) { alert('Giv delopgaven en titel'); return; }
   const p = state.projects.find(x=>x.id===state.editingSubtaskProjectId);
   if(!p) return;
+  const newDeadline = document.getElementById('st-deadline').value;
+
   if(state.editingSubtaskId) {
-    const s = (p.subtasks||[]).find(x=>x.id===state.editingSubtaskId);
-    if(s) { s.title=title; s.deadline=document.getElementById('st-deadline').value; s.time=document.getElementById('st-time').value; s.note=document.getElementById('st-note').value; }
+    const idx = (p.subtasks||[]).findIndex(x=>x.id===state.editingSubtaskId);
+    if(idx >= 0) {
+      const s = p.subtasks[idx];
+      const oldDeadline = s.deadline;
+      s.title = title;
+      s.deadline = newDeadline;
+      s.time = document.getElementById('st-time').value;
+      s.note = document.getElementById('st-note').value;
+      // Cascade same deadline to all following subtasks
+      if(newDeadline && newDeadline !== oldDeadline) {
+        for(let i = idx + 1; i < p.subtasks.length; i++) {
+          if(!p.subtasks[i].done && !p.subtasks[i].skipped) {
+            p.subtasks[i].deadline = newDeadline;
+          }
+        }
+      }
+    }
   } else {
-    p.subtasks.push({ id:state.nextId++, title, deadline:document.getElementById('st-deadline').value, time:document.getElementById('st-time').value, note:document.getElementById('st-note').value, done:false, doneAt:null });
+    p.subtasks.push({ id:state.nextId++, title, deadline:newDeadline, time:document.getElementById('st-time').value, note:document.getElementById('st-note').value, done:false, doneAt:null });
   }
   save(); closeModal('modal-subtask'); renderProjects(); renderDashboard();
   setTimeout(()=>{ const list=document.getElementById('subtasks-'+state.editingSubtaskProjectId); if(list){list.classList.add('open');} const arrow=document.getElementById('arrow-'+state.editingSubtaskProjectId); if(arrow){arrow.classList.add('open');} },50);
+}
+
+function handleSubtaskDrop(event, targetProjId, targetStId) {
+  const data = event.dataTransfer.getData('subtask');
+  if(!data) return;
+  const { projId: srcProjId, stId: srcStId } = JSON.parse(data);
+
+  const srcProj = state.projects.find(x=>x.id===srcProjId);
+  const tgtProj = state.projects.find(x=>x.id===targetProjId);
+  if(!srcProj || !tgtProj) return;
+
+  const srcIdx = srcProj.subtasks.findIndex(s=>s.id===srcStId);
+  const tgtIdx = tgtProj.subtasks.findIndex(s=>s.id===targetStId);
+  if(srcIdx === -1) return;
+
+  const [moved] = srcProj.subtasks.splice(srcIdx, 1);
+
+  if(srcProjId === targetProjId) {
+    // Reorder within same project
+    const newIdx = tgtIdx > srcIdx ? tgtIdx : tgtIdx;
+    tgtProj.subtasks.splice(newIdx, 0, moved);
+  } else {
+    // Move to different project
+    if(tgtIdx === -1) tgtProj.subtasks.push(moved);
+    else tgtProj.subtasks.splice(tgtIdx, 0, moved);
+  }
+
+  save(); renderProjects(); renderDashboard();
 }
 
 function toggleSubtask(projId, stId) {
@@ -3053,8 +3196,77 @@ function deleteInboxItem(id) {
   }
 }
 
+// ── POCKET REVIEW ──
+let _prProjId = null;
+let _prActionItems = [];
+
+function openPocketReview(projId) {
+  const p = state.projects.find(x=>x.id===projId);
+  if(!p) return openTaskModal(projId);
+
+  let pocketItems = [];
+  if(p.subtasks?.length) {
+    pocketItems = p.subtasks.map(s=>({ title:s.title, dueDate:s.deadline, isCompleted:s.done }));
+  }
+
+  if(!pocketItems.length) { openTaskModal(projId); return; }
+
+  _prProjId = projId;
+  _prActionItems = pocketItems;
+
+  document.getElementById('pr-title').value = p.title || '';
+  document.getElementById('pr-cat').value   = p.cat || 'Andet';
+  document.getElementById('pr-prio').value  = p.prio || 'mid';
+
+  const el = document.getElementById('pr-action-items');
+  el.innerHTML = pocketItems.map((item, i) => {
+    const date = item.dueDate ? item.dueDate.substring(0,10) : '';
+    const displayDate = date ? date.substring(5).split('-').reverse().join('/') : '';
+    return `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface2);border-radius:var(--radius);border:1px solid var(--border);">
+      <input type="checkbox" id="pr-item-${i}" checked style="flex-shrink:0;width:16px;height:16px;accent-color:var(--accent);">
+      <input type="text" value="${esc(item.title||'')}" id="pr-item-title-${i}"
+        style="flex:1;background:transparent;border:none;outline:none;font-family:var(--font);font-size:12px;color:var(--text);">
+      <input type="text" value="${displayDate}" id="pr-item-date-${i}"
+        placeholder="dato" style="width:55px;font-size:10px;text-align:center;border:1px solid var(--border);border-radius:4px;padding:3px 5px;background:var(--surface);color:var(--text);font-family:var(--font);">
+    </div>`;
+  }).join('');
+
+  document.getElementById('modal-pocket-review').classList.add('open');
+}
+
+function savePocketReview() {
+  const p = state.projects.find(x=>x.id===_prProjId);
+  if(!p) return;
+  const catColorMap3 = {
+    'SoMe':'#2A5DB0','Presse':'#C15A1A','Nyhedsbrev':'#C9A800',
+    'Artikel':'#265E3A','Møde':'#C09060','Website':'#6B3FA0',
+    'Projekt':'#1B8BB0','Kommunikationsflow':'#ffffff',
+    'Event':'#B04A8A','Andet':'#7A8088','Generelt':'#7A8088'
+  };
+  p.title = document.getElementById('pr-title').value.trim() || p.title;
+  p.cat   = document.getElementById('pr-cat').value;
+  p.prio  = document.getElementById('pr-prio').value;
+  p.color = catColorMap3[p.cat] || '#7A8088';
+  p.desc  = '';
+  p.subtasks = _prActionItems.map((item, i) => {
+    if(!document.getElementById(`pr-item-${i}`)?.checked) return null;
+    const title   = document.getElementById(`pr-item-title-${i}`)?.value.trim();
+    const dateStr = document.getElementById(`pr-item-date-${i}`)?.value.trim();
+    const deadline = dateStr ? parseSmartDate(dateStr) : (item.dueDate||'');
+    if(!title) return null;
+    return { id:state.nextId++, title, deadline, time:'', note:'', done:false, doneAt:null, skippable:false, skipped:false };
+  }).filter(Boolean);
+  save();
+  closeModal('modal-pocket-review');
+  renderProjects(); renderDashboard(); updateBadge();
+  toast(`✓ "${p.title}" oprettet med ${p.subtasks.length} delopgaver`);
+}
+
 function processInboxItem(id) {
-  openTaskModal(id);
+  const p = state.projects.find(x=>x.id===id);
+  if(!p) return;
+  if(p.subtasks?.length > 0) openPocketReview(id);
+  else openTaskModal(id);
 }
 
 // ── KAT-WIDGET ──
@@ -3549,31 +3761,69 @@ function renderInterviewsForSubtask(projId, stId) {
   const p = state.projects.find(x=>x.id===projId);
   const s = p?.subtasks.find(x=>x.id===stId);
   const ivs = s?.interviews || [];
+  const tc = getContrastText(p?.color||'#7A8088');
+  const mc = getMuted(p?.color||'#7A8088');
   const statusLabel = { afventer:'Afventer aftale', aftalt:'Aftalt', gennemfort:'Gennemført', aflyst:'Aflyst' };
 
-  return `<div style="margin-top:8px;padding:10px;background:var(--surface2);border-radius:var(--radius);border:1px solid var(--border);">
-    <div style="font-size:9px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:flex;align-items:center;gap:8px;">
-      🎙 Interviews (${ivs.filter(i=>i.status!=='aflyst').length} aktive · ${ivs.filter(i=>i.status==='afventer').length} afventer aftale)
-      <button class="btn sm" onclick="openInterviewModal(${projId},${stId})" style="font-size:9px;padding:2px 8px;margin-left:auto;">+ Tilføj</button>
+  const active    = ivs.filter(iv=>iv.status!=='aflyst');
+  const allDone   = active.length > 0 && active.every(iv=>iv.status==='gennemfort');
+
+  // Auto-sync: if all interviews gennemført, mark subtask done
+  if(allDone && s && !s.done) {
+    s.done = true; s.doneAt = new Date().toISOString();
+    setTimeout(()=>{ save(); renderProjects(); renderDashboard(); }, 200);
+  }
+
+  return `<div style="margin-top:8px;padding:10px;background:rgba(0,0,0,0.12);border-radius:var(--radius);border:1px solid rgba(255,255,255,0.15);">
+    <div style="font-size:9px;font-weight:600;color:${mc};text-transform:uppercase;letter-spacing:1px;margin-bottom:${allDone?'0':'8px'};display:flex;align-items:center;gap:8px;">
+      🎙 Interviews
+      ${allDone
+        ? `<span style="font-size:9px;padding:1px 7px;border-radius:8px;background:rgba(255,255,255,0.2);color:${tc};">✓ ${active.length} gennemført</span>`
+        : `<span style="color:${mc};">(${active.length} aktive · ${ivs.filter(i=>i.status==='afventer').length} afventer)</span>`}
+      <button class="btn sm" onclick="openInterviewModal(${projId},${stId})" style="font-size:9px;padding:2px 8px;margin-left:auto;${getBtnStyle(p?.color||'#7A8088')}">+ Tilføj</button>
     </div>
-    ${ivs.length === 0
-      ? `<div style="font-size:11px;color:var(--text-muted);">Ingen interviews tilføjet endnu.</div>`
-      : ivs.map((iv,i) => `
-        <div class="interview-card ${iv.status==='aflyst'?'aflyst':''}">
-          <span class="interview-status iv-${iv.status}">${statusLabel[iv.status]||iv.status}</span>
-          <div style="font-size:12px;font-weight:600;">${esc(iv.person)||'Unavngivet'}${iv.role?` · <span style="font-weight:400;color:var(--text-muted);">${esc(iv.role)}</span>`:''}</div>
-          <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">
-            ${iv.format==='personligt'?'👤':'iv.format'==='online'?'💻':'📞'} ${iv.format}
-            ${iv.address?' · '+esc(iv.address):''}
-            ${iv.date?' · '+formatDate(iv.date)+(iv.time?' '+iv.time:''):''}
-          </div>
-          ${iv.questions?`<div style="font-size:11px;color:var(--text-muted);margin-top:4px;font-style:italic;">${esc(iv.questions).substring(0,80)}${iv.questions.length>80?'…':''}</div>`:''}
-          <div class="flex gap8 mt8">
-            <button class="icon-btn" onclick="openInterviewModal(${projId},${stId},${i})" style="font-size:11px;color:var(--accent);">✎ Rediger</button>
-            <button class="icon-btn red" onclick="deleteInterview(${projId},${stId},${i})" style="font-size:11px;">✕</button>
-          </div>
-        </div>`).join('')}
+    ${allDone ? '' : ivs.length === 0
+      ? `<div style="font-size:11px;color:${mc};">Ingen interviews tilføjet endnu.</div>`
+      : ivs.map((iv,i) => {
+          const isDone = iv.status === 'gennemfort';
+          const isAflyst = iv.status === 'aflyst';
+          if(isDone) return `
+            <div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-top:1px solid rgba(255,255,255,0.1);opacity:0.6;">
+              <span class="interview-status iv-gennemfort" style="font-size:8px;">✔</span>
+              <span style="font-size:11px;color:${tc};text-decoration:line-through;">${esc(iv.person||'Unavngivet')}</span>
+              <button class="icon-btn" onclick="openInterviewModal(${projId},${stId},${i})" style="font-size:10px;color:${mc};margin-left:auto;">✎</button>
+            </div>`;
+          return `
+            <div class="interview-card ${isAflyst?'aflyst':''}" style="background:rgba(0,0,0,0.1);border-color:rgba(255,255,255,0.15);">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+                <span class="interview-status iv-${iv.status}" style="font-size:8px;">${statusLabel[iv.status]||iv.status}</span>
+                <span style="font-size:12px;font-weight:600;color:${tc};">${esc(iv.person)||'Unavngivet'}${iv.role?` <span style="font-weight:400;color:${mc};">${esc(iv.role)}</span>`:''}</span>
+                <button onclick="markInterviewDone(${projId},${stId},${i})" style="margin-left:auto;font-size:9px;padding:2px 7px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:${tc};border-radius:4px;cursor:pointer;font-family:var(--font);">✓ Gennemført</button>
+              </div>
+              <div style="font-size:10px;color:${mc};">
+                ${iv.format==='personligt'?'👤':iv.format==='online'?'💻':'📞'} ${iv.format}
+                ${iv.address?' · '+esc(iv.address):''}
+                ${iv.date?' · '+formatDate(iv.date)+(iv.time?' '+iv.time:''):''}
+              </div>
+              ${iv.questions?`<div style="font-size:10px;color:${mc};margin-top:3px;font-style:italic;">${esc(iv.questions).substring(0,80)}${iv.questions.length>80?'…':''}</div>`:''}
+              <div class="flex gap8 mt8">
+                <button class="icon-btn" onclick="openInterviewModal(${projId},${stId},${i})" style="font-size:10px;color:${mc};">✎ Rediger</button>
+                <button class="icon-btn red" onclick="deleteInterview(${projId},${stId},${i})" style="font-size:10px;">✕</button>
+              </div>
+            </div>`;
+        }).join('')}
   </div>`;
+}
+
+function markInterviewDone(projId, stId, idx) {
+  const p = state.projects.find(x=>x.id===projId);
+  const s = p?.subtasks.find(x=>x.id===stId);
+  if(!s?.interviews?.[idx]) return;
+  s.interviews[idx].status = 'gennemfort';
+  // Check if all done → mark subtask done
+  const allDone = s.interviews.filter(iv=>iv.status!=='aflyst').every(iv=>iv.status==='gennemfort');
+  if(allDone) { s.done = true; s.doneAt = new Date().toISOString(); }
+  save(); renderProjects(); renderDashboard();
 }
 
 function renderDashboardInterviews() {
