@@ -714,7 +714,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   <div class="sidebar-logo">
     <div style="font-size:10px;color:var(--sidebar-text);opacity:0.6;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
     <h1>FocusBase</h1>
-    <span>Dit system · Din flow · v1.37</span>
+    <span>Dit system · Din flow · v1.38</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
@@ -2115,25 +2115,6 @@ function parseSmartDate(str) {
 
 const DA_MONTHS_SHORT = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
 
-function previewSmartDate(inputId, previewId) {
-  const val = document.getElementById(inputId)?.value;
-  const preview = document.getElementById(previewId);
-  const hiddenId = inputId === 'p-deadline-smart' ? 'p-deadline' : inputId === 'flow-deadline-smart' ? 'flow-deadline' : 'st-deadline';
-  const hidden = document.getElementById(hiddenId);
-  const result = parseSmartDate(val);
-  if(result) {
-    const d = new Date(result+'T12:00:00');
-    const isPast = d < new Date();
-    if(preview) {
-      preview.textContent = `→ ${d.getDate()}. ${DA_MONTHS_SHORT[d.getMonth()]} ${d.getFullYear()}${isPast?' (baguddat.)':''}`;
-      preview.style.color = isPast ? 'var(--warning,#f59e0b)' : 'var(--accent2)';
-    }
-    if(hidden) hidden.value = result;
-  } else {
-    if(preview) { preview.textContent = val ? 'Ugyldigt format – prøv fx 15/6 eller 15/6/2025' : ''; preview.style.color = 'var(--danger)'; }
-    if(hidden) hidden.value = '';
-  }
-}
 
 // ── EMAIL OPGAVE-PARSER ──
 // Parses structured task format from email body:
@@ -3369,25 +3350,35 @@ function renderDashboardAvis() {
   }).join('');
 }
 
-// Patch previewSmartDate for avis-tryk-input
-const _origPreviewSmartDate = previewSmartDate;
+// ── KONSOLIDERET previewSmartDate ──
 function previewSmartDate(inputId, previewId) {
-  if(inputId === 'avis-tryk-input') {
-    const val = document.getElementById(inputId)?.value;
-    const preview = document.getElementById(previewId);
-    const hidden  = document.getElementById('avis-tryk-hidden');
-    const result  = parseSmartDate(val);
-    if(result) {
-      const d = new Date(result+'T12:00:00');
-      if(preview) { preview.textContent=`→ ${d.getDate()}. ${DA_MONTHS_SHORT[d.getMonth()]} ${d.getFullYear()}`; preview.style.color='var(--accent2)'; }
-      if(hidden) hidden.value = result;
-    } else {
-      if(preview) { preview.textContent = val?'Ugyldigt format':''; preview.style.color='var(--danger)'; }
-      if(hidden) hidden.value = '';
+  const val    = document.getElementById(inputId)?.value;
+  const preview = document.getElementById(previewId);
+  const result = parseSmartDate(val);
+
+  // Determine hidden field
+  let hiddenId;
+  if(inputId === 'p-deadline-smart')    hiddenId = 'p-deadline';
+  else if(inputId === 'flow-deadline-smart') hiddenId = 'flow-deadline';
+  else if(inputId === 'avis-tryk-input')     hiddenId = 'avis-tryk-hidden';
+  else if(inputId === 'off-from')            hiddenId = 'off-from-hidden';
+  else if(inputId === 'off-to')              hiddenId = 'off-to-hidden';
+  else                                       hiddenId = 'st-deadline';
+
+  const hidden = document.getElementById(hiddenId);
+
+  if(result) {
+    const d = new Date(result+'T12:00:00');
+    const isPast = d < new Date();
+    if(preview) {
+      preview.textContent = `→ ${d.getDate()}. ${DA_MONTHS_SHORT[d.getMonth()]} ${d.getFullYear()}${isPast?' (baguddat.)':''}`;
+      preview.style.color = isPast ? 'var(--warning,#f59e0b)' : 'var(--accent2)';
     }
-    return;
+    if(hidden) hidden.value = result;
+  } else {
+    if(preview) { preview.textContent = val ? 'Ugyldigt format – prøv fx 15/6' : ''; preview.style.color = 'var(--danger)'; }
+    if(hidden) hidden.value = '';
   }
-  _origPreviewSmartDate(inputId, previewId);
 }
 let _prProjId = null;
 let _prActionItems = [];
