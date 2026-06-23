@@ -146,8 +146,8 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); font-si
 /* ── DASHBOARD ── */
 .dash-stats {
   display: grid;
-  grid-template-columns: repeat(4, 1fr) 0.5fr;
-  gap: 14px;
+  grid-template-columns: repeat(4, 1fr) 0.8fr 0.8fr 0.5fr;
+  gap: 12px;
   margin-bottom: 20px;
   align-items: stretch;
 }
@@ -714,7 +714,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   <div class="sidebar-logo">
     <div style="font-size:10px;color:var(--sidebar-text);opacity:0.6;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
     <h1>FocusBase</h1>
-    <span>Dit system · Din flow · v1.47</span>
+    <span>Dit system · Din flow · v1.48</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
@@ -761,9 +761,6 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
     <!-- DASHBOARD -->
     <div class="view active" id="view-dashboard">
       <div class="dash-stats" id="dash-stats-grid">
-        <div class="stat-card" id="sc-cat" style="transition:border-color 0.5s;padding:0;overflow:hidden;cursor:default;order:5;">
-          <img id="cat-img" src="" alt="" style="width:100%;height:100%;object-fit:cover;display:block;min-height:90px;transition:opacity 0.4s;border-radius:var(--radius-lg);">
-        </div>
         <div class="stat-card" id="sc-proj" style="transition:background 0.5s,border-color 0.5s;order:1;">
           <div class="s-label" id="sc-proj-label">Åbne opgaver</div>
           <div class="s-val" id="stat-proj">0</div>
@@ -783,6 +780,32 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
           <div class="s-label" id="sc-some-label">SoMe afventer</div>
           <div class="s-val" id="stat-some">0</div>
           <div class="s-sub" id="sc-some-sub"></div>
+        </div>
+        <!-- Temaer cirkeldiagram -->
+        <div class="stat-card" style="order:5;padding:10px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <span class="s-label" style="margin:0;">◈ Temaer</span>
+            <span id="tema-chart-count" style="font-size:9px;color:var(--text-muted);"></span>
+          </div>
+          <canvas id="tema-pie" width="140" height="140" style="display:block;margin:0 auto;"></canvas>
+          <div id="tema-pie-legend" style="margin-top:6px;display:flex;flex-direction:column;gap:2px;"></div>
+        </div>
+        <!-- SoMe cirkeldiagram -->
+        <div class="stat-card" style="order:6;padding:10px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:3px;">
+            <span class="s-label" style="margin:0;">◈ SoMe</span>
+            <div style="display:flex;gap:2px;">
+              <button class="filter-pill active" id="some-chart-btn-0" onclick="setSomeChartView(0,this)" style="font-size:8px;padding:1px 5px;">FB/LI</button>
+              <button class="filter-pill" id="some-chart-btn-1" onclick="setSomeChartView(1,this)" style="font-size:8px;padding:1px 5px;">FB</button>
+              <button class="filter-pill" id="some-chart-btn-2" onclick="setSomeChartView(2,this)" style="font-size:8px;padding:1px 5px;">LI</button>
+            </div>
+          </div>
+          <canvas id="some-pie" width="140" height="140" style="display:block;margin:0 auto;"></canvas>
+          <div id="some-pie-legend" style="margin-top:6px;display:flex;flex-direction:column;gap:2px;"></div>
+        </div>
+        <!-- Kat -->
+        <div class="stat-card" id="sc-cat" style="transition:border-color 0.5s;padding:0;overflow:hidden;cursor:default;order:7;">
+          <img id="cat-img" src="" alt="" style="width:100%;height:100%;object-fit:cover;display:block;min-height:90px;transition:opacity 0.4s;border-radius:var(--radius-lg);">
         </div>
       </div>
 
@@ -816,28 +839,6 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
               <span id="inbox-count" style="margin-left:auto;background:var(--accent);color:#fff;font-size:10px;padding:1px 7px;border-radius:10px;font-weight:600;"></span>
             </div>
             <div class="card-body" id="dash-inbox"></div>
-          </div>
-          <div class="card">
-            <div class="card-header">◈ Temaer
-              <span id="tema-chart-count" style="margin-left:auto;font-size:10px;color:var(--text-muted);"></span>
-            </div>
-            <div class="card-body">
-              <canvas id="tema-pie" width="200" height="200" style="display:block;margin:0 auto;max-width:180px;"></canvas>
-              <div id="tema-pie-legend" style="margin-top:10px;display:flex;flex-direction:column;gap:4px;"></div>
-            </div>
-          </div>
-          <div class="card">
-            <div class="card-header">◈ SoMe
-              <div style="margin-left:auto;display:flex;gap:3px;">
-                <button class="filter-pill active" id="some-chart-btn-0" onclick="setSomeChartView(0,this)" style="font-size:9px;padding:1px 6px;">FB/LI</button>
-                <button class="filter-pill" id="some-chart-btn-1" onclick="setSomeChartView(1,this)" style="font-size:9px;padding:1px 6px;">FB emner</button>
-                <button class="filter-pill" id="some-chart-btn-2" onclick="setSomeChartView(2,this)" style="font-size:9px;padding:1px 6px;">LI typer</button>
-              </div>
-            </div>
-            <div class="card-body">
-              <canvas id="some-pie" width="200" height="200" style="display:block;margin:0 auto;max-width:180px;"></canvas>
-              <div id="some-pie-legend" style="margin-top:10px;display:flex;flex-direction:column;gap:4px;"></div>
-            </div>
           </div>
           <div class="card" id="dash-avis-card">
             <div class="card-header" style="display:flex;align-items:center;">
