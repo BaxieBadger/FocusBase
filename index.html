@@ -714,7 +714,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   <div class="sidebar-logo">
     <div style="font-size:10px;color:var(--sidebar-text);opacity:0.6;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
     <h1>FocusBase</h1>
-    <span>Dit system · Din flow · v1.38</span>
+    <span>Dit system · Din flow · v1.42</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
@@ -727,8 +727,8 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
     <div class="nav-item" onclick="nav('calendar')"><span class="ni-icon">◷</span> Kalender</div>
     <div class="nav-item" onclick="nav('some')"><span class="ni-icon">◈</span> SoMe</div>
     <div class="sidebar-section-label">Arkiv</div>
-    <div class="nav-item" onclick="nav('notes')"><span class="ni-icon">◱</span> Notater</div>
-    <div class="nav-item" onclick="nav('diary')"><span class="ni-icon">◎</span> Dagbog</div>
+    <div class="nav-item" onclick="nav('notes')" style="display:none;"><span class="ni-icon">◱</span> Notater</div>
+    <div class="nav-item" onclick="nav('diary')" style="display:none;"><span class="ni-icon">◎</span> Dagbog</div>
     <div class="nav-item" onclick="nav('reports')"><span class="ni-icon">📋</span> Afrapportering</div>
   </div>
   <div class="sidebar-footer">
@@ -737,8 +737,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
       <span class="streak-num" id="streak-count">0</span>
       <div class="streak-info">dages streak<br><span style="font-size:9px;opacity:0.6;">kun hverdage</span></div>
     </div>
-    <button class="streak-off-btn" onclick="forceRefreshFromSupabase()" style="margin-top:4px;" id="refresh-btn">☁ Genindlæs fra sky</button>
-    <button class="streak-off-btn" onclick="syncMake()" style="margin-top:4px;" id="make-sync-btn">⟳ Hent nye mails</button>
+    <button class="streak-off-btn" onclick="forceRefreshFromSupabase()" style="margin-top:4px;" id="refresh-btn">⟳ Opdater</button>
     <button class="streak-off-btn" onclick="openOffDaysModal()">📅 Markér fridage / ferie</button>
     <button class="streak-off-btn" onclick="openSupabaseModal()" style="margin-top:4px;" id="sb-btn">☁ Supabase: ikke forbundet</button>
     <div class="focus-bar-label" id="focus-label">Fokus-score: 0%</div>
@@ -818,10 +817,32 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
             </div>
             <div class="card-body" id="dash-inbox"></div>
           </div>
+          <div class="card">
+            <div class="card-header">◈ Temaer
+              <span id="tema-chart-count" style="margin-left:auto;font-size:10px;color:var(--text-muted);"></span>
+            </div>
+            <div class="card-body">
+              <canvas id="tema-pie" width="200" height="200" style="display:block;margin:0 auto;max-width:180px;"></canvas>
+              <div id="tema-pie-legend" style="margin-top:10px;display:flex;flex-direction:column;gap:4px;"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">◈ SoMe
+              <div style="margin-left:auto;display:flex;gap:3px;">
+                <button class="filter-pill active" id="some-chart-btn-0" onclick="setSomeChartView(0,this)" style="font-size:9px;padding:1px 6px;">FB/LI</button>
+                <button class="filter-pill" id="some-chart-btn-1" onclick="setSomeChartView(1,this)" style="font-size:9px;padding:1px 6px;">FB emner</button>
+                <button class="filter-pill" id="some-chart-btn-2" onclick="setSomeChartView(2,this)" style="font-size:9px;padding:1px 6px;">LI typer</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <canvas id="some-pie" width="200" height="200" style="display:block;margin:0 auto;max-width:180px;"></canvas>
+              <div id="some-pie-legend" style="margin-top:10px;display:flex;flex-direction:column;gap:4px;"></div>
+            </div>
+          </div>
           <div class="card" id="dash-avis-card">
             <div class="card-header" style="display:flex;align-items:center;">
-              📰 Værestedsavisen
-              <span id="dash-avis-tryk" style="margin-left:auto;font-size:10px;color:var(--text-muted);cursor:pointer;" onclick="openAvisTrykModal()" title="Sæt Sendes til tryk-dato"></span>
+              🏷 Temaer
+              <span id="dash-avis-tryk" style="margin-left:auto;font-size:10px;color:var(--text-muted);" title="Sendes til tryk"></span>
             </div>
             <div class="card-body" id="dash-avis"></div>
           </div>
@@ -872,16 +893,8 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
           <button class="btn sm" onclick="openTaskModal()">+ Ny opgave</button>
         </div>
       </div>
-      <!-- VÆRESTEDSAVISEN SEKTION -->
-      <div id="avis-section" style="margin-bottom:8px;display:none;">
-        <div onclick="toggleAvisSection()" style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:#265E3A;border-radius:var(--radius);cursor:pointer;margin-bottom:4px;">
-          <span id="avis-arrow" style="color:#fff;font-size:11px;transition:transform 0.2s;">▶</span>
-          <span style="color:#fff;font-size:13px;font-weight:600;">📰 Værestedsavisen</span>
-          <span id="avis-count" style="font-size:10px;background:rgba(255,255,255,0.2);color:#fff;padding:1px 7px;border-radius:10px;margin-left:2px;"></span>
-          <span style="margin-left:auto;font-size:11px;color:rgba(255,255,255,0.75);" id="avis-tryk-label"></span>
-        </div>
-        <div id="avis-list" style="display:none;padding-left:4px;"></div>
-      </div>
+      <!-- TEMA SEKTIONER -->
+      <div id="tema-sections"></div>
       <div class="project-list" id="project-list"></div>
     </div>
 
@@ -1019,16 +1032,24 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
         <div class="field">
           <label>Kategori</label>
           <select id="p-cat" onchange="showTemplatePreview()">
-            <option>SoMe</option>
-            <option>Presse</option>
-            <option>Nyhedsbrev</option>
-            <option>Artikel</option>
-            <option>Møde</option>
-            <option>Website</option>
-            <option>Projekt</option>
-            <option>Kommunikationsflow</option>
-            <option>Event</option>
-            <option>Andet</option>
+            <optgroup label="Kommunikation">
+              <option>SoMe</option>
+              <option>Presse</option>
+              <option>Nyhedsbrev</option>
+              <option>Website</option>
+            </optgroup>
+            <optgroup label="Indhold">
+              <option>Artikel</option>
+            </optgroup>
+            <optgroup label="Møder & Admin">
+              <option>Møde</option>
+              <option>Projekt</option>
+              <option>Event</option>
+            </optgroup>
+            <optgroup label="Andet">
+              <option>Kommunikationsflow</option>
+              <option>Andet</option>
+            </optgroup>
           </select>
         </div>
       </div>
@@ -1093,6 +1114,20 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
         <label>Note</label>
         <textarea id="st-note" style="min-height:60px;" placeholder="Valgfri note..."></textarea>
       </div>
+      <div class="field">
+        <label>Links <span style="font-size:10px;color:var(--text-muted);">– tilføj URL og tryk Enter</span></label>
+        <div style="display:flex;gap:6px;margin-bottom:6px;">
+          <input type="url" id="st-link-input" placeholder="https://..." style="flex:1;" onkeydown="if(event.key==='Enter'){event.preventDefault();addSubtaskLink();}">
+          <input type="text" id="st-link-label" placeholder="Navn (valgfrit)" style="width:120px;" onkeydown="if(event.key==='Enter'){event.preventDefault();addSubtaskLink();}">
+          <button class="btn sm" onclick="addSubtaskLink()">+</button>
+        </div>
+        <div id="st-links-list" style="display:flex;flex-direction:column;gap:4px;"></div>
+        <input type="hidden" id="st-links">
+      </div>
+      <div class="field">
+        <label>OneDrive / fil-reference</label>
+        <input type="text" id="st-onedrive" placeholder="fx https://sharepoint.com/... eller mappenavn">
+      </div>
       <div class="flex gap8">
         <button class="btn" onclick="saveSubtask()" style="flex:1;">Gem</button>
         <button class="btn secondary" onclick="closeModal('modal-subtask')">Annuller</button>
@@ -1110,7 +1145,26 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
     </div>
     <div class="modal-body">
       <div class="field"><label>Platform</label>
-        <select id="s-platform"><option>LinkedIn</option><option>Instagram</option><option>Facebook</option><option>Twitter/X</option><option>TikTok</option></select>
+        <select id="s-platform" onchange="updateSomeCatFields()"><option>LinkedIn</option><option>Instagram</option><option>Facebook</option><option>Twitter/X</option><option>TikTok</option></select>
+      </div>
+      <div class="field" id="s-fb-emne-field" style="display:none;"><label>Facebook emne</label>
+        <select id="s-fb-emne">
+          <option value="">— Vælg emne —</option>
+          <option value="sport">Sport for livet</option>
+          <option value="feriecamp">FerieCamp</option>
+          <option value="temadage">Temadage</option>
+          <option value="fra_lvs">Fra LVS</option>
+          <option value="andet">Andet</option>
+        </select>
+      </div>
+      <div class="field" id="s-li-type-field" style="display:none;"><label>LinkedIn posttype</label>
+        <select id="s-li-type">
+          <option value="">— Vælg type —</option>
+          <option value="processer">Processer & indsigt</option>
+          <option value="resultater">Resultater & impact</option>
+          <option value="historier">Menneskelige historier</option>
+          <option value="viden">Viden & fagligt</option>
+        </select>
       </div>
       <div class="field"><label>Tekst</label><textarea id="s-content" style="min-height:120px;"></textarea></div>
       <div class="row2">
@@ -1196,29 +1250,18 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   </div>
 </div>
 
-<!-- SENDES TIL TRYK MODAL -->
-<div class="modal-overlay" id="modal-avis-tryk">
-  <div class="modal" style="width:360px;">
-    <div class="modal-header" style="background:#265E3A;border-radius:var(--radius-lg) var(--radius-lg) 0 0;">
-      <div class="modal-title" style="color:#fff;">📰 Sendes til tryk</div>
-      <button class="modal-close" onclick="closeModal('modal-avis-tryk')" style="color:#fff;">✕</button>
+<!-- TEMA MENU -->
+<div class="modal-overlay" id="modal-tema-menu">
+  <div class="modal" style="width:320px;">
+    <div class="modal-header">
+      <div class="modal-title">🏷 Vælg tema</div>
+      <button class="modal-close" onclick="closeModal('modal-tema-menu')">✕</button>
     </div>
-    <div class="modal-body">
-      <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">Sæt den globale deadline for hvornår Værestedsavisen sendes til tryk. Vises på dashboard og i opgavelisten.</p>
-      <div class="field">
-        <label>Dato</label>
-        <input type="text" id="avis-tryk-input" placeholder="fx 15/8" oninput="previewSmartDate('avis-tryk-input','avis-tryk-preview')">
-        <div id="avis-tryk-preview" style="font-size:11px;color:var(--accent2);margin-top:3px;min-height:14px;"></div>
-        <input type="hidden" id="avis-tryk-hidden">
-      </div>
-      <div class="flex gap8">
-        <button class="btn" onclick="saveAvisTryk()" style="flex:1;background:#265E3A;">Gem dato</button>
-        <button class="btn secondary" onclick="clearAvisTryk()" style="color:var(--danger);">Fjern</button>
-      </div>
-    </div>
+    <div class="modal-body" id="tema-menu-list"></div>
   </div>
 </div>
 
+<!-- SENDES TIL TRYK MODAL -->
 <!-- POCKET REVIEW MODAL -->
 <div class="modal-overlay" id="modal-pocket-review">
   <div class="modal" style="width:520px;">
@@ -1682,6 +1725,16 @@ let state = {
   mediaList: [], // brugerens faste medieliste til presse-opgaver
   subtaskLibrary: [], // {id, title, emoji, color, category} – brugerdefinerede delopgavetyper
   avisTryk: '', // global "Sendes til tryk"-dato
+  temaer: [
+    { id:'vaeresteds', navn:'Værestedsavisen', emoji:'📰', color:'#265E3A', tryk:'' },
+    { id:'feriecamp',  navn:'FerieCamp',        emoji:'🏕', color:'#C15A1A', tryk:'' },
+    { id:'sport',      navn:'Sport for livet',  emoji:'⚽', color:'#1B8BB0', tryk:'' },
+    { id:'temadage',   navn:'Temadage',          emoji:'📅', color:'#6B3FA0', tryk:'' },
+    { id:'vaeresteds_dag', navn:'Den nationale Værestedsdag', emoji:'🏛', color:'#B04A8A', tryk:'' },
+    { id:'landsmoede', navn:'Landsmøde',         emoji:'🤝', color:'#C09060', tryk:'' },
+    { id:'hjemmeside', navn:'Hjemmeside',         emoji:'🌐', color:'#2A5DB0', tryk:'' },
+    { id:'kommunikation', navn:'Kommunikation',  emoji:'📢', color:'#C9A800', tryk:'' },
+  ],
 };
 
 // ── SUPABASE CONFIG ──
@@ -2230,6 +2283,10 @@ function migrateColors() {
       if(newColor) { p.color = newColor; changed = true; }
     }
   });
+  // Migrate avisTag → temaId
+  state.projects.forEach(p => {
+    if(p.avisTag && !p.temaId) { p.temaId = 'vaeresteds'; changed = true; }
+  });
   if(changed) save();
 }
 
@@ -2306,20 +2363,12 @@ function showTemplatePreview() {
   const list = document.getElementById('template-preview-list');
   const tpl = TEMPLATES[cat];
 
-  // Auto-set matching category color
-  const catColorMap = {
-    'SoMe':'#2A5DB0', 'Presse':'#C15A1A', 'Nyhedsbrev':'#C9A800',
-    'Artikel':'#265E3A', 'Møde':'#C09060', 'Website':'#6B3FA0',
-    'Projekt':'#1B8BB0', 'Andet':'#7A8088',
-    'Kommunikationsflow':'#ffffff', 'Event':'#B04A8A'
-  };
-
   // Show/hide event fields
   const eventFields = document.getElementById('event-fields');
   if(eventFields) eventFields.style.display = cat === 'Event' ? 'block' : 'none';
 
-  if(catColorMap[cat] && !state.editingProjectId) {
-    state.selectedColor = catColorMap[cat];
+  if(CAT_HEX[cat] && !state.editingProjectId) {
+    state.selectedColor = CAT_HEX[cat];
     document.querySelectorAll('.color-dot').forEach(d => {
       d.classList.toggle('selected', d.dataset.color === state.selectedColor);
     });
@@ -2437,8 +2486,6 @@ function renderAgenda() {
       el.innerHTML = `<div class="empty"><div class="emoji">🎉</div>Ingen kommende opgaver de næste ${agendaDays} dage</div>`;
       return;
     }
-
-    const darkBgsSet = new Set(['#2A5DB0','#C15A1A','#265E3A','#6B3FA0','#1B8BB0','#7A8088','#B04A8A','#D4520A','#0a2d6e','#004225','#5b3fa0','#9099a8']);
 
     el.innerHTML = Object.entries(byDate).sort(([a],[b])=>a.localeCompare(b)).map(([date, projects]) => {
       const d = new Date(date+'T12:00:00');
@@ -2841,13 +2888,7 @@ function saveProject() {
       p.prio=document.getElementById('p-prio').value; p.cat=cat;
       p.deadline=document.getElementById('p-deadline').value;
       // Auto-update color when category changes
-      const catColorMap2 = {
-        'SoMe':'#2A5DB0','Presse':'#C15A1A','Nyhedsbrev':'#C9A800',
-        'Artikel':'#265E3A','Møde':'#C09060','Website':'#6B3FA0',
-        'Projekt':'#1B8BB0','Kommunikationsflow':'#ffffff',
-        'Event':'#B04A8A','Andet':'#7A8088','Generelt':'#7A8088'
-      };
-      p.color = catColorMap2[cat] || state.selectedColor;
+      p.color = CAT_HEX[cat] || state.selectedColor;
       if(isEvent) Object.assign(p, getEventFields());
     }
     save(); closeModal('modal-project'); renderProjects(); renderDashboard(); updateBadge(); renderDiary();
@@ -2918,10 +2959,7 @@ function toggleProjectExpand(id) {
 
 function renderProjects() {
   const list = document.getElementById('project-list');
-  const avisList = document.getElementById('avis-list');
-  const avisSection = document.getElementById('avis-section');
-  const avisCount = document.getElementById('avis-count');
-  const avisTrykLabel = document.getElementById('avis-tryk-label');
+  const temaContainer = document.getElementById('tema-sections');
   const sortBy = document.getElementById('proj-sort')?.value || 'prio';
   let projects = [...state.projects];
 
@@ -2942,20 +2980,32 @@ function renderProjects() {
     }
   };
 
-  const avisProjs   = projects.filter(p=>p.avisTag).sort(sortFn);
-  const regularProjs = projects.filter(p=>!p.avisTag).sort(sortFn);
-
-  if(avisProjs.length && avisSection) {
-    avisSection.style.display = 'block';
-    if(avisCount) avisCount.textContent = `${avisProjs.filter(p=>!p.done).length} åbne`;
-    if(avisTrykLabel) avisTrykLabel.textContent = state.avisTryk ? `🖨 Tryk: ${formatDate(state.avisTryk)}` : '+ Sæt trykdato';
-    if(avisList) avisList.innerHTML = avisProjs.map(p=>renderProjectCard(p)).join('');
-  } else if(avisSection) {
-    avisSection.style.display = 'none';
+  // Render tema sections
+  if(temaContainer) {
+    temaContainer.innerHTML = (state.temaer||[]).map(t => {
+      const temaProjs = projects.filter(p=>p.temaId===t.id).sort(sortFn);
+      if(!temaProjs.length) return '';
+      const tc = getContrastText(t.color);
+      const isOpen = _temaOpenSections[t.id];
+      return `<div style="margin-bottom:8px;">
+        <div onclick="toggleTemaSection('${t.id}')" style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:${t.color};border-radius:var(--radius);cursor:pointer;margin-bottom:4px;">
+          <span id="tema-arrow-${t.id}" style="color:${tc};font-size:11px;transition:transform 0.2s;${isOpen?'transform:rotate(90deg)':''}">▶</span>
+          <span style="color:${tc};font-size:13px;font-weight:600;">${t.emoji} ${t.navn}</span>
+          <span style="font-size:10px;background:rgba(0,0,0,0.18);color:${tc};padding:1px 7px;border-radius:10px;margin-left:2px;">${temaProjs.filter(p=>!p.done).length} åbne</span>
+          ${t.tryk?`<span style="margin-left:auto;font-size:10px;color:${tc};opacity:0.8;">🖨 ${formatDate(t.tryk)}</span>`:''}
+        </div>
+        <div id="tema-list-${t.id}" style="display:${isOpen?'block':'none'};padding-left:4px;">
+          ${temaProjs.map(p=>renderProjectCard(p)).join('')}
+        </div>
+      </div>`;
+    }).join('');
   }
 
+  const regularProjs = projects.filter(p=>!p.temaId).sort(sortFn);
   if(!list) return;
-  if(!regularProjs.length && !avisProjs.length) { list.innerHTML='<div class="empty"><div class="emoji">📋</div>Ingen opgaver endnu</div>'; return; }
+  if(!regularProjs.length && !projects.some(p=>p.temaId)) {
+    list.innerHTML='<div class="empty"><div class="emoji">📋</div>Ingen opgaver endnu</div>'; return;
+  }
   list.innerHTML = regularProjs.map(p=>renderProjectCard(p)).join('');
 }
 
@@ -2991,7 +3041,7 @@ function renderProjectCard(p) {
           <span>${done}/${total}</span>
         </div>`:''}
         <span style="font-size:11px;font-weight:500;padding:3px 9px;border-radius:12px;white-space:nowrap;background:rgba(0,0,0,0.15);color:${tc};">⏰ ${dlText}</span>
-        <button class="btn secondary sm" onclick="event.stopPropagation();toggleAvisTag(${p.id})" style="font-size:10px;padding:3px 8px;${p.avisTag?'background:#265E3A;color:#fff;border-color:#265E3A;':bs}" title="${p.avisTag?'Fjern fra Værestedsavisen':'Tilføj til Værestedsavisen'}">📰</button>
+        <button class="btn secondary sm" onclick="event.stopPropagation();openTemaMenu(${p.id},this)" style="font-size:10px;padding:3px 8px;${p.temaId?'background:'+getTemaColor(p.temaId)+';color:#fff;border-color:'+getTemaColor(p.temaId)+';':bs}" title="Sæt tema">${p.temaId?getTemaEmoji(p.temaId):'🏷'}</button>
         <button class="btn secondary sm" onclick="event.stopPropagation();openProjectModal(${p.id})" style="font-size:10px;padding:3px 8px;${bs}">✎</button>
         <button class="btn secondary sm" onclick="event.stopPropagation();openSubtaskBuilder(${p.id})" style="font-size:10px;padding:3px 8px;${bs}" title="Byg delopgaver">⊕ Delopgaver</button>
         ${(p.cat==='Presse'||p.cat==='Nyhedsbrev'||p.cat==='Artikel') ? `<button class="btn secondary sm" onclick="event.stopPropagation();openArticleLinksModal(${p.id})" style="font-size:10px;padding:3px 8px;${bs}" title="Artikellinks">📰 ${(p.articleLinks||[]).length}</button>` : ''}
@@ -3046,6 +3096,10 @@ function renderSubtask(projId, s) {
     <div class="subtask-check ${s.done?'done':''}" onclick="toggleSubtask(${projId},${s.id})"
       style="border-color:${checkBorder};${s.done?'background:'+checkDoneBg+';color:'+tc+';':''}">${s.done?'✓':''}</div>
     <span class="subtask-text ${s.done?'done':''}" style="color:${s.done?mc:tc};${s.done?'text-decoration:line-through;':''}">${esc(s.title)}${s.skippable&&!s.done?`<span style="font-size:9px;color:${mc};margin-left:6px;font-style:italic;">kan frafaldes</span>`:''}</span>
+    ${(s.links?.length||s.onedrive) ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;width:100%;">
+      ${(s.links||[]).map(l=>`<a href="${l.url}" target="_blank" style="font-size:10px;color:${tc};background:rgba(0,0,0,0.12);padding:2px 7px;border-radius:10px;text-decoration:none;white-space:nowrap;">🔗 ${esc(l.label)}</a>`).join('')}
+      ${s.onedrive?`<a href="${s.onedrive.startsWith('http')?s.onedrive:'#'}" target="_blank" style="font-size:10px;color:${tc};background:rgba(0,0,0,0.12);padding:2px 7px;border-radius:10px;text-decoration:none;white-space:nowrap;">📁 ${esc(s.onedrive.startsWith('http')?'OneDrive':''+s.onedrive)}</a>`:''}
+    </div>` : ''}
     ${s.title.toLowerCase().includes('vælg medier') ? `
       <div style="margin-top:6px;padding:8px 10px;background:rgba(0,0,0,0.12);border-radius:var(--radius);border:1px solid ${checkBorder};width:100%;">
         <div style="font-size:9px;font-weight:600;color:${mc};text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;display:flex;align-items:center;gap:8px;">
@@ -3108,6 +3162,10 @@ function openSubtaskModal(projId, stId=null) {
   document.getElementById('st-deadline').value = s?.deadline||'';
   document.getElementById('st-time').value     = s?.time||'';
   document.getElementById('st-note').value     = s?.note||'';
+  document.getElementById('st-onedrive').value = s?.onedrive||'';
+  // Load links
+  _stLinks = s?.links ? JSON.parse(JSON.stringify(s.links)) : [];
+  renderStLinks();
   const stSmartInp  = document.getElementById('st-deadline-smart');
   const stSmartPrev = document.getElementById('st-deadline-preview');
   if(s?.deadline) {
@@ -3135,10 +3193,12 @@ function saveSubtask() {
     if(idx >= 0) {
       const s = p.subtasks[idx];
       const oldDeadline = s.deadline;
-      s.title = title;
+      s.title    = title;
       s.deadline = newDeadline;
-      s.time = document.getElementById('st-time').value;
-      s.note = document.getElementById('st-note').value;
+      s.time     = document.getElementById('st-time').value;
+      s.note     = document.getElementById('st-note').value;
+      s.links    = [..._stLinks];
+      s.onedrive = document.getElementById('st-onedrive')?.value.trim()||'';
       // Cascade same deadline to all following subtasks
       if(newDeadline && newDeadline !== oldDeadline) {
         for(let i = idx + 1; i < p.subtasks.length; i++) {
@@ -3258,76 +3318,192 @@ function deleteInboxItem(id) {
   }
 }
 
-// ── VÆRESTEDSAVISEN ──
-let avisSectionOpen = false;
+// ── DASHBOARD CHARTS ──
+let someChartView = 0;
 
-function toggleAvisTag(projId) {
+const LI_POSTTYPER = [
+  { id:'processer',  label:'Processer & indsigt',   color:'#2A5DB0' },
+  { id:'resultater', label:'Resultater & impact',    color:'#265E3A' },
+  { id:'historier',  label:'Menneskelige historier', color:'#B04A8A' },
+  { id:'viden',      label:'Viden & fagligt',        color:'#C9A800' },
+];
+
+const FB_EMNER = [
+  { id:'sport',     label:'Sport for livet', color:'#1B8BB0' },
+  { id:'feriecamp', label:'FerieCamp',        color:'#C15A1A' },
+  { id:'temadage',  label:'Temadage',         color:'#6B3FA0' },
+  { id:'fra_lvs',   label:'Fra LVS',          color:'#265E3A' },
+];
+
+function setSomeChartView(v, el) {
+  someChartView = v;
+  document.querySelectorAll('[id^="some-chart-btn-"]').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  renderDashboardCharts();
+}
+
+function drawPieChart(canvasId, data) {
+  const canvas = document.getElementById(canvasId);
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0,0,W,H);
+
+  const total = data.reduce((s,d)=>s+d.value,0);
+  if(!total) {
+    ctx.fillStyle = 'var(--border,#e0e0e0)';
+    ctx.beginPath(); ctx.arc(W/2,H/2,W/2-10,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#888'; ctx.font='12px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('Ingen data', W/2, H/2+4);
+    return;
+  }
+
+  let start = -Math.PI/2;
+  data.forEach(d => {
+    if(!d.value) return;
+    const angle = (d.value/total)*Math.PI*2;
+    ctx.beginPath();
+    ctx.moveTo(W/2,H/2);
+    ctx.arc(W/2,H/2,W/2-6,start,start+angle);
+    ctx.closePath();
+    ctx.fillStyle = d.color;
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    start += angle;
+  });
+}
+
+function renderLegend(legendId, data, total) {
+  const el = document.getElementById(legendId);
+  if(!el) return;
+  el.innerHTML = data.filter(d=>d.value>0).map(d=>`
+    <div style="display:flex;align-items:center;gap:6px;">
+      <span style="width:10px;height:10px;border-radius:2px;background:${d.color};flex-shrink:0;display:inline-block;"></span>
+      <span style="font-size:10px;flex:1;">${d.label}</span>
+      <span style="font-size:10px;font-weight:600;color:var(--text-muted);">${d.value} (${Math.round(d.value/total*100)}%)</span>
+    </div>`).join('');
+}
+
+function renderDashboardCharts() {
+  // ── TEMA PIE ──
+  const temaData = (state.temaer||[]).map(t => ({
+    label: t.navn,
+    color: t.color,
+    value: state.projects.filter(p=>p.temaId===t.id&&!p.done).length,
+  })).filter(d=>d.value>0);
+  const temaTotal = temaData.reduce((s,d)=>s+d.value,0);
+  document.getElementById('tema-chart-count')&&(document.getElementById('tema-chart-count').textContent = temaTotal ? `${temaTotal} opgaver` : '');
+  drawPieChart('tema-pie', temaData);
+  renderLegend('tema-pie-legend', temaData, temaTotal);
+
+  // ── SOME PIE ──
+  const allPosts = state.some||[];
+  let someData = [];
+
+  if(someChartView === 0) {
+    // FB vs LinkedIn
+    const fb = allPosts.filter(s=>s.platform==='Facebook').length;
+    const li = allPosts.filter(s=>s.platform==='LinkedIn').length;
+    someData = [
+      { label:'Facebook', color:'#1877F2', value:fb },
+      { label:'LinkedIn', color:'#0A66C2', value:li },
+    ];
+  } else if(someChartView === 1) {
+    // Facebook posts by emne
+    const fbPosts = allPosts.filter(s=>s.platform==='Facebook');
+    someData = FB_EMNER.map(e=>({
+      label: e.label, color: e.color,
+      value: fbPosts.filter(s=>s.fbEmne===e.id).length,
+    }));
+    const ucat = fbPosts.filter(s=>!s.fbEmne).length;
+    if(ucat) someData.push({ label:'Andet', color:'#7A8088', value:ucat });
+  } else {
+    // LinkedIn posts by type
+    const liPosts = allPosts.filter(s=>s.platform==='LinkedIn');
+    someData = LI_POSTTYPER.map(t=>({
+      label: t.label, color: t.color,
+      value: liPosts.filter(s=>s.liType===t.id).length,
+    }));
+    const ucat = liPosts.filter(s=>!s.liType).length;
+    if(ucat) someData.push({ label:'Ukategoriseret', color:'#7A8088', value:ucat });
+  }
+
+  const someTotal = someData.reduce((s,d)=>s+d.value,0);
+  drawPieChart('some-pie', someData);
+  renderLegend('some-pie-legend', someData, someTotal||1);
+}
+let _temaProjId = null;
+let _temaOpenSections = {};
+
+function getTema(id) { return (state.temaer||[]).find(t=>t.id===id); }
+function getTemaColor(id) { return getTema(id)?.color || '#7A8088'; }
+function getTemaEmoji(id) { return getTema(id)?.emoji || '🏷'; }
+
+function openTemaMenu(projId, btn) {
+  _temaProjId = projId;
+  const p = state.projects.find(x=>x.id===projId);
+  const el = document.getElementById('tema-menu-list');
+  el.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:6px;">
+      <div onclick="setTema(${projId},null)" style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:var(--radius);border:1px solid var(--border);cursor:pointer;background:${!p?.temaId?'var(--surface2)':'transparent'};">
+        <span>🏷</span><span style="font-size:12px;">Intet tema</span>
+        ${!p?.temaId?'<span style="margin-left:auto;color:var(--accent);">✓</span>':''}
+      </div>
+      ${(state.temaer||[]).map(t=>`
+        <div onclick="setTema(${projId},'${t.id}')" style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:var(--radius);border:1.5px solid ${t.color};cursor:pointer;background:${p?.temaId===t.id?t.color+'22':'transparent'};">
+          <span>${t.emoji}</span>
+          <span style="font-size:12px;font-weight:500;">${t.navn}</span>
+          ${p?.temaId===t.id?'<span style="margin-left:auto;">✓</span>':''}
+        </div>`).join('')}
+    </div>`;
+  document.getElementById('modal-tema-menu').classList.add('open');
+}
+
+function setTema(projId, temaId) {
   const p = state.projects.find(x=>x.id===projId);
   if(!p) return;
-  p.avisTag = !p.avisTag;
-  save(); renderProjects(); renderDashboardAvis();
-  toast(p.avisTag ? '📰 Tilføjet til Værestedsavisen' : 'Fjernet fra Værestedsavisen');
+  p.temaId = temaId || null;
+  // Keep backwards compat with avisTag
+  p.avisTag = temaId === 'vaeresteds';
+  save();
+  closeModal('modal-tema-menu');
+  renderProjects();
+  renderDashboardAvis();
+  toast(temaId ? `${getTemaEmoji(temaId)} Tema sat: ${getTema(temaId)?.navn}` : 'Tema fjernet');
 }
 
-function toggleAvisSection() {
-  avisSectionOpen = !avisSectionOpen;
-  const list  = document.getElementById('avis-list');
-  const arrow = document.getElementById('avis-arrow');
-  if(list)  list.style.display  = avisSectionOpen ? 'block' : 'none';
-  if(arrow) arrow.style.transform = avisSectionOpen ? 'rotate(90deg)' : '';
+function toggleTemaSection(temaId) {
+  _temaOpenSections[temaId] = !_temaOpenSections[temaId];
+  const list  = document.getElementById(`tema-list-${temaId}`);
+  const arrow = document.getElementById(`tema-arrow-${temaId}`);
+  if(list)  list.style.display  = _temaOpenSections[temaId] ? 'block' : 'none';
+  if(arrow) arrow.style.transform = _temaOpenSections[temaId] ? 'rotate(90deg)' : '';
 }
 
-function openAvisTrykModal() {
-  const inp  = document.getElementById('avis-tryk-input');
-  const prev = document.getElementById('avis-tryk-preview');
-  const hid  = document.getElementById('avis-tryk-hidden');
-  if(state.avisTryk) {
-    const d = new Date(state.avisTryk+'T12:00:00');
-    if(inp) inp.value = `${d.getDate()}/${d.getMonth()+1}`;
-    if(hid) hid.value = state.avisTryk;
-    if(prev) { prev.textContent = `→ ${d.getDate()}. ${DA_MONTHS_SHORT[d.getMonth()]} ${d.getFullYear()}`; prev.style.color='var(--accent2)'; }
-  } else {
-    if(inp) inp.value = '';
-    if(prev) prev.textContent = '';
-    if(hid) hid.value = '';
-  }
-  document.getElementById('modal-avis-tryk').classList.add('open');
-  setTimeout(()=>inp?.focus(), 80);
-}
+// Legacy compatibility
+function toggleAvisTag(projId) { openTemaMenu(projId, null); }
+function toggleAvisSection()   { toggleTemaSection('vaeresteds'); }
 
-function saveAvisTryk() {
-  const val = document.getElementById('avis-tryk-hidden')?.value;
-  if(!val) { alert('Vælg en dato'); return; }
-  state.avisTryk = val;
-  save(); closeModal('modal-avis-tryk');
-  renderProjects(); renderDashboardAvis();
-  toast('📰 Sendes til tryk: ' + formatDate(val));
-}
-
-function clearAvisTryk() {
-  state.avisTryk = '';
-  save(); closeModal('modal-avis-tryk');
-  renderProjects(); renderDashboardAvis();
-}
 
 function renderDashboardAvis() {
-  const el    = document.getElementById('dash-avis');
-  const card  = document.getElementById('dash-avis-card');
-  const tryk  = document.getElementById('dash-avis-tryk');
+  const el   = document.getElementById('dash-avis');
+  const tryk = document.getElementById('dash-avis-tryk');
   if(!el) return;
 
-  const avisProjects = state.projects.filter(p=>p.avisTag&&!p.done);
-
-  // Update tryk label
+  // Find Værestedsavisen tema specifically for tryk date
+  const avisTema = (state.temaer||[]).find(t=>t.id==='vaeresteds');
   if(tryk) {
-    tryk.textContent = state.avisTryk
-      ? `🖨 Sendes til tryk: ${formatDate(state.avisTryk)}`
-      : '+ Sæt trykdato';
-    tryk.style.color = state.avisTryk ? '#265E3A' : 'var(--text-muted)';
+    const trykDate = avisTema?.tryk || state.avisTryk || '';
+    tryk.textContent = trykDate ? `🖨 Sendes til tryk: ${formatDate(trykDate)}` : '+ Sæt trykdato';
+    tryk.style.color = trykDate ? '#265E3A' : 'var(--text-muted)';
   }
 
-  if(!avisProjects.length) {
-    el.innerHTML = '<div style="font-size:12px;color:var(--text-muted);padding:8px 0;">Ingen Værestedsavis-opgaver</div>';
+  const allTemaProjects = state.projects.filter(p=>p.temaId&&!p.done);
+
+  if(!allTemaProjects.length) {
+    el.innerHTML = '<div style="font-size:12px;color:var(--text-muted);padding:8px 0;">Ingen tema-opgaver</div>';
     return;
   }
 
@@ -3335,17 +3511,22 @@ function renderDashboardAvis() {
   const weekEnd = new Date(); weekEnd.setDate(weekEnd.getDate()+7);
   const weekEndStr = weekEnd.toISOString().split('T')[0];
 
-  el.innerHTML = avisProjects.map(p => {
-    const dlClass = p.deadline < today ? 'danger' : p.deadline <= weekEndStr ? 'warning' : '';
-    const total = (p.subtasks||[]).filter(s=>!s.skipped).length;
-    const done  = (p.subtasks||[]).filter(s=>s.done).length;
-    return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);">
-      <span style="width:8px;height:8px;border-radius:50%;background:${p.color};flex-shrink:0;display:inline-block;"></span>
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(p.title)}</div>
-        ${total>0?`<div style="font-size:10px;color:var(--text-muted);">${done}/${total} delopgaver</div>`:''}
-      </div>
-      ${p.deadline?`<span style="font-size:10px;font-weight:500;white-space:nowrap;color:${dlClass==='danger'?'var(--danger)':dlClass==='warning'?'var(--warning)':'var(--text-muted)'};">⏰ ${formatDate(p.deadline)}</span>`:''}
+  // Group by tema
+  el.innerHTML = (state.temaer||[]).map(t => {
+    const temaProjs = allTemaProjects.filter(p=>p.temaId===t.id);
+    if(!temaProjs.length) return '';
+    return `<div style="margin-bottom:8px;">
+      <div style="font-size:10px;font-weight:600;color:${t.color};text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">${t.emoji} ${t.navn}</div>
+      ${temaProjs.slice(0,3).map(p=>{
+        const isOverdue = p.deadline && p.deadline < today;
+        const isSoon = p.deadline && p.deadline <= weekEndStr;
+        return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--border);">
+          <span style="width:7px;height:7px;border-radius:50%;background:${p.color};flex-shrink:0;display:inline-block;"></span>
+          <span style="font-size:11px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(p.title)}</span>
+          ${p.deadline?`<span style="font-size:9px;white-space:nowrap;color:${isOverdue?'var(--danger)':isSoon?'var(--warning)':'var(--text-muted)'};">⏰ ${formatDate(p.deadline)}</span>`:''}
+        </div>`;
+      }).join('')}
+      ${temaProjs.length>3?`<div style="font-size:9px;color:var(--text-muted);margin-top:2px;">+${temaProjs.length-3} mere</div>`:''}
     </div>`;
   }).join('');
 }
@@ -3420,16 +3601,10 @@ function openPocketReview(projId) {
 function savePocketReview() {
   const p = state.projects.find(x=>x.id===_prProjId);
   if(!p) return;
-  const catColorMap3 = {
-    'SoMe':'#2A5DB0','Presse':'#C15A1A','Nyhedsbrev':'#C9A800',
-    'Artikel':'#265E3A','Møde':'#C09060','Website':'#6B3FA0',
-    'Projekt':'#1B8BB0','Kommunikationsflow':'#ffffff',
-    'Event':'#B04A8A','Andet':'#7A8088','Generelt':'#7A8088'
-  };
   p.title = document.getElementById('pr-title').value.trim() || p.title;
   p.cat   = document.getElementById('pr-cat').value;
   p.prio  = document.getElementById('pr-prio').value;
-  p.color = catColorMap3[p.cat] || '#7A8088';
+  p.color = CAT_HEX[p.cat] || '#7A8088';
   p.desc  = '';
   p.subtasks = _prActionItems.map((item, i) => {
     if(!document.getElementById(`pr-item-${i}`)?.checked) return null;
@@ -3626,6 +3801,7 @@ function renderDashboard() {
   renderDashboardInterviews();
   renderInbox();
   renderDashboardAvis();
+  renderDashboardCharts();
   updateCatWidget();
 
   const projEl = document.getElementById('dash-projects');
@@ -4110,7 +4286,35 @@ function archiveAllInterviews() {
   toast('📰 Alle interviews arkiveret ✓');
 }
 
-// ── DELOPGAVE BIBLIOTEK ──
+// ── DELOPGAVE LINKS ──
+let _stLinks = [];
+
+function addSubtaskLink() {
+  const url   = document.getElementById('st-link-input')?.value.trim();
+  const label = document.getElementById('st-link-label')?.value.trim();
+  if(!url) return;
+  _stLinks.push({ url, label: label || url.replace(/^https?:\/\//, '').substring(0,40) });
+  document.getElementById('st-link-input').value = '';
+  document.getElementById('st-link-label').value = '';
+  renderStLinks();
+}
+
+function removeStLink(idx) {
+  _stLinks.splice(idx,1);
+  renderStLinks();
+}
+
+function renderStLinks() {
+  const el = document.getElementById('st-links-list');
+  if(!el) return;
+  el.innerHTML = _stLinks.map((l,i)=>`
+    <div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:var(--surface2);border-radius:var(--radius);border:1px solid var(--border);">
+      <a href="${l.url}" target="_blank" style="font-size:11px;flex:1;color:var(--accent);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🔗 ${esc(l.label)}</a>
+      <button class="icon-btn red" onclick="removeStLink(${i})" style="font-size:10px;">✕</button>
+    </div>`).join('');
+  const hidden = document.getElementById('st-links');
+  if(hidden) hidden.value = JSON.stringify(_stLinks);
+}
 
 // Built-in subtask types from all templates
 const BUILTIN_SUBTASK_TYPES = [
@@ -4762,12 +4966,23 @@ function renderSomeKanban() {
 
 function openSomeDetailModal(id) { openSomeModal(id); }
 
+function updateSomeCatFields() {
+  const plat = document.getElementById('s-platform')?.value;
+  const fbField = document.getElementById('s-fb-emne-field');
+  const liField = document.getElementById('s-li-type-field');
+  if(fbField) fbField.style.display = plat==='Facebook' ? 'block' : 'none';
+  if(liField) liField.style.display = plat==='LinkedIn' ? 'block' : 'none';
+}
+
 function openSomeModal(id=null){
   const p=id?state.some.find(x=>x.id===id):null;
   document.getElementById('s-platform').value=p?.platform||'LinkedIn';
   document.getElementById('s-content').value=p?.content||'';
   document.getElementById('s-date').value=p?.date||'';
   document.getElementById('s-status').value=p?.status||'draft';
+  if(document.getElementById('s-fb-emne')) document.getElementById('s-fb-emne').value=p?.fbEmne||'';
+  if(document.getElementById('s-li-type')) document.getElementById('s-li-type').value=p?.liType||'';
+  updateSomeCatFields();
   document.getElementById('modal-some').classList.add('open');
   document.getElementById('modal-some').dataset.editId=id||'';
 }
@@ -4775,8 +4990,11 @@ function saveSome(){
   const content=document.getElementById('s-content').value.trim();
   if(!content){alert('Skriv indhold');return;}
   const editId=parseInt(document.getElementById('modal-some').dataset.editId)||null;
-  if(editId){const s=state.some.find(x=>x.id===editId);if(s){s.platform=document.getElementById('s-platform').value;s.content=content;s.date=document.getElementById('s-date').value;s.status=document.getElementById('s-status').value;}}
-  else{state.some.push({id:state.nextId++,platform:document.getElementById('s-platform').value,content,date:document.getElementById('s-date').value,status:document.getElementById('s-status').value,checks:[false,false,false,false,false],createdAt:new Date().toISOString()});}
+  const plat = document.getElementById('s-platform').value;
+  const fbEmne = plat==='Facebook' ? document.getElementById('s-fb-emne')?.value||'' : '';
+  const liType = plat==='LinkedIn' ? document.getElementById('s-li-type')?.value||'' : '';
+  if(editId){const s=state.some.find(x=>x.id===editId);if(s){s.platform=plat;s.content=content;s.date=document.getElementById('s-date').value;s.status=document.getElementById('s-status').value;s.fbEmne=fbEmne;s.liType=liType;}}
+  else{state.some.push({id:state.nextId++,platform:plat,content,date:document.getElementById('s-date').value,status:document.getElementById('s-status').value,fbEmne,liType,checks:[false,false,false,false,false],createdAt:new Date().toISOString()});}
   save();closeModal('modal-some');renderSome();renderDashboard();
 }
 function toggleSomeCheck(id,idx,val){
@@ -4860,19 +5078,7 @@ function openOffDaysModal() {
 }
 
 function previewOffDate(inputId, previewId) {
-  const val = document.getElementById(inputId)?.value;
-  const preview = document.getElementById(previewId);
-  const hiddenId = inputId === 'off-from' ? 'off-from-hidden' : 'off-to-hidden';
-  const hidden = document.getElementById(hiddenId);
-  const result = parseSmartDate(val);
-  if(result) {
-    const d = new Date(result+'T12:00:00');
-    if(preview) { preview.textContent = `→ ${d.getDate()}. ${DA_MONTHS_SHORT[d.getMonth()]} ${d.getFullYear()}`; preview.style.color = 'var(--accent2)'; }
-    if(hidden) hidden.value = result;
-  } else {
-    if(preview) { preview.textContent = val ? 'Ugyldigt format' : ''; preview.style.color = 'var(--danger)'; }
-    if(hidden) hidden.value = '';
-  }
+  previewSmartDate(inputId, previewId);
 }
 
 function addOffDays() {
@@ -4903,15 +5109,15 @@ function addOffDays() {
 function renderOffDaysList() {
   const el = document.getElementById('offdays-list');
   if(!el) return;
-  const future = (state.offDays||[])
-    .filter(d => d >= new Date().toISOString().split('T')[0])
-    .sort();
-  if(!future.length) { el.innerHTML = '<div style="font-size:11px;color:var(--text-muted);">Ingen planlagte fridage</div>'; return; }
+  const today = new Date().toISOString().split('T')[0];
+  const allDays = (state.offDays||[]).sort();
+  if(!allDays.length) { el.innerHTML = '<div style="font-size:11px;color:var(--text-muted);">Ingen fridage registreret</div>'; return; }
+
   // Group consecutive days
   const groups = [];
-  let start = future[0], prev = future[0];
-  for(let i = 1; i <= future.length; i++) {
-    const curr = future[i];
+  let start = allDays[0], prev = allDays[0];
+  for(let i = 1; i <= allDays.length; i++) {
+    const curr = allDays[i];
     const prevD = new Date(prev+'T12:00:00');
     const currD = curr ? new Date(curr+'T12:00:00') : null;
     const isConsec = currD && (currD - prevD) === 86400000;
@@ -4920,14 +5126,16 @@ function renderOffDaysList() {
       start = curr; prev = curr;
     } else { prev = curr; }
   }
+
   el.innerHTML = groups.map(g => {
     const fromD = new Date(g.from+'T12:00:00');
     const toD   = new Date(g.to+'T12:00:00');
+    const isPast = g.to < today;
     const label = g.from === g.to
       ? `${fromD.getDate()}. ${DA_MONTHS_SHORT[fromD.getMonth()]} ${fromD.getFullYear()}`
       : `${fromD.getDate()}. ${DA_MONTHS_SHORT[fromD.getMonth()]} – ${toD.getDate()}. ${DA_MONTHS_SHORT[toD.getMonth()]} ${toD.getFullYear()}`;
-    return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);">
-      <span style="font-size:12px;flex:1;">📅 ${label}</span>
+    return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);${isPast?'opacity:0.5':''}">
+      <span style="font-size:12px;flex:1;">📅 ${label}${isPast?' <span style="font-size:9px;color:var(--text-muted);">(passeret)</span>':''}</span>
       <button class="icon-btn red" onclick="removeOffDayGroup('${g.from}','${g.to}')">✕</button>
     </div>`;
   }).join('');
@@ -5222,33 +5430,19 @@ function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace
 function formatDate(d){if(!d)return'';try{return new Date(d+'T12:00:00').toLocaleDateString('da-DK',{day:'numeric',month:'short'});}catch(e){return d;}}
 function formatDatetime(s){try{return new Date(s).toLocaleString('da-DK',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});}catch(e){return s;}}
 
-async function syncMake() {
-  const btn = document.getElementById('make-sync-btn');
-  if(btn) btn.textContent = '⏳ Henter...';
-  const loaded = await loadFromSupabase();
-  if(loaded) {
-    localStorage.setItem('focusbase_v2', JSON.stringify(state));
-    renderAll();
-    toast('⟳ Nye mails hentet ✓');
-  } else {
-    toast('Kunne ikke hente fra Supabase');
-  }
-  if(btn) btn.textContent = '⟳ Hent nye mails';
-}
-
 async function forceRefreshFromSupabase() {
   if(!sbReady) { toast('Supabase er ikke forbundet'); return; }
   const btn = document.getElementById('refresh-btn');
-  if(btn) btn.textContent = '⏳ Henter...';
+  if(btn) btn.textContent = '⏳ Opdaterer...';
   const loaded = await loadFromSupabase();
   if(loaded) {
     localStorage.setItem('focusbase_v2', JSON.stringify(state));
     renderAll();
-    toast('☁ Data opdateret fra sky ✓');
+    toast('⟳ Opdateret ✓');
   } else {
-    toast('Kunne ikke hente data fra sky');
+    toast('Kunne ikke hente data');
   }
-  if(btn) btn.textContent = '☁ Genindlæs fra sky';
+  if(btn) btn.textContent = '⟳ Opdater';
 }
 
 // ── SUPABASE SETUP ──
