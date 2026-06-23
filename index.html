@@ -146,7 +146,7 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); font-si
 /* ── DASHBOARD ── */
 .dash-stats {
   display: grid;
-  grid-template-columns: repeat(4, 1fr) 0.8fr 0.8fr 0.5fr;
+  grid-template-columns: repeat(3, 1fr) 0.8fr 0.8fr 0.6fr;
   gap: 12px;
   margin-bottom: 20px;
   align-items: stretch;
@@ -714,7 +714,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   <div class="sidebar-logo">
     <div style="font-size:10px;color:var(--sidebar-text);opacity:0.6;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
     <h1>FocusBase</h1>
-    <span>Dit system · Din flow · v1.48</span>
+    <span>Dit system · Din flow · v1.49</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
@@ -776,11 +776,6 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
           <div class="s-val" id="stat-deadlines">0</div>
           <div class="s-sub" id="sc-dl-sub" style="white-space:normal;line-height:1.4;"></div>
         </div>
-        <div class="stat-card" id="sc-some" style="transition:background 0.5s,border-color 0.5s;order:4;">
-          <div class="s-label" id="sc-some-label">SoMe afventer</div>
-          <div class="s-val" id="stat-some">0</div>
-          <div class="s-sub" id="sc-some-sub"></div>
-        </div>
         <!-- Temaer cirkeldiagram -->
         <div class="stat-card" style="order:5;padding:10px;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
@@ -790,7 +785,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
           <canvas id="tema-pie" width="140" height="140" style="display:block;margin:0 auto;"></canvas>
           <div id="tema-pie-legend" style="margin-top:6px;display:flex;flex-direction:column;gap:2px;"></div>
         </div>
-        <!-- SoMe cirkeldiagram -->
+        <!-- SoMe cirkeldiagram med afventer -->
         <div class="stat-card" style="order:6;padding:10px;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:3px;">
             <span class="s-label" style="margin:0;">◈ SoMe</span>
@@ -802,10 +797,20 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
           </div>
           <canvas id="some-pie" width="140" height="140" style="display:block;margin:0 auto;"></canvas>
           <div id="some-pie-legend" style="margin-top:6px;display:flex;flex-direction:column;gap:2px;"></div>
+          <div style="margin-top:8px;padding-top:6px;border-top:1px solid var(--border);display:flex;gap:12px;">
+            <div style="text-align:center;flex:1;">
+              <div style="font-size:16px;font-weight:700;" id="stat-some-planned">0</div>
+              <div style="font-size:9px;color:var(--text-muted);">Planlagte</div>
+            </div>
+            <div style="text-align:center;flex:1;">
+              <div style="font-size:16px;font-weight:700;color:var(--warning);" id="stat-some">0</div>
+              <div style="font-size:9px;color:var(--text-muted);">Afventer</div>
+            </div>
+          </div>
         </div>
-        <!-- Kat -->
-        <div class="stat-card" id="sc-cat" style="transition:border-color 0.5s;padding:0;overflow:hidden;cursor:default;order:7;">
-          <img id="cat-img" src="" alt="" style="width:100%;height:100%;object-fit:cover;display:block;min-height:90px;transition:opacity 0.4s;border-radius:var(--radius-lg);">
+        <!-- Kat – større nu -->
+        <div class="stat-card" id="sc-cat" style="transition:border-color 0.5s;padding:0;overflow:hidden;cursor:default;order:7;grid-column:span 1;">
+          <img id="cat-img" src="" alt="" style="width:100%;height:100%;object-fit:cover;display:block;min-height:120px;transition:opacity 0.4s;border-radius:var(--radius-lg);">
         </div>
       </div>
 
@@ -3881,23 +3886,13 @@ function renderDashboard() {
     styleStatCard('sc-dl', dominantDl, null, null);
   }
 
-  // Stat 4: SoMe afventer – dominant platform by post count (unchanged – this IS about posts)
-  const pending = state.some.filter(s=>s.status==='ready');
-  document.getElementById('stat-some').textContent = pending.length;
-  const platCounts = {};
-  pending.forEach(s=>{ platCounts[s.platform]=(platCounts[s.platform]||0)+1; });
-  const topPlat = Object.entries(platCounts).sort((a,b)=>b[1]-a[1])[0];
-  document.getElementById('sc-some-sub').textContent = topPlat ? topPlat[0] : '';
-  if(topPlat) {
-    const pc = platColor(topPlat[0]);
-    const sc4 = document.getElementById('sc-some');
-    sc4.style.background  = pc.light;
-    sc4.style.borderColor = pc.bg;
-    sc4.querySelector('.s-label').style.color = pc.bg;
-    sc4.querySelector('.s-val').style.color   = pc.bg;
-  } else {
-    styleStatCard('sc-some', null, null, null);
-  }
+  // SoMe: planlagte og afventer i SoMe-kortet
+  const pending  = state.some.filter(s=>s.status==='ready');
+  const planned  = state.some.filter(s=>s.status==='scheduled'||s.status==='draft');
+  const somePlanned = document.getElementById('stat-some-planned');
+  const somePending = document.getElementById('stat-some');
+  if(somePlanned) somePlanned.textContent = planned.length;
+  if(somePending) somePending.textContent = pending.length;
 
   if(dashView === 'agenda') renderAgenda(); else renderKanban();
 
@@ -4474,8 +4469,7 @@ function openSubtaskBuilderFromModal() {
 function openSubtaskBuilder(projId) {
   const p = state.projects.find(x=>x.id===projId);
   if(!p) return;
-
-  document.getElementById('sb-proj-title').textContent = p.title;
+  sbProjId = projId;
   document.getElementById('sb-proj-sub').textContent   = `${p.cat} · Byg delopgaver fra puljen`;
 
   // Pre-populate with existing subtasks
