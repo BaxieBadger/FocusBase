@@ -526,35 +526,6 @@ select { cursor:pointer; }
 .rep-item { font-size:12px; padding:5px 0; border-bottom:1px solid var(--border); color:var(--text-muted); }
 
 /* ── AI ── */
-.ai-bubble { position:fixed; bottom:24px; left:248px; z-index:90; }
-.ai-toggle { width:44px; height:44px; border-radius:50%; background:linear-gradient(135deg,var(--accent),#a78bfa); border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:18px; box-shadow:0 4px 16px rgba(108,99,255,0.35); transition:transform 0.2s; }
-.ai-toggle:hover { transform:scale(1.08); }
-.ai-panel { position:absolute; bottom:54px; left:0; width:360px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow-md); display:none; flex-direction:column; overflow:hidden; max-height:520px; }
-.ai-panel.open { display:flex; }
-.ai-header { padding:13px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; }
-.ai-dot { width:8px; height:8px; border-radius:50%; background:var(--accent2); box-shadow:0 0 8px var(--accent2); animation:pulse 2s infinite; }
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-.ai-title { font-size:12px; font-weight:600; flex:1; }
-.ai-sub { font-size:10px; color:var(--text-muted); }
-.ai-messages { flex:1; overflow-y:auto; padding:14px 16px; display:flex; flex-direction:column; gap:10px; min-height:200px; max-height:340px; }
-.ai-msg { max-width:85%; font-size:12px; line-height:1.5; padding:9px 12px; border-radius:var(--radius); animation:fadeIn 0.2s ease; }
-@keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
-.ai-msg.assistant { background:var(--accent-light); border:1px solid rgba(108,99,255,0.2); align-self:flex-start; }
-.ai-msg.user { background:var(--accent2-light); border:1px solid rgba(0,200,117,0.2); align-self:flex-end; }
-.ai-msg.thinking { background:var(--surface2); border:1px solid var(--border); color:var(--text-muted); font-style:italic; align-self:flex-start; }
-.ai-suggestions { padding:0 14px 10px; display:flex; flex-wrap:wrap; gap:5px; }
-.ai-suggestion { font-size:10px; padding:3px 9px; border:1px solid var(--border); border-radius:12px; color:var(--text-muted); cursor:pointer; background:transparent; font-family:var(--font); transition:all 0.15s; }
-.ai-suggestion:hover { color:var(--accent); border-color:var(--accent); }
-.ai-input-row { padding:12px 14px; border-top:1px solid var(--border); display:flex; gap:8px; align-items:flex-end; }
-.ai-input { flex:1; background:var(--surface2); border:1.5px solid var(--border); color:var(--text); font-family:var(--font); font-size:12px; padding:8px 10px; border-radius:var(--radius); outline:none; resize:none; min-height:36px; max-height:100px; transition:border-color 0.15s; }
-.ai-input:focus { border-color:var(--accent); }
-.ai-send { background:var(--accent); color:#fff; border:none; padding:8px 12px; font-family:var(--font); font-size:12px; cursor:pointer; border-radius:var(--radius); font-weight:500; transition:opacity 0.15s; }
-.ai-send:hover { opacity:0.85; }
-.ai-send:disabled { opacity:0.4; cursor:default; }
-.api-setup { padding:16px; display:flex; flex-direction:column; gap:10px; }
-.api-setup p { font-size:11px; color:var(--text-muted); line-height:1.6; }
-.api-setup a { color:var(--accent); }
-.api-key-input { font-family:var(--font); font-size:11px; background:var(--surface2); border:1.5px solid var(--border); color:var(--text); padding:8px 10px; border-radius:var(--radius); outline:none; width:100%; }
 
 /* ── EMPTY ── */
 .empty { text-align:center; padding:40px 20px; color:var(--text-muted); font-size:12px; }
@@ -714,7 +685,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   <div class="sidebar-logo">
     <div style="font-size:10px;color:var(--sidebar-text);opacity:0.6;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
     <h1>FocusBase</h1>
-    <span>Dit system · Din flow · v1.50</span>
+    <span>Dit system · Din flow · v1.51</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
@@ -1685,40 +1656,6 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   </div>
 </div>
 
-<!-- AI -->
-<div class="ai-bubble">
-  <div class="ai-panel" id="ai-panel">
-    <div class="ai-header">
-      <div class="ai-dot"></div>
-      <div class="ai-title">FocusAssistent</div>
-      <div class="ai-sub">drevet af Claude</div>
-    </div>
-    <div class="api-setup" id="api-setup">
-      <p>Indsæt din Anthropic API-nøgle for at aktivere AI-assistenten. Gemmes kun lokalt.<br><br>
-      Hent den på <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → API Keys.</p>
-      <input class="api-key-input" id="api-key-input" type="password" placeholder="sk-ant-...">
-      <button class="btn sm" onclick="saveApiKey()">Gem og aktiver</button>
-    </div>
-    <div id="ai-chat" style="display:none;flex-direction:column;flex:1;">
-      <div class="ai-messages" id="ai-messages">
-        <div class="ai-msg assistant">Hej! Jeg kan oprette opgaver, delopgaver, SoMe-opslag og notater direkte for dig. Prøv fx: <em>"Opret opgave: Pressemeddelelse om åbent hus"</em></div>
-      </div>
-      <div class="ai-suggestions">
-        <button class="ai-suggestion" onclick="aiSuggest('Hvad er mine åbne opgaver?')">Åbne opgaver?</button>
-        <button class="ai-suggestion" onclick="aiSuggest('Opret opgave: ')">+ Opgave</button>
-        <button class="ai-suggestion" onclick="aiSuggest('Opret SoMe-opslag til LinkedIn: ')">+ SoMe</button>
-        <button class="ai-suggestion" onclick="aiSuggest('Opret note: ')">+ Note</button>
-      </div>
-      <div class="ai-input-row">
-        <textarea class="ai-input" id="ai-input" placeholder="Skriv til assistenten..." rows="1"
-          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAiMessage();}"
-          oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
-        <button class="ai-send" id="ai-send-btn" onclick="sendAiMessage()">Send</button>
-      </div>
-    </div>
-  </div>
-  <button class="ai-toggle" id="ai-toggle-btn" onclick="toggleAiPanel()">🤖</button>
-</div>
 
 <div class="toasts" id="toasts"></div>
 
@@ -5515,42 +5452,6 @@ setTimeout(checkDeadlines,2000);
 function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.getElementById('toasts').appendChild(t);setTimeout(()=>t.remove(),4000);}
 
 // ── AI ASSISTANT ──
-let aiOpen=false,aiHistory=[];
-function toggleAiPanel(){aiOpen=!aiOpen;document.getElementById('ai-panel').classList.toggle('open',aiOpen);if(aiOpen)checkApiKey();}
-function checkApiKey(){const key=localStorage.getItem('fb_apikey');if(key){document.getElementById('api-setup').style.display='none';document.getElementById('ai-chat').style.display='flex';}else{document.getElementById('api-setup').style.display='flex';document.getElementById('ai-chat').style.display='none';}}
-function saveApiKey(){const key=document.getElementById('api-key-input').value.trim();if(!key.startsWith('sk-')){alert('Indsæt en gyldig API-nøgle');return;}localStorage.setItem('fb_apikey',key);checkApiKey();toast('API-nøgle gemt ✓');}
-function aiSuggest(text){const inp=document.getElementById('ai-input');inp.value=text;inp.focus();inp.style.height='auto';inp.style.height=inp.scrollHeight+'px';}
-function addAiMsg(role,html){const el=document.createElement('div');el.className=`ai-msg ${role}`;el.innerHTML=html;document.getElementById('ai-messages').appendChild(el);document.getElementById('ai-messages').scrollTop=9999;return el;}
-function buildSystemPrompt(){
-  const projects=state.projects.map(p=>`[ID:${p.id}] "${p.title}" | prio:${p.prio} | ${p.done?'FÆRDIG':'ÅBEN'} | delopgaver:${(p.subtasks||[]).length}${p.deadline?' | deadline:'+p.deadline:''}`).join('\n')||'Ingen opgaver.';
-  const some=state.some.map(s=>`[ID:${s.id}] ${s.platform} | status:${s.status}`).join('\n')||'Ingen opslag.';
-  const notes=state.notes.map(n=>`[ID:${n.id}] "${n.title}"`).join('\n')||'Ingen notater.';
-  return `Du er FocusAssistenten i FocusBase. Kommuniker på dansk, kortfattet og direkte.\n\nPROJEKTER:\n${projects}\n\nSOME:\n${some}\n\nNOTATER:\n${notes}\n\nDu kan udføre handlinger med JSON-kommandoer sidst i dit svar:\n- Opret opgave: |||{"action":"create_project","title":"...","desc":"...","prio":"high|mid|low","cat":"...","deadline":"YYYY-MM-DD","color":"#6c63ff"}|||\n- Tilføj delopgave: |||{"action":"add_subtask","projectId":123,"title":"...","deadline":"YYYY-MM-DD","time":"HH:MM"}|||\n- Opret SoMe: |||{"action":"create_some","platform":"LinkedIn","content":"...","date":"YYYY-MM-DD","status":"draft"}|||\n- Opret note: |||{"action":"create_note","title":"...","body":"...","cat":"general"}|||\n\nSvar altid på dansk, maks 2-3 sætninger.`;
-}
-async function sendAiMessage(){
-  const inp=document.getElementById('ai-input');const msg=inp.value.trim();if(!msg)return;
-  const key=localStorage.getItem('fb_apikey');if(!key){toast('Indsæt API-nøgle for at bruge assistenten');return;}
-  inp.value='';inp.style.height='auto';addAiMsg('user',esc(msg));aiHistory.push({role:'user',content:msg});
-  const btn=document.getElementById('ai-send-btn');btn.disabled=true;
-  const thinking=addAiMsg('thinking','⟳ Tænker...');
-  try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:buildSystemPrompt(),messages:aiHistory})});
-    const data=await res.json();thinking.remove();
-    if(data.error){addAiMsg('assistant','⚠️ Fejl: '+esc(data.error.message));btn.disabled=false;return;}
-    const fullText=data.content.map(b=>b.text||'').join('');aiHistory.push({role:'assistant',content:fullText});
-    const cmdRegex=/\|\|\|(\{.*?\})\|\|\|/gs;let displayText=fullText.replace(cmdRegex,'').trim();
-    addAiMsg('assistant',esc(displayText).replace(/\n/g,'<br>'));
-    const matches=[...fullText.matchAll(cmdRegex)];for(const m of matches){try{executeAiCommand(JSON.parse(m[1]));}catch(e){}}
-  }catch(e){thinking.remove();addAiMsg('assistant','⚠️ Netværksfejl – prøv igen.');}
-  btn.disabled=false;
-}
-function executeAiCommand(cmd){
-  if(cmd.action==='create_project'){state.projects.push({id:state.nextId++,title:cmd.title||'Ny opgave',desc:cmd.desc||'',prio:cmd.prio||'mid',cat:cmd.cat||'Generelt',deadline:cmd.deadline||'',color:cmd.color||'#6c63ff',done:false,subtasks:[],createdAt:new Date().toISOString()});save();renderProjects();renderDashboard();updateBadge();renderDiary();toast(`✓ Opgave oprettet: ${cmd.title}`);}
-  else if(cmd.action==='add_subtask'){const p=state.projects.find(x=>x.id===cmd.projectId);if(p){p.subtasks.push({id:state.nextId++,title:cmd.title,deadline:cmd.deadline||'',time:cmd.time||'',note:'',done:false,doneAt:null});save();renderProjects();renderDashboard();toast(`✓ Delopgave tilføjet: ${cmd.title}`);}}
-  else if(cmd.action==='create_some'){state.some.push({id:state.nextId++,platform:cmd.platform||'LinkedIn',content:cmd.content||'',date:cmd.date||'',status:cmd.status||'draft',checks:[false,false,false,false,false],createdAt:new Date().toISOString()});save();renderSome();renderDashboard();toast(`✓ SoMe-opslag oprettet`);}
-  else if(cmd.action==='create_note'){const n={id:state.nextId++,title:cmd.title||'',body:cmd.body||'',cat:cmd.cat||'general',createdAt:new Date().toISOString()};state.notes.unshift(n);state.currentNoteId=n.id;save();renderNotes();loadNoteEditor();toast(`✓ Note oprettet`);}
-}
-
 // ── UTILS ──
 function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function formatDate(d){if(!d)return'';try{return new Date(d+'T12:00:00').toLocaleDateString('da-DK',{day:'numeric',month:'short'});}catch(e){return d;}}
