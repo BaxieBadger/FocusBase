@@ -714,7 +714,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   <div class="sidebar-logo">
     <div style="font-size:10px;color:var(--sidebar-text);opacity:0.6;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
     <h1>FocusBase</h1>
-    <span>Dit system · Din flow · v1.49</span>
+    <span>Dit system · Din flow · v1.50</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
@@ -3255,7 +3255,13 @@ function quickAddSubtask(projId) {
   const p = state.projects.find(x=>x.id===projId);
   if(!p) return;
   const deadline = dateInp?.value ? parseSmartDate(dateInp.value) || '' : '';
-  p.subtasks.push({ id:state.nextId++, title, deadline, time:'', note:'', done:false, doneAt:null });
+  const isInterview = title.toLowerCase().includes('interview');
+  p.subtasks.push({
+    id:state.nextId++, title, deadline, time:'', note:'',
+    done:false, doneAt:null,
+    isInterviewStep: isInterview,
+    interviews: isInterview ? [] : undefined,
+  });
   inp.value='';
   if(dateInp) dateInp.value='';
   save(); renderProjects(); renderDashboard();
@@ -3308,6 +3314,12 @@ function saveSubtask() {
       s.note     = document.getElementById('st-note').value;
       s.links    = [..._stLinks];
       s.onedrive = document.getElementById('st-onedrive')?.value.trim()||'';
+      // Auto-detect interview step
+      const isInterview = title.toLowerCase().includes('interview');
+      if(isInterview && !s.isInterviewStep) {
+        s.isInterviewStep = true;
+        s.interviews = s.interviews || [];
+      }
       // Cascade same deadline to all following subtasks
       if(newDeadline && newDeadline !== oldDeadline) {
         for(let i = idx + 1; i < p.subtasks.length; i++) {
@@ -3318,7 +3330,17 @@ function saveSubtask() {
       }
     }
   } else {
-    p.subtasks.push({ id:state.nextId++, title, deadline:newDeadline, time:document.getElementById('st-time').value, note:document.getElementById('st-note').value, done:false, doneAt:null });
+    const isInterview = title.toLowerCase().includes('interview');
+    p.subtasks.push({
+      id:state.nextId++, title, deadline:newDeadline,
+      time:document.getElementById('st-time').value,
+      note:document.getElementById('st-note').value,
+      links:[..._stLinks],
+      onedrive:document.getElementById('st-onedrive')?.value.trim()||'',
+      done:false, doneAt:null,
+      isInterviewStep: isInterview,
+      interviews: isInterview ? [] : undefined,
+    });
   }
   save(); closeModal('modal-subtask'); renderProjects(); renderDashboard();
   setTimeout(()=>{ const list=document.getElementById('subtasks-'+state.editingSubtaskProjectId); if(list){list.classList.add('open');} const arrow=document.getElementById('arrow-'+state.editingSubtaskProjectId); if(arrow){arrow.classList.add('open');} },50);
