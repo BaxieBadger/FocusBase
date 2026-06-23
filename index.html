@@ -714,7 +714,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   <div class="sidebar-logo">
     <div style="font-size:10px;color:var(--sidebar-text);opacity:0.6;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
     <h1>FocusBase</h1>
-    <span>Dit system · Din flow · v1.43</span>
+    <span>Dit system · Din flow · v1.45</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
@@ -884,10 +884,10 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
         <div style="display:flex;align-items:center;gap:6px;margin-left:auto;">
           <span style="font-size:11px;color:var(--text-muted);">Sortér:</span>
           <select id="proj-sort" onchange="renderProjects()" style="font-size:11px;padding:3px 8px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:var(--font);">
+            <option value="tema" selected>Tema</option>
             <option value="prio">Prioritet</option>
             <option value="deadline">Deadline</option>
             <option value="cat">Opgavetype</option>
-            <option value="tema">Tema</option>
             <option value="progress">Fremgang</option>
             <option value="title">Navn A-Z</option>
           </select>
@@ -1080,6 +1080,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
       </div>
       <div class="flex gap8">
         <button class="btn" onclick="saveProject()" style="flex:1;">Gem opgave</button>
+        <button class="btn secondary" onclick="openSubtaskBuilderFromModal()" id="modal-subtask-lib-btn" style="display:none;">⊕ Delopgaver</button>
         <button class="btn secondary" onclick="closeModal('modal-project')">Annuller</button>
       </div>
     </div>
@@ -2834,6 +2835,8 @@ function openProjectModal(id=null) {
   state.editingProjectId = id;
   const p = id ? state.projects.find(x=>x.id===id) : null;
   document.getElementById('modal-project-title').textContent = p ? 'Rediger opgave' : 'Ny opgave';
+  const libBtn = document.getElementById('modal-subtask-lib-btn');
+  if(libBtn) libBtn.style.display = p ? 'block' : 'none';
   document.getElementById('p-title').value = p?.title||'';
   document.getElementById('p-desc').value  = p?.desc||'';
   document.getElementById('p-prio').value  = p?.prio||'mid';
@@ -2961,7 +2964,7 @@ function toggleProjectExpand(id) {
 function renderProjects() {
   const list = document.getElementById('project-list');
   const temaContainer = document.getElementById('tema-sections');
-  const sortBy = document.getElementById('proj-sort')?.value || 'prio';
+  const sortBy = document.getElementById('proj-sort')?.value || 'tema';
   let projects = [...state.projects];
 
   if(projFilter==='open') projects=projects.filter(p=>!p.done);
@@ -2982,7 +2985,75 @@ function renderProjects() {
     }
   };
 
-  // Render tema sections
+  // Tema-sortering: vis kompakt pill-gruppering
+  if(sortBy === 'tema') {
+    if(temaContainer) temaContainer.innerHTML = '';
+
+    const today = new Date().toISOString().split('T')[0];
+    const soon  = new Date(); soon.setDate(soon.getDate()+3);
+    const soonStr = soon.toISOString().split('T')[0];
+
+    // Build tema groups + utagged group
+    const groups = [
+      ...(state.temaer||[]).map(t => ({
+        id: t.id, navn: t.navn, emoji: t.emoji, color: t.color,
+        projs: projects.filter(p=>p.temaId===t.id).sort(sortFn)
+      })).filter(g=>g.projs.length),
+      { id:'_none', navn:'Uden tema', emoji:'📋', color:'#7A8088',
+        projs: projects.filter(p=>!p.temaId).sort(sortFn) }
+    ].filter(g=>g.projs.length);
+
+    if(!groups.length) {
+      list.innerHTML='<div class="empty"><div class="emoji">📋</div>Ingen opgaver endnu</div>';
+      return;
+    }
+
+    list.innerHTML = groups.map(g => {
+      const tc = getContrastText(g.color);
+      const open   = g.projs.filter(p=>!p.done).length;
+      const total  = g.projs.length;
+      const urgent = g.projs.filter(p=>!p.done&&p.deadline&&p.deadline<=soonStr&&p.deadline>=today).length;
+      const overdue= g.projs.filter(p=>!p.done&&p.deadline&&p.deadline<today).length;
+      const isOpen = _temaOpenSections[g.id] !== false; // default open
+
+      return `<div style="margin-bottom:10px;">
+        <div onclick="toggleTemaSection('${g.id}')"
+          style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:${g.color};border-radius:var(--radius);cursor:pointer;">
+          <span id="tema-arrow-${g.id}" style="color:${tc};font-size:11px;transition:transform 0.2s;${isOpen?'transform:rotate(90deg)':''}">▶</span>
+          <span style="color:${tc};font-size:13px;font-weight:600;">${g.emoji} ${g.navn}</span>
+          <span style="font-size:10px;background:rgba(0,0,0,0.18);color:${tc};padding:2px 8px;border-radius:10px;">${open}/${total}</span>
+          ${overdue?`<span style="font-size:10px;background:rgba(228,66,88,0.85);color:#fff;padding:2px 8px;border-radius:10px;">⚠ ${overdue} overskredet</span>`:''}
+          ${urgent?`<span style="font-size:10px;background:rgba(245,158,11,0.85);color:#fff;padding:2px 8px;border-radius:10px;">⏰ ${urgent} snart</span>`:''}
+        </div>
+        <div id="tema-list-${g.id}" style="display:${isOpen?'block':'none'};">
+          ${g.projs.map(p => {
+            const nextSub = getNextSubtaskLabel(p);
+            const ptc = getContrastText(p.color||'#7A8088');
+            const isOver = p.deadline && p.deadline < today;
+            const isSoon = p.deadline && p.deadline <= soonStr && p.deadline >= today;
+            return `<div style="display:flex;align-items:center;gap:10px;padding:8px 14px 8px 28px;border-bottom:1px solid var(--border);${p.done?'opacity:0.45;':''}">
+              <span style="width:10px;height:10px;border-radius:50%;background:${p.color};flex-shrink:0;display:inline-block;"></span>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:12px;font-weight:${p.done?'400':'600'};${p.done?'text-decoration:line-through;color:var(--text-muted);':''}">
+                  ${esc(p.title)}
+                </div>
+                ${nextSub&&!p.done?`<div style="font-size:10px;color:var(--text-muted);margin-top:1px;">→ ${esc(nextSub)}</div>`:''}
+              </div>
+              ${p.deadline&&!p.done?`<span style="font-size:10px;white-space:nowrap;font-weight:500;color:${isOver?'var(--danger)':isSoon?'var(--warning)':'var(--text-muted)'};">⏰ ${formatDate(p.deadline)}</span>`:''}
+              <span style="font-size:9px;padding:2px 6px;border-radius:8px;background:${p.color};color:${ptc};white-space:nowrap;">${esc(p.cat)}</span>
+              <button onclick="event.stopPropagation();toggleProjectExpand(${p.id})" style="font-size:10px;padding:2px 6px;border-radius:4px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;">▾</button>
+            </div>
+            <div id="subtasks-${p.id}" class="subtask-list" style="display:none;margin-left:28px;background:var(--surface2);">
+              ${(p.subtasks||[]).map(s=>renderSubtask(p.id,s)).join('')}
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+    }).join('');
+    return;
+  }
+
+  // Alle andre sorteringer: normal visning med farvede sektioner
   if(temaContainer) {
     temaContainer.innerHTML = (state.temaer||[]).map(t => {
       const temaProjs = projects.filter(p=>p.temaId===t.id).sort(sortFn);
@@ -4362,7 +4433,14 @@ function getAllSubtaskTypes() {
   return [...BUILTIN_SUBTASK_TYPES, ...custom];
 }
 
-function openSubtaskBuilder(projId) {
+function openSubtaskBuilderFromModal() {
+  const id = state.editingProjectId;
+  if(!id) return;
+  // Save current edits first
+  saveProject();
+  // Then open subtask builder
+  setTimeout(() => openSubtaskBuilder(id), 100);
+}
   sbProjId = projId;
   const p = state.projects.find(x=>x.id===projId);
   if(!p) return;
