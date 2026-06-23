@@ -714,7 +714,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   <div class="sidebar-logo">
     <div style="font-size:10px;color:var(--sidebar-text);opacity:0.6;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
     <h1>FocusBase</h1>
-    <span>Dit system · Din flow · v1.42</span>
+    <span>Dit system · Din flow · v1.43</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
@@ -886,7 +886,8 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
           <select id="proj-sort" onchange="renderProjects()" style="font-size:11px;padding:3px 8px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:var(--font);">
             <option value="prio">Prioritet</option>
             <option value="deadline">Deadline</option>
-            <option value="cat">Kategori</option>
+            <option value="cat">Opgavetype</option>
+            <option value="tema">Tema</option>
             <option value="progress">Fremgang</option>
             <option value="title">Navn A-Z</option>
           </select>
@@ -2974,6 +2975,7 @@ function renderProjects() {
     switch(sortBy) {
       case 'deadline': if(!a.deadline&&!b.deadline) return 0; if(!a.deadline) return 1; if(!b.deadline) return -1; return a.deadline.localeCompare(b.deadline);
       case 'cat': { const ai=catOrder.indexOf(a.cat),bi=catOrder.indexOf(b.cat); if(ai!==bi) return (ai===-1?99:ai)-(bi===-1?99:bi); return (prioOrder[a.prio]||1)-(prioOrder[b.prio]||1); }
+      case 'tema': { const temaOrder=(state.temaer||[]).map(t=>t.id); const ai=temaOrder.indexOf(a.temaId||''),bi=temaOrder.indexOf(b.temaId||''); const aIdx=a.temaId?ai:99; const bIdx=b.temaId?bi:99; if(aIdx!==bIdx) return aIdx-bIdx; return (prioOrder[a.prio]||1)-(prioOrder[b.prio]||1); }
       case 'progress': { const ap=(a.subtasks||[]).filter(s=>!s.skipped).length?((a.subtasks||[]).filter(s=>s.done).length/((a.subtasks||[]).filter(s=>!s.skipped).length)):0; const bp=(b.subtasks||[]).filter(s=>!s.skipped).length?((b.subtasks||[]).filter(s=>s.done).length/((b.subtasks||[]).filter(s=>!s.skipped).length)):0; return bp-ap; }
       case 'title': return a.title.localeCompare(b.title,'da');
       default: return (prioOrder[a.prio]||1)-(prioOrder[b.prio]||1);
