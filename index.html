@@ -714,7 +714,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   <div class="sidebar-logo">
     <div style="font-size:10px;color:var(--sidebar-text);opacity:0.6;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
     <h1>FocusBase</h1>
-    <span>Dit system · Din flow · v1.46</span>
+    <span>Dit system · Din flow · v1.47</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
@@ -878,7 +878,6 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
         <div class="board-filters">
           <button class="filter-pill active" onclick="setProjFilter('all',this)">Alle</button>
           <button class="filter-pill" onclick="setProjFilter('open',this)">Åbne</button>
-          <button class="filter-pill" onclick="setProjFilter('done',this)">Færdige</button>
           <button class="filter-pill" onclick="setProjFilter('high',this)">🔴 Høj prioritet</button>
         </div>
         <div style="display:flex;align-items:center;gap:6px;margin-left:auto;">
@@ -1052,6 +1051,18 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
               <option>Andet</option>
             </optgroup>
           </select>
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Tema <span style="color:var(--danger);">*</span></label>
+          <select id="p-tema">
+            <option value="">— Vælg tema —</option>
+          </select>
+        </div>
+        <div class="field" style="display:flex;align-items:center;gap:8px;padding-top:22px;">
+          <input type="checkbox" id="p-flow" style="width:16px;height:16px;accent-color:var(--accent);">
+          <label for="p-flow" style="font-size:12px;cursor:pointer;margin:0;">📣 Kommunikationsflow</label>
         </div>
       </div>
       <div class="template-preview" id="template-preview">
@@ -2861,7 +2872,15 @@ function openProjectModal(id=null) {
     document.getElementById('ev-end').value         = p.evEnd||'';
     document.getElementById('ev-responsible').value = p.evResponsible||'';
   }
-  document.getElementById('template-preview').classList.remove('visible');
+  // Populate tema dropdown
+  const temaSelect = document.getElementById('p-tema');
+  if(temaSelect) {
+    temaSelect.innerHTML = '<option value="">— Vælg tema —</option>' +
+      (state.temaer||[]).map(t=>`<option value="${t.id}" ${p?.temaId===t.id?'selected':''}>${t.emoji} ${t.navn}</option>`).join('');
+  }
+  // Flow checkbox
+  const flowCb = document.getElementById('p-flow');
+  if(flowCb) flowCb.checked = p?.isFlow || false;
   state.selectedColor = p?.color||'#6c63ff';
   document.querySelectorAll('.color-dot').forEach(d=>{
     d.classList.toggle('selected', d.dataset.color===state.selectedColor);
@@ -2883,16 +2902,26 @@ function getEventFields() {
 function saveProject() {
   const title = document.getElementById('p-title').value.trim();
   if(!title) { alert('Giv opgaven et navn'); return; }
-  const cat = document.getElementById('p-cat').value;
+  const cat    = document.getElementById('p-cat').value;
+  const temaId = document.getElementById('p-tema')?.value || '';
+  const isFlow = document.getElementById('p-flow')?.checked || false;
   const isEvent = cat === 'Event';
+
+  // Tema is required for new projects
+  if(!state.editingProjectId && !temaId) {
+    alert('Vælg et tema for opgaven'); return;
+  }
+
   if(state.editingProjectId) {
     const p = state.projects.find(x=>x.id===state.editingProjectId);
     if(p) {
       p.title=title; p.desc=document.getElementById('p-desc').value;
       p.prio=document.getElementById('p-prio').value; p.cat=cat;
       p.deadline=document.getElementById('p-deadline').value;
-      // Auto-update color when category changes
       p.color = CAT_HEX[cat] || state.selectedColor;
+      if(temaId) p.temaId = temaId;
+      p.isFlow = isFlow;
+      p.avisTag = p.temaId === 'vaeresteds';
       if(isEvent) Object.assign(p, getEventFields());
     }
     save(); closeModal('modal-project'); renderProjects(); renderDashboard(); updateBadge(); renderDiary();
@@ -2900,7 +2929,9 @@ function saveProject() {
     const newProj = {
       id:state.nextId++, title, desc:document.getElementById('p-desc').value,
       prio:document.getElementById('p-prio').value, cat,
-      deadline:document.getElementById('p-deadline').value, color:state.selectedColor,
+      deadline:document.getElementById('p-deadline').value,
+      color: CAT_HEX[cat] || '#7A8088',
+      temaId, isFlow, avisTag: temaId === 'vaeresteds',
       done:false, subtasks:[], createdAt:new Date().toISOString(),
       ...(isEvent ? getEventFields() : {}),
     };
@@ -2968,7 +2999,6 @@ function renderProjects() {
   let projects = [...state.projects];
 
   if(projFilter==='open') projects=projects.filter(p=>!p.done);
-  if(projFilter==='done') projects=projects.filter(p=>p.done);
   if(projFilter==='high') projects=projects.filter(p=>p.prio==='high'&&!p.done);
 
   const prioOrder = {high:0,mid:1,low:2};
@@ -2985,78 +3015,62 @@ function renderProjects() {
     }
   };
 
-  // Tema-sortering: vis kompakt pill-gruppering
+  // Skil færdige fra aktive - gælder ALLE sorteringer
+  const activeProjects  = projects.filter(p=>!p.done);
+  const doneProjects    = projects.filter(p=>p.done);
+
+  // Tema-sortering: vis tema-headers med fulde opgavekort
   if(sortBy === 'tema') {
     if(temaContainer) temaContainer.innerHTML = '';
 
-    const today = new Date().toISOString().split('T')[0];
-    const soon  = new Date(); soon.setDate(soon.getDate()+3);
+    const today   = new Date().toISOString().split('T')[0];
+    const soon    = new Date(); soon.setDate(soon.getDate()+3);
     const soonStr = soon.toISOString().split('T')[0];
 
-    // Build tema groups + utagged group
     const groups = [
       ...(state.temaer||[]).map(t => ({
         id: t.id, navn: t.navn, emoji: t.emoji, color: t.color,
-        projs: projects.filter(p=>p.temaId===t.id).sort(sortFn)
+        projs: activeProjects.filter(p=>p.temaId===t.id).sort(sortFn)
       })).filter(g=>g.projs.length),
       { id:'_none', navn:'Uden tema', emoji:'📋', color:'#7A8088',
-        projs: projects.filter(p=>!p.temaId).sort(sortFn) }
+        projs: activeProjects.filter(p=>!p.temaId).sort(sortFn) }
     ].filter(g=>g.projs.length);
 
-    if(!groups.length) {
+    const doneHtml = doneProjects.length ? renderDoneSection(doneProjects) : '';
+
+    if(!groups.length && !doneProjects.length) {
       list.innerHTML='<div class="empty"><div class="emoji">📋</div>Ingen opgaver endnu</div>';
       return;
     }
 
     list.innerHTML = groups.map(g => {
-      const tc = getContrastText(g.color);
-      const open   = g.projs.filter(p=>!p.done).length;
-      const total  = g.projs.length;
-      const urgent = g.projs.filter(p=>!p.done&&p.deadline&&p.deadline<=soonStr&&p.deadline>=today).length;
-      const overdue= g.projs.filter(p=>!p.done&&p.deadline&&p.deadline<today).length;
-      const isOpen = _temaOpenSections[g.id] !== false; // default open
+      const tc     = getContrastText(g.color);
+      const open   = g.projs.length;
+      const urgent = g.projs.filter(p=>p.deadline&&p.deadline<=soonStr&&p.deadline>=today).length;
+      const overdue= g.projs.filter(p=>p.deadline&&p.deadline<today).length;
+      const isOpen = _temaOpenSections[g.id] !== false;
 
-      return `<div style="margin-bottom:10px;">
+      return `<div style="margin-bottom:8px;">
         <div onclick="toggleTemaSection('${g.id}')"
-          style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:${g.color};border-radius:var(--radius);cursor:pointer;">
+          style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:${g.color};border-radius:var(--radius);cursor:pointer;margin-bottom:4px;">
           <span id="tema-arrow-${g.id}" style="color:${tc};font-size:11px;transition:transform 0.2s;${isOpen?'transform:rotate(90deg)':''}">▶</span>
           <span style="color:${tc};font-size:13px;font-weight:600;">${g.emoji} ${g.navn}</span>
-          <span style="font-size:10px;background:rgba(0,0,0,0.18);color:${tc};padding:2px 8px;border-radius:10px;">${open}/${total}</span>
-          ${overdue?`<span style="font-size:10px;background:rgba(228,66,88,0.85);color:#fff;padding:2px 8px;border-radius:10px;">⚠ ${overdue} overskredet</span>`:''}
-          ${urgent?`<span style="font-size:10px;background:rgba(245,158,11,0.85);color:#fff;padding:2px 8px;border-radius:10px;">⏰ ${urgent} snart</span>`:''}
+          <span style="font-size:10px;background:rgba(0,0,0,0.18);color:${tc};padding:1px 7px;border-radius:10px;margin-left:2px;">${open} åbne</span>
+          ${overdue?`<span style="font-size:10px;background:rgba(228,66,88,0.85);color:#fff;padding:2px 7px;border-radius:10px;">⚠ ${overdue}</span>`:''}
+          ${urgent&&!overdue?`<span style="font-size:10px;background:rgba(245,158,11,0.85);color:#fff;padding:2px 7px;border-radius:10px;">⏰ ${urgent} snart</span>`:''}
         </div>
-        <div id="tema-list-${g.id}" style="display:${isOpen?'block':'none'};">
-          ${g.projs.map(p => {
-            const nextSub = getNextSubtaskLabel(p);
-            const ptc = getContrastText(p.color||'#7A8088');
-            const isOver = p.deadline && p.deadline < today;
-            const isSoon = p.deadline && p.deadline <= soonStr && p.deadline >= today;
-            return `<div style="display:flex;align-items:center;gap:10px;padding:8px 14px 8px 28px;border-bottom:1px solid var(--border);${p.done?'opacity:0.45;':''}">
-              <span style="width:10px;height:10px;border-radius:50%;background:${p.color};flex-shrink:0;display:inline-block;"></span>
-              <div style="flex:1;min-width:0;">
-                <div style="font-size:12px;font-weight:${p.done?'400':'600'};${p.done?'text-decoration:line-through;color:var(--text-muted);':''}">
-                  ${esc(p.title)}
-                </div>
-                ${nextSub&&!p.done?`<div style="font-size:10px;color:var(--text-muted);margin-top:1px;">→ ${esc(nextSub)}</div>`:''}
-              </div>
-              ${p.deadline&&!p.done?`<span style="font-size:10px;white-space:nowrap;font-weight:500;color:${isOver?'var(--danger)':isSoon?'var(--warning)':'var(--text-muted)'};">⏰ ${formatDate(p.deadline)}</span>`:''}
-              <span style="font-size:9px;padding:2px 6px;border-radius:8px;background:${p.color};color:${ptc};white-space:nowrap;">${esc(p.cat)}</span>
-              <button onclick="event.stopPropagation();toggleProjectExpand(${p.id})" style="font-size:10px;padding:2px 6px;border-radius:4px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;">▾</button>
-            </div>
-            <div id="subtasks-${p.id}" class="subtask-list" style="display:none;margin-left:28px;background:var(--surface2);">
-              ${(p.subtasks||[]).map(s=>renderSubtask(p.id,s)).join('')}
-            </div>`;
-          }).join('')}
+        <div id="tema-list-${g.id}" style="display:${isOpen?'block':'none'};padding-left:4px;">
+          ${g.projs.map(p=>renderProjectCard(p)).join('')}
         </div>
       </div>`;
-    }).join('');
+    }).join('') + doneHtml;
     return;
   }
 
-  // Alle andre sorteringer: normal visning med farvede sektioner
+  // Alle andre sorteringer: tema-headers + aktive projekter + færdige sektion
   if(temaContainer) {
     temaContainer.innerHTML = (state.temaer||[]).map(t => {
-      const temaProjs = projects.filter(p=>p.temaId===t.id).sort(sortFn);
+      const temaProjs = activeProjects.filter(p=>p.temaId===t.id).sort(sortFn);
       if(!temaProjs.length) return '';
       const tc = getContrastText(t.color);
       const isOpen = _temaOpenSections[t.id];
@@ -3064,7 +3078,7 @@ function renderProjects() {
         <div onclick="toggleTemaSection('${t.id}')" style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:${t.color};border-radius:var(--radius);cursor:pointer;margin-bottom:4px;">
           <span id="tema-arrow-${t.id}" style="color:${tc};font-size:11px;transition:transform 0.2s;${isOpen?'transform:rotate(90deg)':''}">▶</span>
           <span style="color:${tc};font-size:13px;font-weight:600;">${t.emoji} ${t.navn}</span>
-          <span style="font-size:10px;background:rgba(0,0,0,0.18);color:${tc};padding:1px 7px;border-radius:10px;margin-left:2px;">${temaProjs.filter(p=>!p.done).length} åbne</span>
+          <span style="font-size:10px;background:rgba(0,0,0,0.18);color:${tc};padding:1px 7px;border-radius:10px;margin-left:2px;">${temaProjs.length} åbne</span>
           ${t.tryk?`<span style="margin-left:auto;font-size:10px;color:${tc};opacity:0.8;">🖨 ${formatDate(t.tryk)}</span>`:''}
         </div>
         <div id="tema-list-${t.id}" style="display:${isOpen?'block':'none'};padding-left:4px;">
@@ -3074,12 +3088,28 @@ function renderProjects() {
     }).join('');
   }
 
-  const regularProjs = projects.filter(p=>!p.temaId).sort(sortFn);
+  const regularProjs = activeProjects.filter(p=>!p.temaId).sort(sortFn);
   if(!list) return;
-  if(!regularProjs.length && !projects.some(p=>p.temaId)) {
+  if(!regularProjs.length && !activeProjects.some(p=>p.temaId) && !doneProjects.length) {
     list.innerHTML='<div class="empty"><div class="emoji">📋</div>Ingen opgaver endnu</div>'; return;
   }
-  list.innerHTML = regularProjs.map(p=>renderProjectCard(p)).join('');
+  list.innerHTML = regularProjs.map(p=>renderProjectCard(p)).join('') +
+    (doneProjects.length ? renderDoneSection(doneProjects) : '');
+}
+
+function renderDoneSection(doneProjs) {
+  if(!doneProjs.length) return '';
+  const isOpen = _temaOpenSections['_done'] === true;
+  return `<div style="margin-top:12px;">
+    <div onclick="toggleTemaSection('_done')" style="display:flex;align-items:center;gap:8px;padding:8px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;margin-bottom:4px;">
+      <span id="tema-arrow-_done" style="color:var(--text-muted);font-size:11px;transition:transform 0.2s;${isOpen?'transform:rotate(90deg)':''}">▶</span>
+      <span style="font-size:12px;font-weight:600;color:var(--text-muted);">✓ Færdige opgaver</span>
+      <span style="font-size:10px;background:var(--border);color:var(--text-muted);padding:1px 7px;border-radius:10px;">${doneProjs.length}</span>
+    </div>
+    <div id="tema-list-_done" style="display:${isOpen?'block':'none'};padding-left:4px;opacity:0.65;">
+      ${doneProjs.map(p=>renderProjectCard(p)).join('')}
+    </div>
+  </div>`;
 }
 
 function renderProjectCard(p) {
@@ -3099,7 +3129,7 @@ function renderProjectCard(p) {
     <div class="project-header" onclick="toggleProjectExpand(${p.id})" style="color:${tc};">
       <span class="project-expand" id="arrow-${p.id}" style="color:${mc};">▶</span>
       <span class="project-name" style="${p.done?'text-decoration:line-through;':''}">
-        ${esc(p.title)}${p.flowName ? ` <span style="font-size:9px;font-weight:600;padding:1px 6px;border-radius:8px;background:rgba(176,74,138,0.2);color:#B04A8A;margin-left:4px;">📣 ${esc(p.flowName)}</span>` : ''}
+        ${esc(p.title)}${p.flowName ? ` <span style="font-size:9px;font-weight:600;padding:1px 6px;border-radius:8px;background:rgba(176,74,138,0.2);color:#B04A8A;margin-left:4px;">📣 ${esc(p.flowName)}</span>` : ''}${p.isFlow ? ` <span style="font-size:9px;font-weight:600;padding:1px 6px;border-radius:8px;background:rgba(176,74,138,0.25);color:${tc};margin-left:4px;">📣 Flow</span>` : ''}
         ${nextSub&&!p.done ? `<span style="font-size:10px;color:${mc};font-weight:400;margin-left:8px;">→ ${esc(nextSub)}</span>` : ''}
       </span>
       ${p.cat==='Event' ? `<div style="font-size:10px;color:${mc};margin-top:2px;display:flex;gap:10px;flex-wrap:wrap;">
