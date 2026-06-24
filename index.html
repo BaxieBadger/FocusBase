@@ -685,7 +685,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   <div class="sidebar-logo">
     <div style="font-size:10px;color:var(--sidebar-text);opacity:0.6;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
     <h1>FocusBase</h1>
-    <span>Dit system · Din flow · v1.58</span>
+    <span>Dit system · Din flow · v1.60</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
@@ -863,9 +863,10 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
           <span style="font-size:11px;color:var(--text-muted);">Sortér:</span>
           <select id="proj-sort" onchange="renderProjects()" style="font-size:11px;padding:3px 8px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:var(--font);">
             <option value="tema" selected>Projekt</option>
-            <option value="prio">Prioritet</option>
-            <option value="deadline">Deadline</option>
+            <option value="deadline">Næste deadline</option>
+            <option value="deadlineFinal">Endelig deadline</option>
             <option value="cat">Opgavetype</option>
+            <option value="prio">Prioritet</option>
             <option value="progress">Fremgang</option>
             <option value="title">Navn A-Z</option>
           </select>
@@ -1065,13 +1066,22 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
         </div>
         <div class="field"><label>Ansvarlig</label><input type="text" id="ev-responsible" placeholder="Navn på ansvarlig"></div>
       </div>
-      <div class="field">
-        <label>Dato / Deadline</label>
-        <input type="text" id="p-deadline-smart" placeholder="fx 15/6 eller 3.8" style="width:100%;"
-          oninput="previewSmartDate('p-deadline-smart','p-deadline-preview')"
-          onkeydown="if(event.key==='Enter') document.getElementById('p-title').focus()">
-        <div id="p-deadline-preview" style="font-size:11px;color:var(--accent);margin-top:4px;min-height:16px;"></div>
-        <input type="hidden" id="p-deadline">
+      <div class="row2">
+        <div class="field">
+          <label>Næste deadline</label>
+          <input type="text" id="p-deadline-smart" placeholder="fx 15/6" style="width:100%;"
+            oninput="previewSmartDate('p-deadline-smart','p-deadline-preview')"
+            onkeydown="if(event.key==='Enter') document.getElementById('p-deadline-final-smart').focus()">
+          <div id="p-deadline-preview" style="font-size:11px;color:var(--accent);margin-top:4px;min-height:16px;"></div>
+          <input type="hidden" id="p-deadline">
+        </div>
+        <div class="field">
+          <label>Endelig deadline</label>
+          <input type="text" id="p-deadline-final-smart" placeholder="fx 30/8" style="width:100%;"
+            oninput="previewSmartDate('p-deadline-final-smart','p-deadline-final-preview')">
+          <div id="p-deadline-final-preview" style="font-size:11px;color:var(--accent);margin-top:4px;min-height:16px;"></div>
+          <input type="hidden" id="p-deadline-final">
+        </div>
       </div>
       <div class="flex gap8">
         <button class="btn" onclick="saveProject()" style="flex:1;">Gem opgave</button>
@@ -1223,27 +1233,18 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   </div>
 </div>
 
-<!-- FASE DEADLINE MODAL -->
-<div class="modal-overlay" id="modal-fase-deadline">
-  <div class="modal" style="width:360px;">
+<!-- FASE REMINDER -->
+<div class="modal-overlay" id="modal-fase-reminder">
+  <div class="modal" style="width:340px;">
     <div class="modal-header">
-      <div class="modal-title" id="fase-dl-title">Næste deadline</div>
-      <button class="modal-close" onclick="closeModal('modal-fase-deadline')">✕</button>
+      <div class="modal-title" id="fase-reminder-title">Fase opdateret</div>
+      <button class="modal-close" onclick="closeModal('modal-fase-reminder')">✕</button>
     </div>
-    <div class="modal-body">
-      <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;" id="fase-dl-desc"></p>
-      <div class="field">
-        <label>Deadline for næste trin</label>
-        <input type="text" id="fase-dl-input" placeholder="fx 15/6" 
-          oninput="previewSmartDate('fase-dl-input','fase-dl-preview')"
-          onkeydown="if(event.key==='Enter'){event.preventDefault();saveFaseDeadline();}">
-        <div id="fase-dl-preview" style="font-size:11px;color:var(--accent2);margin-top:3px;min-height:14px;"></div>
-        <input type="hidden" id="fase-dl-hidden">
-      </div>
-      <div class="flex gap8">
-        <button class="btn" onclick="saveFaseDeadline()" style="flex:1;">Sæt deadline</button>
-        <button class="btn secondary" onclick="closeModal('modal-fase-deadline')">Spring over</button>
-      </div>
+    <div class="modal-body" style="text-align:center;padding:20px;">
+      <div style="font-size:32px;margin-bottom:12px;">⏰</div>
+      <p style="font-size:13px;color:var(--text);margin-bottom:6px;" id="fase-reminder-msg"></p>
+      <p style="font-size:11px;color:var(--text-muted);margin-bottom:20px;">Husk at justere deadlinen på opgaven hvis nødvendigt.</p>
+      <button class="btn" onclick="closeModal('modal-fase-reminder')" style="width:100%;">OK, forstået</button>
     </div>
   </div>
 </div>
@@ -3200,7 +3201,18 @@ function openProjectModal(id=null) {
     smartPrev.textContent = `→ ${d.getDate()}. ${DA_MONTHS_SHORT[d.getMonth()]} ${d.getFullYear()}`;
     smartPrev.style.color = 'var(--accent2)';
   } else { smartInp.value=''; smartPrev.textContent=''; }
-  // Event fields
+  // Final deadline
+  document.getElementById('p-deadline-final').value = p?.deadlineFinal||'';
+  const finalInp  = document.getElementById('p-deadline-final-smart');
+  const finalPrev = document.getElementById('p-deadline-final-preview');
+  if(finalInp && finalPrev) {
+    if(p?.deadlineFinal) {
+      const df = new Date(p.deadlineFinal+'T12:00:00');
+      finalInp.value = `${df.getDate()}/${df.getMonth()+1}`;
+      finalPrev.textContent = `→ ${df.getDate()}. ${DA_MONTHS_SHORT[df.getMonth()]} ${df.getFullYear()}`;
+      finalPrev.style.color = 'var(--accent2)';
+    } else { finalInp.value=''; finalPrev.textContent=''; }
+  }
   const evFields = document.getElementById('event-fields');
   if(evFields) evFields.style.display = p?.cat==='Event' ? 'block' : 'none';
   if(p?.cat==='Event') {
@@ -3257,6 +3269,7 @@ function saveProject() {
       p.notes=document.getElementById('p-desc').value;
       p.prio=document.getElementById('p-prio').value; p.cat=cat;
       p.deadline=document.getElementById('p-deadline').value;
+      p.deadlineFinal=document.getElementById('p-deadline-final').value||'';
       p.color = CAT_HEX[cat] || state.selectedColor;
       if(temaId) p.temaId = temaId;
       p.isFlow = isFlow;
@@ -3269,6 +3282,7 @@ function saveProject() {
       id:state.nextId++, title, desc:document.getElementById('p-desc').value,
       prio:document.getElementById('p-prio').value, cat,
       deadline:document.getElementById('p-deadline').value,
+      deadlineFinal:document.getElementById('p-deadline-final').value||'',
       color: CAT_HEX[cat] || '#7A8088',
       temaId, isFlow, avisTag: temaId === 'vaeresteds',
       done:false, subtasks:[], createdAt:new Date().toISOString(),
@@ -3346,6 +3360,7 @@ function renderProjects() {
     if(a.done!==b.done) return a.done?1:-1;
     switch(sortBy) {
       case 'deadline': if(!a.deadline&&!b.deadline) return 0; if(!a.deadline) return 1; if(!b.deadline) return -1; return a.deadline.localeCompare(b.deadline);
+      case 'deadlineFinal': if(!a.deadlineFinal&&!b.deadlineFinal) return 0; if(!a.deadlineFinal) return 1; if(!b.deadlineFinal) return -1; return a.deadlineFinal.localeCompare(b.deadlineFinal);
       case 'cat': { const ai=catOrder.indexOf(a.cat),bi=catOrder.indexOf(b.cat); if(ai!==bi) return (ai===-1?99:ai)-(bi===-1?99:bi); return (prioOrder[a.prio]||1)-(prioOrder[b.prio]||1); }
       case 'tema': { const temaOrder=(state.temaer||[]).map(t=>t.id); const ai=temaOrder.indexOf(a.temaId||''),bi=temaOrder.indexOf(b.temaId||''); const aIdx=a.temaId?ai:99; const bIdx=b.temaId?bi:99; if(aIdx!==bIdx) return aIdx-bIdx; return (prioOrder[a.prio]||1)-(prioOrder[b.prio]||1); }
       case 'progress': { const ap=(a.subtasks||[]).filter(s=>!s.skipped).length?((a.subtasks||[]).filter(s=>s.done).length/((a.subtasks||[]).filter(s=>!s.skipped).length)):0; const bp=(b.subtasks||[]).filter(s=>!s.skipped).length?((b.subtasks||[]).filter(s=>s.done).length/((b.subtasks||[]).filter(s=>!s.skipped).length)):0; return bp-ap; }
@@ -3360,10 +3375,12 @@ function renderProjects() {
 
   const deadlineSortFn = (a,b) => {
     if(a.done !== b.done) return a.done ? 1 : -1;
-    if(!a.deadline && !b.deadline) return 0;
-    if(!a.deadline) return 1;
-    if(!b.deadline) return -1;
-    return a.deadline.localeCompare(b.deadline);
+    const ad = a.deadline || a.deadlineFinal || '';
+    const bd = b.deadline || b.deadlineFinal || '';
+    if(!ad && !bd) return 0;
+    if(!ad) return 1;
+    if(!bd) return -1;
+    return ad.localeCompare(bd);
   };
 
   // Tema-sortering: vis tema-headers med fulde opgavekort
@@ -3549,9 +3566,6 @@ function renderInterviewPanel(p) {
   </div>`;
 }
 
-let _faseDeadlineProjId = null;
-let _faseDeadlineFaseId = null;
-
 function toggleFase(projId, faseId) {
   const p = state.projects.find(x=>x.id===projId);
   if(!p) return;
@@ -3560,63 +3574,18 @@ function toggleFase(projId, faseId) {
   const currentFaseIdx = flow.findIndex(x=>x.id===faseId);
 
   if(p.faser[faseId]?.done) {
-    // Undo – allow going back to any fase
-    p.faser[faseId] = { done: false, deadline: p.faser[faseId].deadline };
+    p.faser[faseId].done = false;
+    delete p.faser[faseId].doneAt;
   } else {
-    // Mark done
-    p.faser[faseId] = { done: true, doneAt: new Date().toISOString(), deadline: p.faser[faseId]?.deadline||'' };
-    // Ask for next fase deadline
+    p.faser[faseId] = { done: true, doneAt: new Date().toISOString() };
     const nextFase = flow[currentFaseIdx + 1];
-    if(nextFase && !p.faser[nextFase.id]?.done) {
-      _faseDeadlineProjId = projId;
-      _faseDeadlineFaseId = nextFase.id;
-      const dlModal = document.getElementById('modal-fase-deadline');
-      dlModal.dataset.projId = projId;
-      dlModal.dataset.faseId = nextFase.id;
-      document.getElementById('fase-dl-title').textContent   = `Deadline for: ${nextFase.label}`;
-      document.getElementById('fase-dl-desc').textContent    = `"${p.title}" er nu i fase: ${nextFase.label}`;
-      document.getElementById('fase-dl-input').value         = '';
-      document.getElementById('fase-dl-preview').textContent = '';
-      document.getElementById('fase-dl-hidden').value        = '';
-      save();
-      // Render AFTER modal is shown so DOM isn't replaced
-      dlModal.classList.add('open');
-      setTimeout(()=>document.getElementById('fase-dl-input')?.focus(), 80);
-      return; // Don't renderProjects now – saveFaseDeadline will do it
+    if(nextFase) {
+      document.getElementById('fase-reminder-title').textContent = `→ ${nextFase.label}`;
+      document.getElementById('fase-reminder-msg').textContent   = `"${p.title}" er nu i fase: ${nextFase.label}`;
+      document.getElementById('modal-fase-reminder').classList.add('open');
     }
   }
   save(); renderProjects();
-}
-
-function saveFaseDeadline() {
-  const raw      = document.getElementById('fase-dl-input')?.value.trim();
-  const hidden   = document.getElementById('fase-dl-hidden')?.value;
-  const deadline = hidden || (raw ? parseSmartDate(raw) : '');
-
-  // Read IDs from modal data attributes as fallback
-  const modal = document.getElementById('modal-fase-deadline');
-  const projId = _faseDeadlineProjId || parseInt(modal?.dataset.projId);
-  const faseId = _faseDeadlineFaseId || modal?.dataset.faseId;
-
-  if(projId && faseId) {
-    const p = state.projects.find(x=>x.id===projId);
-    if(p) {
-      if(!p.faser) p.faser = {};
-      if(!p.faser[faseId]) p.faser[faseId] = {};
-      if(deadline) {
-        p.faser[faseId].deadline = deadline;
-        const allDeadlines = Object.values(p.faser)
-          .filter(f => !f.done && f.deadline)
-          .map(f => f.deadline).sort();
-        if(allDeadlines.length) p.deadline = allDeadlines[0];
-        toast(`⏰ Deadline sat: ${formatDate(deadline)}`);
-      }
-      save(); renderProjects(); renderDashboard();
-    }
-  }
-  _faseDeadlineProjId = null;
-  _faseDeadlineFaseId = null;
-  closeModal('modal-fase-deadline');
 }
 
 function saveProjectNote(projId, note) {
@@ -3678,7 +3647,8 @@ function renderProjectCard(p) {
           </div>
           <span style="font-size:9px;color:${tc};">${doneFaser}/${flow.length}</span>
         </div>
-        ${p.deadline?`<span style="font-size:10px;font-weight:500;padding:2px 7px;border-radius:10px;white-space:nowrap;background:rgba(0,0,0,0.15);color:${tc};">⏰ ${formatDate(p.deadline)}</span>`:''}
+        ${p.deadline?`<span style="font-size:10px;font-weight:500;padding:2px 7px;border-radius:10px;white-space:nowrap;background:rgba(0,0,0,0.15);color:${tc};" title="Næste deadline">⏰ ${formatDate(p.deadline)}</span>`:''}
+        ${p.deadlineFinal?`<span style="font-size:10px;font-weight:500;padding:2px 7px;border-radius:10px;white-space:nowrap;background:rgba(0,0,0,0.25);color:${tc};" title="Endelig deadline">🏁 ${formatDate(p.deadlineFinal)}</span>`:''}
         <button class="btn secondary sm" onclick="event.stopPropagation();openProjectModal(${p.id})" style="font-size:10px;padding:3px 8px;${bs}">✎</button>
         <button class="btn secondary sm" onclick="event.stopPropagation();toggleProjectDone(${p.id})" style="font-size:10px;padding:3px 8px;${bs}">${p.done?'↺':'✓'}</button>
         <button class="btn sm danger" onclick="event.stopPropagation();deleteProject(${p.id})" style="font-size:10px;padding:3px 8px;">✕</button>
@@ -5047,8 +5017,9 @@ function previewSmartDate(inputId, previewId) {
 
   // Determine hidden field
   let hiddenId;
-  if(inputId === 'p-deadline-smart')         hiddenId = 'p-deadline';
-  else if(inputId === 'flow-deadline-smart') hiddenId = 'flow-deadline';
+  if(inputId === 'p-deadline-smart')             hiddenId = 'p-deadline';
+  else if(inputId === 'p-deadline-final-smart')  hiddenId = 'p-deadline-final';
+  else if(inputId === 'flow-deadline-smart')      hiddenId = 'flow-deadline';
   else if(inputId === 'avis-tryk-input')     hiddenId = 'avis-tryk-hidden';
   else if(inputId === 'off-from')            hiddenId = 'off-from-hidden';
   else if(inputId === 'off-to')              hiddenId = 'off-to-hidden';
