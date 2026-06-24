@@ -685,7 +685,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   <div class="sidebar-logo">
     <div style="font-size:10px;color:var(--sidebar-text);opacity:0.6;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
     <h1>FocusBase</h1>
-    <span>Dit system · Din flow · v1.55</span>
+    <span>Dit system · Din flow · v1.56</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
@@ -1234,7 +1234,9 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
       <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;" id="fase-dl-desc"></p>
       <div class="field">
         <label>Deadline for næste trin</label>
-        <input type="text" id="fase-dl-input" placeholder="fx 15/6" oninput="previewSmartDate('fase-dl-input','fase-dl-preview')">
+        <input type="text" id="fase-dl-input" placeholder="fx 15/6" 
+          oninput="previewSmartDate('fase-dl-input','fase-dl-preview')"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();saveFaseDeadline();}">
         <div id="fase-dl-preview" style="font-size:11px;color:var(--accent2);margin-top:3px;min-height:14px;"></div>
         <input type="hidden" id="fase-dl-hidden">
       </div>
@@ -3563,17 +3565,27 @@ function toggleFase(projId, faseId) {
 }
 
 function saveFaseDeadline() {
-  const deadline = document.getElementById('fase-dl-hidden').value;
-  if(deadline && _faseDeadlineProjId && _faseDeadlineFaseId) {
+  // Try hidden field first, then parse from input directly
+  let deadline = document.getElementById('fase-dl-hidden').value;
+  if(!deadline) {
+    const raw = document.getElementById('fase-dl-input')?.value.trim();
+    if(raw) deadline = parseSmartDate(raw);
+  }
+
+  if(_faseDeadlineProjId && _faseDeadlineFaseId) {
     const p = state.projects.find(x=>x.id===_faseDeadlineProjId);
     if(p) {
       if(!p.faser) p.faser = {};
       if(!p.faser[_faseDeadlineFaseId]) p.faser[_faseDeadlineFaseId] = {};
-      p.faser[_faseDeadlineFaseId].deadline = deadline;
-      // Update project deadline to nearest fase deadline
-      const allDeadlines = Object.values(p.faser).filter(f=>!f.done&&f.deadline).map(f=>f.deadline).sort();
-      if(allDeadlines.length) p.deadline = allDeadlines[0];
-      save(); renderProjects();
+      if(deadline) {
+        p.faser[_faseDeadlineFaseId].deadline = deadline;
+        // Update project deadline to nearest active fase deadline
+        const allDeadlines = Object.values(p.faser)
+          .filter(f=>!f.done && f.deadline)
+          .map(f=>f.deadline).sort();
+        if(allDeadlines.length) p.deadline = allDeadlines[0];
+      }
+      save(); renderProjects(); renderDashboard();
     }
   }
   closeModal('modal-fase-deadline');
