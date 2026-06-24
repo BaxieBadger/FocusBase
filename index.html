@@ -685,7 +685,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   <div class="sidebar-logo">
     <div style="font-size:10px;color:var(--sidebar-text);opacity:0.6;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
     <h1>FocusBase</h1>
-    <span>Dit system · Din flow · v1.53</span>
+    <span>Dit system · Din flow · v1.55</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
@@ -752,7 +752,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
         <!-- Temaer cirkeldiagram -->
         <div class="stat-card" style="order:5;padding:10px;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-            <span class="s-label" style="margin:0;">◈ Temaer</span>
+            <span class="s-label" style="margin:0;">◈ Projekter</span>
             <span id="tema-chart-count" style="font-size:9px;color:var(--text-muted);"></span>
           </div>
           <canvas id="tema-pie" width="140" height="140" style="display:block;margin:0 auto;"></canvas>
@@ -820,7 +820,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
           </div>
           <div class="card" id="dash-avis-card">
             <div class="card-header" style="display:flex;align-items:center;">
-              🏷 Temaer
+              📁 Projekter
               <span id="dash-avis-tryk" style="margin-left:auto;font-size:10px;color:var(--text-muted);" title="Sendes til tryk"></span>
             </div>
             <div class="card-body" id="dash-avis"></div>
@@ -862,7 +862,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
         <div style="display:flex;align-items:center;gap:6px;margin-left:auto;">
           <span style="font-size:11px;color:var(--text-muted);">Sortér:</span>
           <select id="proj-sort" onchange="renderProjects()" style="font-size:11px;padding:3px 8px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:var(--font);">
-            <option value="tema" selected>Tema</option>
+            <option value="tema" selected>Projekt</option>
             <option value="prio">Prioritet</option>
             <option value="deadline">Deadline</option>
             <option value="cat">Opgavetype</option>
@@ -1014,7 +1014,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
           </select>
         </div>
         <div class="field">
-          <label>Kategori</label>
+          <label>Opgavetype</label>
           <select id="p-cat" onchange="showTemplatePreview()">
             <optgroup label="Kommunikation">
               <option>SoMe</option>
@@ -1039,9 +1039,9 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
       </div>
       <div class="row2">
         <div class="field">
-          <label>Tema <span style="color:var(--danger);">*</span></label>
+          <label>Projekt <span style="color:var(--danger);">*</span></label>
           <select id="p-tema">
-            <option value="">— Vælg tema —</option>
+            <option value="">— Vælg projekt —</option>
           </select>
         </div>
         <div class="field" style="display:flex;align-items:center;gap:8px;padding-top:22px;">
@@ -1250,7 +1250,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
 <div class="modal-overlay" id="modal-tema-menu">
   <div class="modal" style="width:320px;">
     <div class="modal-header">
-      <div class="modal-title">🏷 Vælg tema</div>
+      <div class="modal-title">📁 Vælg projekt</div>
       <button class="modal-close" onclick="closeModal('modal-tema-menu')">✕</button>
     </div>
     <div class="modal-body" id="tema-menu-list"></div>
@@ -1272,7 +1272,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
       </div>
       <div class="row2">
         <div class="field">
-          <label>Kategori</label>
+          <label>Opgavetype</label>
           <select id="pr-cat" style="width:100%;" onchange="prUpdateCat()">
             <option>SoMe</option><option>Presse</option><option>Nyhedsbrev</option>
             <option>Artikel</option><option>Møde</option><option>Website</option>
@@ -2394,28 +2394,16 @@ function selectColor(el) {
   state.selectedColor = el.dataset.color;
 }
 
-// ── TEMPLATES ──
-function applyTemplate(project) {
-  const tpl = TEMPLATES[project.cat];
-  if(!tpl || project.subtasks.length > 0) return;
-  tpl.forEach(s => {
-    project.subtasks.push({
-      id: state.nextId++,
-      title: s.title,
-      deadline: '',
-      time: '',
-      note: s.note || '',
-      done: false,
-      doneAt: null,
-      skippable: s.skippable || false,
-      skipped: false,
-      evalOffset: s.evalOffset || null,   // days after send date
-      sameDay: s.sameDay || null,         // paired subtask name
-      isInterviewStep: s.isInterviewStep || false,
-      interviews: s.isInterviewStep ? [] : undefined,
-    });
-  });
+// ── OPGAVETYPE FARVE ──
+function showTemplatePreview() {
+  const cat = document.getElementById('p-cat')?.value;
+  if(!cat || state.editingProjectId) return;
+  if(CAT_HEX[cat]) state.selectedColor = CAT_HEX[cat];
+  const eventFields = document.getElementById('event-fields');
+  if(eventFields) eventFields.style.display = cat === 'Event' ? 'block' : 'none';
 }
+
+function applyTemplate(project) { /* no-op: fase-system bruges i stedet */ }
 
 // ── DASHBOARD VIEW TOGGLE ──
 let dashView   = 'agenda';
@@ -2535,7 +2523,7 @@ function openMigrationWizard() {
         <span style="font-size:10px;padding:1px 7px;border-radius:8px;background:${p.color||'#7A8088'};color:${getContrastText(p.color||'#7A8088')};">${p.cat||'Generelt'}</span>
       </div>
       <div style="display:flex;gap:8px;">
-        <div style="flex:1;"><label style="font-size:10px;color:var(--text-muted);">Kategori</label>
+        <div style="flex:1;"><label style="font-size:10px;color:var(--text-muted);">Opgavetype</label>
           <select id="mig-cat-${p.id}" style="width:100%;font-size:11px;padding:4px 6px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface);">
             <option value="Artikel" ${p.cat==='Artikel'?'selected':''}>Artikel</option>
             <option value="Nyhedsbrev" ${p.cat==='Nyhedsbrev'?'selected':''}>Nyhedsbrev</option>
@@ -2546,9 +2534,9 @@ function openMigrationWizard() {
             <option value="Event" ${p.cat==='Event'?'selected':''}>Event</option>
             <option value="Andet" ${(!p.cat||['Andet','Generelt','Website','Kommunikationsflow'].includes(p.cat))?'selected':''}>Andet</option>
           </select></div>
-        <div style="flex:1;"><label style="font-size:10px;color:var(--text-muted);">Tema</label>
+        <div style="flex:1;"><label style="font-size:10px;color:var(--text-muted);">Projekt</label>
           <select id="mig-tema-${p.id}" style="width:100%;font-size:11px;padding:4px 6px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface);">
-            <option value="">— Vælg tema —</option>
+            <option value="">— Vælg projekt —</option>
             ${(state.temaer||[]).map(t=>`<option value="${t.id}" ${p.temaId===t.id?'selected':''}>${t.emoji} ${t.navn}</option>`).join('')}
           </select></div>
       </div>
@@ -2763,28 +2751,7 @@ function selectColor(el) {
   state.selectedColor = el.dataset.color;
 }
 
-// ── TEMPLATES ──
-function applyTemplate(project) {
-  const tpl = TEMPLATES[project.cat];
-  if(!tpl || project.subtasks.length > 0) return;
-  tpl.forEach(s => {
-    project.subtasks.push({
-      id: state.nextId++,
-      title: s.title,
-      deadline: '',
-      time: '',
-      note: s.note || '',
-      done: false,
-      doneAt: null,
-      skippable: s.skippable || false,
-      skipped: false,
-      evalOffset: s.evalOffset || null,   // days after send date
-      sameDay: s.sameDay || null,         // paired subtask name
-      isInterviewStep: s.isInterviewStep || false,
-      interviews: s.isInterviewStep ? [] : undefined,
-    });
-  });
-}
+
 
 // ── DASHBOARD VIEW TOGGLE ──
 
@@ -3218,7 +3185,7 @@ function openProjectModal(id=null) {
   const libBtn = document.getElementById('modal-subtask-lib-btn');
   if(libBtn) libBtn.style.display = p ? 'block' : 'none';
   document.getElementById('p-title').value = p?.title||'';
-  document.getElementById('p-desc').value  = p?.desc||'';
+  document.getElementById('p-desc').value  = p?.notes || p?.desc || '';
   document.getElementById('p-prio').value  = p?.prio||'mid';
   document.getElementById('p-cat').value   = p?.cat||'Generelt';
   document.getElementById('p-deadline').value = p?.deadline||'';
@@ -3244,7 +3211,7 @@ function openProjectModal(id=null) {
   // Populate tema dropdown
   const temaSelect = document.getElementById('p-tema');
   if(temaSelect) {
-    temaSelect.innerHTML = '<option value="">— Vælg tema —</option>' +
+    temaSelect.innerHTML = '<option value="">— Vælg projekt —</option>' +
       (state.temaer||[]).map(t=>`<option value="${t.id}" ${p?.temaId===t.id?'selected':''}>${t.emoji} ${t.navn}</option>`).join('');
   }
   // Flow checkbox
@@ -3389,6 +3356,14 @@ function renderProjects() {
   const activeProjects  = projects.filter(p=>!p.done);
   const doneProjects    = projects.filter(p=>p.done);
 
+  const deadlineSortFn = (a,b) => {
+    if(a.done !== b.done) return a.done ? 1 : -1;
+    if(!a.deadline && !b.deadline) return 0;
+    if(!a.deadline) return 1;
+    if(!b.deadline) return -1;
+    return a.deadline.localeCompare(b.deadline);
+  };
+
   // Tema-sortering: vis tema-headers med fulde opgavekort
   if(sortBy === 'tema') {
     if(temaContainer) temaContainer.innerHTML = '';
@@ -3400,10 +3375,10 @@ function renderProjects() {
     const groups = [
       ...(state.temaer||[]).map(t => ({
         id: t.id, navn: t.navn, emoji: t.emoji, color: t.color,
-        projs: activeProjects.filter(p=>p.temaId===t.id).sort(sortFn)
+        projs: activeProjects.filter(p=>p.temaId===t.id).sort(deadlineSortFn)
       })).filter(g=>g.projs.length),
-      { id:'_none', navn:'Uden tema', emoji:'📋', color:'#7A8088',
-        projs: activeProjects.filter(p=>!p.temaId).sort(sortFn) }
+      { id:'_none', navn:'Uden projekt', emoji:'📋', color:'#7A8088',
+        projs: activeProjects.filter(p=>!p.temaId).sort(deadlineSortFn) }
     ].filter(g=>g.projs.length);
 
     const doneHtml = doneProjects.length ? renderDoneSection(doneProjects) : '';
@@ -3511,9 +3486,22 @@ function renderNotesPanel(p) {
   if(!p.notes) return '';
   const tc = getContrastText(p.color||'#7A8088');
   const mc = getMuted(p.color||'#7A8088');
+  // Split into individual note entries
+  const lines = p.notes.split('\n').filter(Boolean);
+  const notesHtml = lines.map(line => {
+    const tsMatch = line.match(/^\[([^\]]+)\] (.+)$/);
+    if(tsMatch) {
+      return `<div style="margin-bottom:6px;">
+        <span style="font-size:9px;font-style:italic;color:${mc};">${esc(tsMatch[1])}</span>
+        <div style="font-size:12px;color:${tc};">${esc(tsMatch[2])}</div>
+      </div>`;
+    }
+    return `<div style="font-size:12px;color:${tc};margin-bottom:4px;">${esc(line)}</div>`;
+  }).join('');
+
   return `<div style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,0.1);">
-    <div style="font-size:9px;font-weight:600;color:${mc};text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;">Noter</div>
-    <div style="font-size:12px;color:${tc};white-space:pre-wrap;">${esc(p.notes)}</div>
+    <div style="font-size:9px;font-weight:600;color:${mc};text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Noter</div>
+    ${notesHtml}
   </div>`;
 }
 
@@ -3550,29 +3538,23 @@ function toggleFase(projId, faseId) {
   if(!p.faser) p.faser = {};
   const flow = getFaseFlow(p.cat);
   const currentFaseIdx = flow.findIndex(x=>x.id===faseId);
-  const activeFaseIdx  = flow.findIndex(x=>!p.faser[x.id]?.done);
-
-  // Only allow toggling the active fase or undoing the last done fase
-  if(currentFaseIdx !== activeFaseIdx && currentFaseIdx !== activeFaseIdx - 1) {
-    toast('Gennemfør faserne i rækkefølge'); return;
-  }
 
   if(p.faser[faseId]?.done) {
-    // Undo
+    // Undo – allow going back to any fase
     p.faser[faseId] = { done: false, deadline: p.faser[faseId].deadline };
   } else {
     // Mark done
     p.faser[faseId] = { done: true, doneAt: new Date().toISOString(), deadline: p.faser[faseId]?.deadline||'' };
     // Ask for next fase deadline
     const nextFase = flow[currentFaseIdx + 1];
-    if(nextFase) {
+    if(nextFase && !p.faser[nextFase.id]?.done) {
       _faseDeadlineProjId = projId;
       _faseDeadlineFaseId = nextFase.id;
-      document.getElementById('fase-dl-title').textContent  = `Deadline for: ${nextFase.label}`;
-      document.getElementById('fase-dl-desc').textContent   = `"${p.title}" er nu i fase: ${nextFase.label}`;
-      document.getElementById('fase-dl-input').value        = '';
+      document.getElementById('fase-dl-title').textContent   = `Deadline for: ${nextFase.label}`;
+      document.getElementById('fase-dl-desc').textContent    = `"${p.title}" er nu i fase: ${nextFase.label}`;
+      document.getElementById('fase-dl-input').value         = '';
       document.getElementById('fase-dl-preview').textContent = '';
-      document.getElementById('fase-dl-hidden').value       = '';
+      document.getElementById('fase-dl-hidden').value        = '';
       document.getElementById('modal-fase-deadline').classList.add('open');
       setTimeout(()=>document.getElementById('fase-dl-input')?.focus(), 80);
     }
@@ -3600,11 +3582,16 @@ function saveFaseDeadline() {
 function saveProjectNote(projId, note) {
   const p = state.projects.find(x=>x.id===projId);
   if(!p || !note?.trim()) return;
-  p.notes = note.trim();
+  const now = new Date();
+  const timestamp = now.toLocaleDateString('da-DK', {day:'numeric',month:'short'}) + ' ' +
+    now.toLocaleTimeString('da-DK', {hour:'2-digit',minute:'2-digit'});
+  const newEntry = `[${timestamp}] ${note.trim()}`;
+  p.notes = p.notes ? p.notes + '\n' + newEntry : newEntry;
   save();
   const inp = document.getElementById('sq-'+projId);
   if(inp) inp.value = '';
   renderProjects();
+  toast('Note gemt ✓');
 }
 
 // Interview på projekt-niveau (Artikel)
@@ -3629,8 +3616,10 @@ function renderProjectCard(p) {
   const nextLabel   = aktivFase ? aktivFase.label : '✓ Færdig';
   const pct         = Math.round(doneFaser/flow.length*100);
 
-  // Notes preview
-  const notePreview = p.notes ? `<div style="font-size:10px;color:${mc};margin-top:4px;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(p.notes)}</div>` : '';
+  // Notes preview – show last entry
+  const lastNote = p.notes ? p.notes.split('\n').filter(Boolean).pop() : '';
+  const lastNoteClean = lastNote ? lastNote.replace(/^\[[^\]]+\] /, '') : '';
+  const notePreview = lastNoteClean ? `<div style="font-size:10px;color:${mc};margin-top:4px;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(lastNoteClean)}</div>` : '';
 
   return `<div class="project-card" id="pcard-${p.id}" style="background:${bg};border-color:${p.done?'var(--border)':bg};">
     <div class="project-header" onclick="toggleProjectExpand(${p.id})" style="color:${tc};">
@@ -4003,7 +3992,7 @@ function setTema(projId, temaId) {
   closeModal('modal-tema-menu');
   renderProjects();
   renderDashboardAvis();
-  toast(temaId ? `${getTemaEmoji(temaId)} Tema sat: ${getTema(temaId)?.navn}` : 'Tema fjernet');
+  toast(temaId ? `${getTemaEmoji(temaId)} Tema sat: ${getTema(temaId)?.navn}` : 'Projekt fjernet');
 }
 
 function toggleTemaSection(temaId) {
@@ -4978,7 +4967,7 @@ function setTema(projId, temaId) {
   closeModal('modal-tema-menu');
   renderProjects();
   renderDashboardAvis();
-  toast(temaId ? `${getTemaEmoji(temaId)} Tema sat: ${getTema(temaId)?.navn}` : 'Tema fjernet');
+  toast(temaId ? `${getTemaEmoji(temaId)} Tema sat: ${getTema(temaId)?.navn}` : 'Projekt fjernet');
 }
 
 function toggleTemaSection(temaId) {
