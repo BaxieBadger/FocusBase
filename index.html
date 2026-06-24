@@ -685,7 +685,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   <div class="sidebar-logo">
     <div style="font-size:10px;color:var(--sidebar-text);opacity:0.6;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
     <h1>FocusBase</h1>
-    <span>Dit system · Din flow · v1.56</span>
+    <span>Dit system · Din flow · v1.57</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
@@ -3460,6 +3460,24 @@ function renderDoneSection(doneProjs) {
 }
 
 // ── FASE PANEL ──
+function renderSubtaskList(p) {
+  const tc = getContrastText(p.color||'#7A8088');
+  const mc = getMuted(p.color||'#7A8088');
+  const subtasks = p.subtasks || [];
+  if(!subtasks.length) return '';
+  return `<div style="padding:8px 12px;border-bottom:1px solid rgba(0,0,0,0.1);">
+    <div style="font-size:9px;font-weight:600;color:${mc};text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Delopgaver</div>
+    ${subtasks.map(s => `
+      <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-top:1px solid rgba(0,0,0,0.06);">
+        <div onclick="toggleSubtask(${p.id},${s.id})" style="width:16px;height:16px;border-radius:3px;border:1.5px solid ${s.done?'transparent':'rgba(255,255,255,0.4)'};background:${s.done?'rgba(255,255,255,0.3)':'transparent'};cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:${tc};">${s.done?'✓':''}</div>
+        <span style="flex:1;font-size:12px;color:${tc};${s.done?'text-decoration:line-through;opacity:0.6;':''}">${esc(s.title)}</span>
+        ${s.deadline?`<span style="font-size:9px;color:${mc};">⏰ ${formatDate(s.deadline)}</span>`:''}
+        <button onclick="event.stopPropagation();openSubtaskModal(${p.id},${s.id})" style="background:none;border:none;color:${mc};cursor:pointer;font-size:11px;padding:2px 4px;">✎</button>
+        <button onclick="event.stopPropagation();deleteSubtask(${p.id},${s.id})" style="background:none;border:none;color:${mc};cursor:pointer;font-size:11px;padding:2px 4px;">✕</button>
+      </div>`).join('')}
+  </div>`;
+}
+
 function renderFasePanel(p) {
   const flow  = getFaseFlow(p.cat);
   const faser = p.faser || {};
@@ -3552,6 +3570,9 @@ function toggleFase(projId, faseId) {
     if(nextFase && !p.faser[nextFase.id]?.done) {
       _faseDeadlineProjId = projId;
       _faseDeadlineFaseId = nextFase.id;
+      const dlModal = document.getElementById('modal-fase-deadline');
+      dlModal.dataset.projId = projId;
+      dlModal.dataset.faseId = nextFase.id;
       document.getElementById('fase-dl-title').textContent   = `Deadline for: ${nextFase.label}`;
       document.getElementById('fase-dl-desc').textContent    = `"${p.title}" er nu i fase: ${nextFase.label}`;
       document.getElementById('fase-dl-input').value         = '';
@@ -3565,29 +3586,33 @@ function toggleFase(projId, faseId) {
 }
 
 function saveFaseDeadline() {
-  // Try hidden field first, then parse from input directly
-  let deadline = document.getElementById('fase-dl-hidden').value;
-  if(!deadline) {
-    const raw = document.getElementById('fase-dl-input')?.value.trim();
-    if(raw) deadline = parseSmartDate(raw);
-  }
+  const raw      = document.getElementById('fase-dl-input')?.value.trim();
+  const hidden   = document.getElementById('fase-dl-hidden')?.value;
+  const deadline = hidden || (raw ? parseSmartDate(raw) : '');
 
-  if(_faseDeadlineProjId && _faseDeadlineFaseId) {
-    const p = state.projects.find(x=>x.id===_faseDeadlineProjId);
+  // Read IDs from modal data attributes as fallback
+  const modal = document.getElementById('modal-fase-deadline');
+  const projId = _faseDeadlineProjId || parseInt(modal?.dataset.projId);
+  const faseId = _faseDeadlineFaseId || modal?.dataset.faseId;
+
+  if(projId && faseId) {
+    const p = state.projects.find(x=>x.id===projId);
     if(p) {
       if(!p.faser) p.faser = {};
-      if(!p.faser[_faseDeadlineFaseId]) p.faser[_faseDeadlineFaseId] = {};
+      if(!p.faser[faseId]) p.faser[faseId] = {};
       if(deadline) {
-        p.faser[_faseDeadlineFaseId].deadline = deadline;
-        // Update project deadline to nearest active fase deadline
+        p.faser[faseId].deadline = deadline;
         const allDeadlines = Object.values(p.faser)
-          .filter(f=>!f.done && f.deadline)
-          .map(f=>f.deadline).sort();
+          .filter(f => !f.done && f.deadline)
+          .map(f => f.deadline).sort();
         if(allDeadlines.length) p.deadline = allDeadlines[0];
+        toast(`⏰ Deadline sat: ${formatDate(deadline)}`);
       }
       save(); renderProjects(); renderDashboard();
     }
   }
+  _faseDeadlineProjId = null;
+  _faseDeadlineFaseId = null;
   closeModal('modal-fase-deadline');
 }
 
@@ -3658,8 +3683,9 @@ function renderProjectCard(p) {
     </div>
     <div class="subtask-list" id="subtasks-${p.id}" style="background:rgba(0,0,0,0.08);">
       ${renderFasePanel(p)}
-      ${p.notes!==undefined ? renderNotesPanel(p) : ''}
+      ${p.notes ? renderNotesPanel(p) : ''}
       ${renderInterviewPanel(p)}
+      ${(p.subtasks||[]).length ? renderSubtaskList(p) : ''}
       <div class="subtask-add-row" style="background:rgba(0,0,0,0.10);gap:6px;">
         <input class="subtask-quick" id="sq-${p.id}" placeholder="+ Tilføj note..." onkeydown="if(event.key==='Enter') saveProjectNote(${p.id},this.value)"
           style="color:${tc};background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:var(--radius);padding:5px 8px;flex:1;outline:none;font-family:var(--font);font-size:12px;">
@@ -4065,36 +4091,7 @@ function renderDashboardAvis() {
 }
 
 // ── KONSOLIDERET previewSmartDate ──
-function previewSmartDate(inputId, previewId) {
-  const val    = document.getElementById(inputId)?.value;
-  const preview = document.getElementById(previewId);
-  const result = parseSmartDate(val);
 
-  // Determine hidden field
-  let hiddenId;
-  if(inputId === 'p-deadline-smart')         hiddenId = 'p-deadline';
-  else if(inputId === 'flow-deadline-smart') hiddenId = 'flow-deadline';
-  else if(inputId === 'avis-tryk-input')     hiddenId = 'avis-tryk-hidden';
-  else if(inputId === 'off-from')            hiddenId = 'off-from-hidden';
-  else if(inputId === 'off-to')              hiddenId = 'off-to-hidden';
-  else if(inputId === 'fase-dl-input')       hiddenId = 'fase-dl-hidden';
-  else                                       hiddenId = 'st-deadline';
-
-  const hidden = document.getElementById(hiddenId);
-
-  if(result) {
-    const d = new Date(result+'T12:00:00');
-    const isPast = d < new Date();
-    if(preview) {
-      preview.textContent = `→ ${d.getDate()}. ${DA_MONTHS_SHORT[d.getMonth()]} ${d.getFullYear()}${isPast?' (baguddat.)':''}`;
-      preview.style.color = isPast ? 'var(--warning,#f59e0b)' : 'var(--accent2)';
-    }
-    if(hidden) hidden.value = result;
-  } else {
-    if(preview) { preview.textContent = val ? 'Ugyldigt format – prøv fx 15/6' : ''; preview.style.color = 'var(--danger)'; }
-    if(hidden) hidden.value = '';
-  }
-}
 let _prProjId = null;
 let _prActionItems = [];
 
