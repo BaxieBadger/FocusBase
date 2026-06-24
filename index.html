@@ -685,7 +685,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   <div class="sidebar-logo">
     <div style="font-size:10px;color:var(--sidebar-text);opacity:0.6;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
     <h1>FocusBase</h1>
-    <span>Dit system · Din flow · v1.60</span>
+    <span>Dit system · Din flow · v1.62</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
@@ -6746,30 +6746,41 @@ function updatePressureBar() {
   else bar.style.background = 'var(--danger)';
 }
 
+let timerStartedAt = null;  // Date.now() when timer last started
+let timerSecsAtStart = 0;  // timerSecs when timer last started
+
 function toggleTimer(){
   timerRunning=!timerRunning;
   document.getElementById('timer-toggle-btn').textContent=timerRunning?'⏸ Pause':'▶ Start';
   if(timerRunning){
+    requestNotificationPermission();
+    timerStartedAt = Date.now();
+    timerSecsAtStart = timerSecs;
+    clearInterval(timerInterval);
     timerInterval=setInterval(()=>{
-      timerSecs--;
+      // Calculate elapsed using wall clock – works even when tab is inactive
+      const elapsed = Math.floor((Date.now() - timerStartedAt) / 1000);
+      timerSecs = Math.max(0, timerSecsAtStart - elapsed);
       updateTimerDisplay();
       if(pomodoroTask) updatePressureBar();
       if(timerSecs<=0){
-        clearInterval(timerInterval); timerRunning=false;
+        clearInterval(timerInterval); timerRunning=false; timerStartedAt=null;
         if(timerMode==='focus'){
           if(pomodoroTask) {
+            sendNotification('⚡ Fokus-session færdig!', `Tid til at markere "${pomodoroTask.name}" som færdig?`);
             toast(`⚡ Session færdig! Markér "${pomodoroTask.name}" som færdig?`);
-            // Offer to complete the subtask
             if(pomodoroTask.stId && confirm(`Markér delopgaven "${pomodoroTask.name}" som færdig?`)) {
               toggleSubtask(pomodoroTask.projId, pomodoroTask.stId);
             }
           } else {
+            sendNotification('⏱ Fokus-session færdig!', 'Tag en velfortjent pause 🎉');
             toast('⏱ Fokus-session færdig! Tag en pause 🎉');
           }
           timerMode='break'; timerSecs=5*60; pomodoroTotalSecs=5*60;
           document.getElementById('timer-label').textContent='Pause';
           document.getElementById('timer-pressure-bar-wrap').style.display='none';
         } else {
+          sendNotification('☕ Pause slut!', 'Klar til en ny fokus-session? 💪');
           toast('Pause slut – klar? 💪');
           timerMode='focus'; timerSecs=25*60; pomodoroTotalSecs=25*60;
           document.getElementById('timer-label').textContent='Fokus';
@@ -6777,9 +6788,33 @@ function toggleTimer(){
         document.getElementById('timer-toggle-btn').textContent='▶ Start';
         updateTimerDisplay(); updateFocusScore();
       }
-    },1000);
-  } else { clearInterval(timerInterval); }
+    },500); // tick every 500ms for responsiveness
+  } else {
+    clearInterval(timerInterval);
+    timerStartedAt=null;
+  }
 }
+
+// ── NOTIFIKATIONER ──
+function requestNotificationPermission() {
+  if('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+}
+
+function sendNotification(title, body) {
+  if('Notification' in window && Notification.permission === 'granted') {
+    new Notification(title, { body, icon: 'https://baxiebadger.github.io/FocusBase/cat1.jpg' });
+  }
+}
+document.addEventListener('visibilitychange', () => {
+  if(!document.hidden && timerRunning && timerStartedAt) {
+    const elapsed = Math.floor((Date.now() - timerStartedAt) / 1000);
+    timerSecs = Math.max(0, timerSecsAtStart - elapsed);
+    updateTimerDisplay();
+    if(pomodoroTask) updatePressureBar();
+  }
+});
 
 function resetTimer(){
   clearInterval(timerInterval); timerRunning=false;
