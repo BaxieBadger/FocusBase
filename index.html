@@ -685,7 +685,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   <div class="sidebar-logo">
     <div style="font-size:10px;color:var(--sidebar-text);opacity:0.6;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
     <h1>FocusBase</h1>
-    <span>Dit system · Din flow · v1.67</span>
+    <span>Dit system · Din flow · v1.68</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
@@ -1226,24 +1226,33 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
 
 <!-- FLOW MODAL -->
 <div class="modal-overlay" id="modal-flow-create">
-  <div class="modal" style="width:380px;">
+  <div class="modal" style="width:520px;max-height:90vh;overflow-y:auto;">
     <div class="modal-header" style="background:#B04A8A;">
-      <div class="modal-title" style="color:#fff;">📣 Nyt flow</div>
+      <div class="modal-title" style="color:#fff;" id="fc-modal-title">📣 Nyt flow</div>
       <button class="modal-close" onclick="closeModal('modal-flow-create')" style="color:#fff;">✕</button>
     </div>
     <div class="modal-body">
-      <div class="field">
-        <label>Flownavn *</label>
-        <input type="text" id="fc-navn" placeholder="fx Slutspurt til FerieCamp">
+      <div class="row2">
+        <div class="field">
+          <label>Flownavn *</label>
+          <input type="text" id="fc-navn" placeholder="fx Slutspurt til FerieCamp">
+        </div>
+        <div class="field">
+          <label>Projekt *</label>
+          <select id="fc-tema" style="width:100%;" onchange="renderFlowTaskPicker()">
+            <option value="">— Vælg projekt —</option>
+          </select>
+        </div>
       </div>
       <div class="field">
-        <label>Projekt *</label>
-        <select id="fc-tema" style="width:100%;">
-          <option value="">— Vælg projekt —</option>
-        </select>
+        <label>Opgaver i dette flow</label>
+        <div id="fc-task-picker" style="display:flex;flex-direction:column;gap:4px;max-height:280px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius);padding:8px;">
+          <div style="font-size:11px;color:var(--text-muted);">Vælg et projekt for at se opgaver</div>
+        </div>
       </div>
       <div class="flex gap8">
-        <button class="btn" onclick="saveFlowCreate()" style="flex:1;background:#B04A8A;">Opret flow</button>
+        <button class="btn" onclick="saveFlowCreate()" style="flex:1;background:#B04A8A;" id="fc-save-btn">Opret flow</button>
+        <button class="btn secondary" id="fc-delete-btn" onclick="deleteCurrentFlow()" style="display:none;color:var(--danger);">Slet flow</button>
         <button class="btn secondary" onclick="closeModal('modal-flow-create')">Annuller</button>
       </div>
     </div>
@@ -1709,6 +1718,7 @@ let state = {
   avisTryk: '',
   kilder: [], // {id, navn, titel, org, tlf, email, noter, createdAt}
   flows: [],  // {id, navn, temaId, createdAt}
+  deletedIds: [], // IDs slettet lokalt – filtreres fra Supabase-data
   temaer: [
     { id:'vaeresteds', navn:'Værestedsavisen', emoji:'📰', color:'#265E3A', tryk:'' },
     { id:'feriecamp',  navn:'FerieCamp',        emoji:'🏕', color:'#C15A1A', tryk:'' },
@@ -1904,11 +1914,12 @@ async function loadFromSupabase() {
     if(projects?.length) {
       const parsed = projects.map(r=>parseSupabaseData(r)).filter(Boolean);
       if(parsed.length > 0) {
-        // Supabase er altid autoritativ – brug Supabase-data direkte
-        // Behold kun lokale projekter der slet ikke er i Supabase (endnu ikke synkroniseret)
-        const sbIds = new Set(parsed.map(p=>String(p.id)));
-        const localOnly = state.projects.filter(p=>!sbIds.has(String(p.id)));
-        state.projects = [...parsed, ...localOnly];
+        // Filter out locally deleted IDs
+        const deletedSet = new Set((state.deletedIds||[]).map(String));
+        const filteredParsed = parsed.filter(p => !deletedSet.has(String(p.id)));
+        const sbIds = new Set(filteredParsed.map(p=>String(p.id)));
+        const localOnly = state.projects.filter(p=>!sbIds.has(String(p.id)) && !deletedSet.has(String(p.id)));
+        state.projects = [...filteredParsed, ...localOnly];
         // Update nextId to avoid collisions
         const maxId = Math.max(...state.projects.map(p=>Number(p.id)||0), state.nextId);
         if(maxId >= state.nextId) state.nextId = maxId + 1;
@@ -2173,15 +2184,59 @@ function getNextFaseLabel(p) {
 }
 
 // ── FLOWS ──
-function openFlowCreate() {
+let _editingFlowId = null;
+
+function openFlowCreate(editFlowId=null) {
+  _editingFlowId = editFlowId;
+  const flow = editFlowId ? (state.flows||[]).find(f=>f.id===editFlowId) : null;
+
   const sel = document.getElementById('fc-tema');
   if(sel) {
     sel.innerHTML = '<option value="">— Vælg projekt —</option>' +
-      (state.temaer||[]).map(t=>`<option value="${t.id}">${t.emoji} ${t.navn}</option>`).join('');
+      (state.temaer||[]).map(t=>`<option value="${t.id}" ${flow?.temaId===t.id?'selected':''}>${t.emoji} ${t.navn}</option>`).join('');
   }
-  document.getElementById('fc-navn').value = '';
+  document.getElementById('fc-navn').value = flow?.navn || '';
+  document.getElementById('fc-modal-title').textContent = editFlowId ? '📣 Rediger flow' : '📣 Nyt flow';
+  document.getElementById('fc-save-btn').textContent = editFlowId ? 'Gem ændringer' : 'Opret flow';
+  document.getElementById('fc-delete-btn').style.display = editFlowId ? 'block' : 'none';
+
+  renderFlowTaskPicker();
   document.getElementById('modal-flow-create').classList.add('open');
   setTimeout(()=>document.getElementById('fc-navn')?.focus(), 80);
+}
+
+function renderFlowTaskPicker() {
+  const temaId = document.getElementById('fc-tema')?.value;
+  const el = document.getElementById('fc-task-picker');
+  if(!el) return;
+
+  if(!temaId) {
+    el.innerHTML = '<div style="font-size:11px;color:var(--text-muted);">Vælg et projekt for at se opgaver</div>';
+    return;
+  }
+
+  const allProjs = state.projects.filter(p => !p.done);
+  // Show projects from this tema + unassigned
+  const available = allProjs.filter(p => p.temaId === temaId || !p.temaId);
+  const currentFlowId = _editingFlowId;
+
+  if(!available.length) {
+    el.innerHTML = '<div style="font-size:11px;color:var(--text-muted);">Ingen opgaver i dette projekt</div>';
+    return;
+  }
+
+  el.innerHTML = available.map(p => {
+    const inThisFlow = p.flowId === currentFlowId && currentFlowId;
+    const inOtherFlow = p.flowId && p.flowId !== currentFlowId;
+    return `<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:var(--radius);${inOtherFlow?'opacity:0.5;':''}">
+      <input type="checkbox" id="fc-task-${p.id}" ${inThisFlow?'checked':''} ${inOtherFlow?'disabled title="Opgaven er i et andet flow"':''} style="width:15px;height:15px;accent-color:#B04A8A;flex-shrink:0;">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12px;font-weight:500;">${esc(p.title)}</div>
+        <div style="font-size:10px;color:var(--text-muted);">${p.cat||'Generelt'}${inOtherFlow?` · 📣 ${esc(p.flowName||'andet flow')}`:''}</div>
+      </div>
+      <span style="font-size:9px;padding:1px 6px;border-radius:6px;background:${p.color||'#7A8088'};color:${getContrastText(p.color||'#7A8088')};">${esc(p.cat||'')}</span>
+    </div>`;
+  }).join('');
 }
 
 function saveFlowCreate() {
@@ -2189,13 +2244,70 @@ function saveFlowCreate() {
   const temaId = document.getElementById('fc-tema').value;
   if(!navn)   { alert('Giv flowet et navn'); return; }
   if(!temaId) { alert('Vælg et projekt'); return; }
+
   if(!state.flows) state.flows = [];
-  const flow = { id:'flow_'+Date.now(), navn, temaId, createdAt: new Date().toISOString() };
-  state.flows.push(flow);
+  let flowId;
+
+  if(_editingFlowId) {
+    // Edit existing
+    const flow = state.flows.find(f=>f.id===_editingFlowId);
+    if(flow) { flow.navn = navn; flow.temaId = temaId; }
+    flowId = _editingFlowId;
+  } else {
+    // Create new
+    flowId = 'flow_' + Date.now();
+    state.flows.push({ id: flowId, navn, temaId, createdAt: new Date().toISOString() });
+  }
+
+  // Update task assignments
+  const allProjs = state.projects.filter(p => !p.done);
+  const available = allProjs.filter(p => p.temaId === temaId || !p.temaId || p.flowId === flowId);
+  available.forEach(p => {
+    const cb = document.getElementById(`fc-task-${p.id}`);
+    if(!cb || cb.disabled) return;
+    if(cb.checked) {
+      p.flowId = flowId; p.flowName = navn;
+      if(!p.temaId) p.temaId = temaId;
+    } else if(p.flowId === flowId) {
+      delete p.flowId; delete p.flowName;
+    }
+  });
+
   save();
   closeModal('modal-flow-create');
-  toast(`📣 Flow "${navn}" oprettet`);
+  toast(`📣 Flow "${navn}" ${_editingFlowId?'opdateret':'oprettet'}`);
+  _editingFlowId = null;
   renderProjects();
+}
+
+function deleteCurrentFlow() {
+  if(!_editingFlowId) return;
+  const flow = (state.flows||[]).find(f=>f.id===_editingFlowId);
+  if(!flow) return;
+
+  const flowProjs = state.projects.filter(p=>p.flowId===_editingFlowId);
+  const msg = flowProjs.length
+    ? `Slet flowet "${flow.navn}" og alle ${flowProjs.length} tilknyttede opgaver?`
+    : `Slet flowet "${flow.navn}"?`;
+  if(!confirm(msg)) return;
+
+  // Delete all projects in flow
+  const idsToDelete = flowProjs.map(p=>p.id);
+  state.projects = state.projects.filter(p=>p.flowId!==_editingFlowId);
+  if(!state.deletedIds) state.deletedIds = [];
+  idsToDelete.forEach(id => {
+    if(!state.deletedIds.includes(id)) state.deletedIds.push(id);
+    if(sbReady) fetch(`${SUPABASE_URL}/rest/v1/projects?id=eq.${id}`, { method:'DELETE', headers:sbHeaders() }).catch(()=>{});
+  });
+
+  // Remove flow
+  state.flows = (state.flows||[]).filter(f=>f.id!==_editingFlowId);
+
+  save();
+  closeModal('modal-flow-create');
+  toast(`📣 Flow "${flow.navn}" slettet`);
+  _editingFlowId = null;
+  renderProjects(); renderDashboard();
 }
 
 function openFlowMenu(projId, btn) {
@@ -3411,6 +3523,9 @@ function deleteProject(id) {
   if(!confirm('Slet opgave og alle delopgaver?')) return;
   state.projects = state.projects.filter(x=>x.id!==id);
   delete state.diaryEntries[id];
+  // Remember deleted ID so it's filtered from Supabase on reload
+  if(!state.deletedIds) state.deletedIds = [];
+  if(!state.deletedIds.includes(id)) state.deletedIds.push(id);
   save(); renderProjects(); renderDashboard(); updateBadge(); renderDiary();
   // Delete from Supabase
   if(sbReady) fetch(`${SUPABASE_URL}/rest/v1/projects?id=eq.${id}`, { method:'DELETE', headers:sbHeaders() }).catch(e=>console.warn('Supabase delete error:',e));
@@ -3568,10 +3683,13 @@ function renderTemaWithFlows(projects) {
     const flowName = flow?.navn || flowProjs[0]?.flowName || 'Flow';
     const isOpen = _temaOpenSections['flow_'+flowId] !== false;
     html += `<div style="margin-bottom:6px;border-left:3px solid #B04A8A;padding-left:8px;">
-      <div onclick="toggleTemaSection('flow_${flowId}')" style="display:flex;align-items:center;gap:6px;padding:6px 8px;cursor:pointer;border-radius:var(--radius);background:rgba(176,74,138,0.08);">
-        <span id="tema-arrow-flow_${flowId}" style="font-size:10px;color:#B04A8A;transition:transform 0.2s;${isOpen?'transform:rotate(90deg)':''}">▶</span>
-        <span style="font-size:12px;font-weight:600;color:#B04A8A;">📣 ${esc(flowName)}</span>
-        <span style="font-size:10px;background:rgba(176,74,138,0.15);color:#B04A8A;padding:1px 6px;border-radius:8px;">${flowProjs.length} opgaver</span>
+      <div style="display:flex;align-items:center;gap:6px;padding:6px 8px;cursor:pointer;border-radius:var(--radius);background:rgba(176,74,138,0.08);">
+        <div onclick="toggleTemaSection('flow_${flowId}')" style="display:flex;align-items:center;gap:6px;flex:1;">
+          <span id="tema-arrow-flow_${flowId}" style="font-size:10px;color:#B04A8A;transition:transform 0.2s;${isOpen?'transform:rotate(90deg)':''}">▶</span>
+          <span style="font-size:12px;font-weight:600;color:#B04A8A;">📣 ${esc(flowName)}</span>
+          <span style="font-size:10px;background:rgba(176,74,138,0.15);color:#B04A8A;padding:1px 6px;border-radius:8px;">${flowProjs.length} opgaver</span>
+        </div>
+        <button onclick="event.stopPropagation();openFlowCreate('${flowId}')" style="font-size:10px;padding:2px 7px;background:rgba(176,74,138,0.15);border:1px solid rgba(176,74,138,0.3);color:#B04A8A;border-radius:4px;cursor:pointer;font-family:var(--font);">✎ Rediger</button>
       </div>
       <div id="tema-list-flow_${flowId}" style="display:${isOpen?'block':'none'};">
         ${flowProjs.map(p=>renderProjectCard(p)).join('')}
