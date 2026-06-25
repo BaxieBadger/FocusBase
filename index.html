@@ -685,7 +685,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   <div class="sidebar-logo">
     <div style="font-size:10px;color:var(--sidebar-text);opacity:0.6;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
     <h1>FocusBase</h1>
-    <span>Dit system · Din flow · v1.69</span>
+    <span>Dit system · Din flow · v1.70</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
@@ -2197,6 +2197,8 @@ function openFlowCreate(editFlowId=null) {
   }
   document.getElementById('fc-navn').value = flow?.navn || '';
   document.getElementById('modal-flow-create').dataset.editFlowId = editFlowId || '';
+  const titleEl = document.getElementById('fc-modal-title');
+  if(titleEl) titleEl.textContent = editFlowId ? '📣 Rediger flow' : '📣 Nyt flow';
   document.getElementById('fc-save-btn').textContent = editFlowId ? 'Gem ændringer' : 'Opret flow';
   document.getElementById('fc-delete-btn').style.display = editFlowId ? 'block' : 'none';
 
@@ -2282,9 +2284,10 @@ function saveFlowCreate() {
 
 function deleteCurrentFlow() {
   const modal = document.getElementById('modal-flow-create');
-  const flowId = _editingFlowId || modal?.dataset.editFlowId;
-  if(!flowId) return;
+  const flowId = _editingFlowId || modal?.dataset.editFlowId || '';
+  if(!flowId) { alert('Ingen flow valgt'); return; }
   const flow = (state.flows||[]).find(f=>f.id===flowId);
+  if(!flow) { alert('Flow ikke fundet: ' + flowId); return; }
   if(!flow) return;
 
   const flowProjs = state.projects.filter(p=>p.flowId===flowId);
@@ -4546,7 +4549,7 @@ function renderDashboard() {
     </div>`).join('') : '<div class="empty" style="padding:16px 0;"><div class="emoji">📅</div>Ingen deadlines sat</div>';
 
   const someEl = document.getElementById('dash-some');
-  someEl.innerHTML = pending.length ? pending.map(s=>{
+  if(someEl) someEl.innerHTML = pending.length ? pending.map(s=>{
     const pc = platColor(s.platform);
     return `<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);">
       <span style="font-size:11px;font-weight:700;color:${pc.bg};">${esc(s.platform)}</span>
