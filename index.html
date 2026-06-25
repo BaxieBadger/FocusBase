@@ -685,7 +685,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   <div class="sidebar-logo">
     <div style="font-size:10px;color:var(--sidebar-text);opacity:0.6;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
     <h1>FocusBase</h1>
-    <span>Dit system · Din flow · v1.70</span>
+    <span>Dit system · Dit flow · v1.72</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
@@ -1792,6 +1792,10 @@ async function syncToSupabase() {
     streakDays:    state.streakDays,
     offDays:       state.offDays,
     currentStreak: state.currentStreak,
+    flows:         state.flows || [],
+    temaer:        state.temaer || [],
+    kilder:        state.kilder || [],
+    deletedIds:    state.deletedIds || [],
   }});
 }
 
@@ -1948,6 +1952,10 @@ async function loadFromSupabase() {
         state.streakDays    = m.streakDays    || state.streakDays;
         state.offDays       = m.offDays       || state.offDays;
         state.currentStreak = m.currentStreak || state.currentStreak;
+        if(m.flows?.length)      state.flows      = m.flows;
+        if(m.temaer?.length)     state.temaer     = m.temaer;
+        if(m.kilder?.length)     state.kilder     = m.kilder;
+        if(m.deletedIds?.length) state.deletedIds = m.deletedIds;
       }
     }
     hideSyncIndicator();
@@ -3021,30 +3029,28 @@ function renderAgenda() {
   const DA_MONTHS = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
 
   if(agendaDetail === 'tasks') {
-    // TASKS-ONLY MODE: show each project on its nearest upcoming date
-    // (earliest subtask deadline, or project deadline if no subtasks)
     const projectEvents = [];
+    const noDeadlineProjects = [];
     state.projects.filter(p=>!p.done).forEach(p => {
       const subtaskDates = (p.subtasks||[]).filter(s=>!s.done&&!s.skipped&&s.deadline).map(s=>s.deadline).sort();
       const nearestDate = subtaskDates[0] || p.deadline;
-      if(!nearestDate) return;
+      if(!nearestDate) { noDeadlineProjects.push(p); return; }
       const d = new Date(nearestDate+'T12:00:00');
-      if(d < today) return; // skip past
+      if(d < today) { projectEvents.push({ p, date: nearestDate, d, overdue: true }); return; }
       const cutoff = new Date(today); cutoff.setDate(today.getDate()+agendaDays);
-      if(d > cutoff) return;
+      if(d > cutoff) { noDeadlineProjects.push(p); return; }
       projectEvents.push({ p, date: nearestDate, d });
     });
     projectEvents.sort((a,b)=>a.date.localeCompare(b.date));
 
-    // Group by date
     const byDate = {};
     projectEvents.forEach(({p, date}) => {
       if(!byDate[date]) byDate[date] = [];
       byDate[date].push(p);
     });
 
-    if(!Object.keys(byDate).length) {
-      el.innerHTML = `<div class="empty"><div class="emoji">🎉</div>Ingen kommende opgaver de næste ${agendaDays} dage</div>`;
+    if(!Object.keys(byDate).length && !noDeadlineProjects.length) {
+      el.innerHTML = `<div class="empty"><div class="emoji">🎉</div>Ingen opgaver</div>`;
       return;
     }
 
@@ -3080,6 +3086,25 @@ function renderAgenda() {
         }).join('')}
       </div>`;
     }).join('');
+
+    // Add no-deadline projects at bottom
+    if(noDeadlineProjects.length) {
+      el.innerHTML += `<div class="agenda-section">
+        <div class="agenda-date-header" style="color:var(--text-muted);">Ingen deadline</div>
+        ${noDeadlineProjects.map(p => {
+          const tc = getContrastText(p.color||'#7A8088');
+          const mc = getMuted(p.color||'#7A8088');
+          const nextSub = getNextSubtaskLabel(p);
+          return `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--radius);background:${p.color};color:${tc};margin-bottom:5px;opacity:0.85;">
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:600;">${esc(p.title)}${nextSub?`<span style="font-size:10px;font-weight:400;color:${mc};margin-left:8px;">→ ${esc(nextSub)}</span>`:''}</div>
+            </div>
+            <span style="font-size:9px;font-weight:600;padding:2px 7px;border-radius:10px;background:rgba(0,0,0,0.15);color:${tc};">${esc(p.cat)}</span>
+            <button onclick="toggleProjectDone(${p.id})" style="${getBtnStyle(p.color)}border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;">✓</button>
+          </div>`;
+        }).join('')}
+      </div>`;
+    }
     return;
   }
 
