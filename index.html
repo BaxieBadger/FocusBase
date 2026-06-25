@@ -685,7 +685,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   <div class="sidebar-logo">
     <div style="font-size:10px;color:var(--sidebar-text);opacity:0.6;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
     <h1>FocusBase</h1>
-    <span>Dit system · Din flow · v1.65</span>
+    <span>Dit system · Din flow · v1.66</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
@@ -709,6 +709,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
       <span class="streak-num" id="streak-count">0</span>
       <div class="streak-info">dages streak<br><span style="font-size:9px;opacity:0.6;">kun hverdage</span></div>
     </div>
+    <button class="streak-off-btn" onclick="openFlowCreate()" style="margin-top:4px;background:rgba(176,74,138,0.15);color:#B04A8A;border-color:#B04A8A;">📣 Nyt flow</button>
     <button class="streak-off-btn" onclick="forceRefreshFromSupabase()" style="margin-top:4px;" id="refresh-btn">⟳ Opdater</button>
     <button class="streak-off-btn" onclick="openMigrationWizard()" style="margin-top:4px;background:rgba(38,94,58,0.2);color:#265E3A;border-color:#265E3A;" id="migration-btn">⚡ Konvertér opgaver</button>
     <button class="streak-off-btn" onclick="openOffDaysModal()">📅 Markér fridage / ferie</button>
@@ -1223,6 +1224,32 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   </div>
 </div>
 
+<!-- FLOW MODAL -->
+<div class="modal-overlay" id="modal-flow-create">
+  <div class="modal" style="width:380px;">
+    <div class="modal-header" style="background:#B04A8A;">
+      <div class="modal-title" style="color:#fff;">📣 Nyt flow</div>
+      <button class="modal-close" onclick="closeModal('modal-flow-create')" style="color:#fff;">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Flownavn *</label>
+        <input type="text" id="fc-navn" placeholder="fx Slutspurt til FerieCamp">
+      </div>
+      <div class="field">
+        <label>Projekt *</label>
+        <select id="fc-tema" style="width:100%;">
+          <option value="">— Vælg projekt —</option>
+        </select>
+      </div>
+      <div class="flex gap8">
+        <button class="btn" onclick="saveFlowCreate()" style="flex:1;background:#B04A8A;">Opret flow</button>
+        <button class="btn secondary" onclick="closeModal('modal-flow-create')">Annuller</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- FASE REMINDER -->
 <div class="modal-overlay" id="modal-fase-reminder">
   <div class="modal" style="width:340px;">
@@ -1681,6 +1708,7 @@ let state = {
   subtaskLibrary: [],
   avisTryk: '',
   kilder: [], // {id, navn, titel, org, tlf, email, noter, createdAt}
+  flows: [],  // {id, navn, temaId, createdAt}
   temaer: [
     { id:'vaeresteds', navn:'Værestedsavisen', emoji:'📰', color:'#265E3A', tryk:'' },
     { id:'feriecamp',  navn:'FerieCamp',        emoji:'🏕', color:'#C15A1A', tryk:'' },
@@ -2142,6 +2170,81 @@ function getAktivFase(p) {
 function getNextFaseLabel(p) {
   const f = getAktivFase(p);
   return f ? f.label : '✓ Færdig';
+}
+
+// ── FLOWS ──
+function openFlowCreate() {
+  const sel = document.getElementById('fc-tema');
+  if(sel) {
+    sel.innerHTML = '<option value="">— Vælg projekt —</option>' +
+      (state.temaer||[]).map(t=>`<option value="${t.id}">${t.emoji} ${t.navn}</option>`).join('');
+  }
+  document.getElementById('fc-navn').value = '';
+  document.getElementById('modal-flow-create').classList.add('open');
+  setTimeout(()=>document.getElementById('fc-navn')?.focus(), 80);
+}
+
+function saveFlowCreate() {
+  const navn   = document.getElementById('fc-navn').value.trim();
+  const temaId = document.getElementById('fc-tema').value;
+  if(!navn)   { alert('Giv flowet et navn'); return; }
+  if(!temaId) { alert('Vælg et projekt'); return; }
+  if(!state.flows) state.flows = [];
+  const flow = { id:'flow_'+Date.now(), navn, temaId, createdAt: new Date().toISOString() };
+  state.flows.push(flow);
+  save();
+  closeModal('modal-flow-create');
+  toast(`📣 Flow "${navn}" oprettet`);
+  renderProjects();
+}
+
+function openFlowMenu(projId, btn) {
+  const flows = (state.flows||[]);
+  if(!flows.length) { toast('Opret et flow først via 📣 Nyt flow'); return; }
+  document.getElementById('flow-menu-popup')?.remove();
+  const p = state.projects.find(x=>x.id===projId);
+  const menu = document.createElement('div');
+  menu.id = 'flow-menu-popup';
+  menu.style.cssText = 'position:fixed;z-index:999;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-md);padding:6px;min-width:200px;';
+  const rect = btn.getBoundingClientRect();
+  menu.style.top  = (rect.bottom + 4) + 'px';
+  menu.style.left = Math.min(rect.left, window.innerWidth - 220) + 'px';
+  menu.innerHTML = `
+    <div style="font-size:10px;font-weight:600;color:var(--text-muted);padding:4px 8px;text-transform:uppercase;letter-spacing:1px;">Tilknyt til flow</div>
+    ${p?.flowId ? `<div onclick="detachFlow(${projId})" style="padding:7px 10px;cursor:pointer;border-radius:4px;font-size:12px;color:var(--danger);">✕ Fjern fra flow</div>` : ''}
+    ${flows.map(f => {
+      const tema = (state.temaer||[]).find(t=>t.id===f.temaId);
+      const isActive = p?.flowId === f.id;
+      return `<div onclick="attachFlow(${projId},'${f.id}')" style="padding:7px 10px;cursor:pointer;border-radius:4px;font-size:12px;${isActive?'font-weight:600;background:var(--surface2);':''}">
+        ${isActive?'✓ ':''}${esc(f.navn)}${tema?` <span style="font-size:10px;color:var(--text-muted);">${tema.emoji} ${tema.navn}</span>`:''}
+      </div>`;
+    }).join('')}`;
+  document.body.appendChild(menu);
+  setTimeout(() => {
+    document.addEventListener('click', function closeMenu(e) {
+      if(!menu.contains(e.target)) { menu.remove(); document.removeEventListener('click', closeMenu); }
+    });
+  }, 100);
+}
+
+function attachFlow(projId, flowId) {
+  const p = state.projects.find(x=>x.id===projId);
+  const flow = (state.flows||[]).find(f=>f.id===flowId);
+  if(!p || !flow) return;
+  p.flowId = flow.id; p.flowName = flow.navn;
+  if(!p.temaId) p.temaId = flow.temaId;
+  save(); renderProjects();
+  document.getElementById('flow-menu-popup')?.remove();
+  toast(`📣 Tilknyttet: ${flow.navn}`);
+}
+
+function detachFlow(projId) {
+  const p = state.projects.find(x=>x.id===projId);
+  if(!p) return;
+  delete p.flowId; delete p.flowName;
+  save(); renderProjects();
+  document.getElementById('flow-menu-popup')?.remove();
+  toast('Flow fjernet');
 }
 
 // ── KILDE KATALOG ──
@@ -3416,7 +3519,7 @@ function renderProjects() {
           ${urgent&&!overdue?`<span style="font-size:10px;background:rgba(245,158,11,0.85);color:#fff;padding:2px 7px;border-radius:10px;">⏰ ${urgent} snart</span>`:''}
         </div>
         <div id="tema-list-${g.id}" style="display:${isOpen?'block':'none'};padding-left:4px;">
-          ${g.projs.map(p=>renderProjectCard(p)).join('')}
+          ${renderTemaWithFlows(g.projs)}
         </div>
       </div>`;
     }).join('') + doneHtml;
@@ -3438,7 +3541,7 @@ function renderProjects() {
           ${t.tryk?`<span style="margin-left:auto;font-size:10px;color:${tc};opacity:0.8;">🖨 ${formatDate(t.tryk)}</span>`:''}
         </div>
         <div id="tema-list-${t.id}" style="display:${isOpen?'block':'none'};padding-left:4px;">
-          ${temaProjs.map(p=>renderProjectCard(p)).join('')}
+          ${renderTemaWithFlows(temaProjs)}
         </div>
       </div>`;
     }).join('');
@@ -3451,6 +3554,34 @@ function renderProjects() {
   }
   list.innerHTML = regularProjs.map(p=>renderProjectCard(p)).join('') +
     (doneProjects.length ? renderDoneSection(doneProjects) : '');
+}
+
+function renderTemaWithFlows(projects) {
+  const flowsInGroup = [...new Set(projects.filter(p=>p.flowId).map(p=>p.flowId))];
+  const standaloneProjs = projects.filter(p=>!p.flowId);
+  let html = '';
+
+  // Render flow sections first
+  flowsInGroup.forEach(flowId => {
+    const flow = (state.flows||[]).find(f=>f.id===flowId);
+    const flowProjs = projects.filter(p=>p.flowId===flowId);
+    const flowName = flow?.navn || flowProjs[0]?.flowName || 'Flow';
+    const isOpen = _temaOpenSections['flow_'+flowId] !== false;
+    html += `<div style="margin-bottom:6px;border-left:3px solid #B04A8A;padding-left:8px;">
+      <div onclick="toggleTemaSection('flow_${flowId}')" style="display:flex;align-items:center;gap:6px;padding:6px 8px;cursor:pointer;border-radius:var(--radius);background:rgba(176,74,138,0.08);">
+        <span id="tema-arrow-flow_${flowId}" style="font-size:10px;color:#B04A8A;transition:transform 0.2s;${isOpen?'transform:rotate(90deg)':''}">▶</span>
+        <span style="font-size:12px;font-weight:600;color:#B04A8A;">📣 ${esc(flowName)}</span>
+        <span style="font-size:10px;background:rgba(176,74,138,0.15);color:#B04A8A;padding:1px 6px;border-radius:8px;">${flowProjs.length} opgaver</span>
+      </div>
+      <div id="tema-list-flow_${flowId}" style="display:${isOpen?'block':'none'};">
+        ${flowProjs.map(p=>renderProjectCard(p)).join('')}
+      </div>
+    </div>`;
+  });
+
+  // Then standalone projects
+  html += standaloneProjs.map(p=>renderProjectCard(p)).join('');
+  return html;
 }
 
 function renderDoneSection(doneProjs) {
@@ -3641,6 +3772,7 @@ function renderProjectCard(p) {
         </div>
         ${p.deadline?`<span style="font-size:10px;font-weight:500;padding:2px 7px;border-radius:10px;white-space:nowrap;background:rgba(0,0,0,0.15);color:${tc};" title="Næste deadline">⏰ ${formatDate(p.deadline)}</span>`:''}
         ${p.deadlineFinal?`<span style="font-size:10px;font-weight:500;padding:2px 7px;border-radius:10px;white-space:nowrap;background:rgba(0,0,0,0.25);color:${tc};" title="Endelig deadline">🏁 ${formatDate(p.deadlineFinal)}</span>`:''}
+        <button class="btn secondary sm" onclick="event.stopPropagation();openFlowMenu(${p.id},this)" style="font-size:10px;padding:3px 8px;${bs}" title="Tilknyt til flow">${p.flowId?'📣':'📣'}</button>
         <button class="btn secondary sm" onclick="event.stopPropagation();openProjectModal(${p.id})" style="font-size:10px;padding:3px 8px;${bs}">✎</button>
         <button class="btn secondary sm" onclick="event.stopPropagation();toggleProjectDone(${p.id})" style="font-size:10px;padding:3px 8px;${bs}">${p.done?'↺':'✓'}</button>
         <button class="btn sm danger" onclick="event.stopPropagation();deleteProject(${p.id})" style="font-size:10px;padding:3px 8px;">✕</button>
