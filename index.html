@@ -146,7 +146,7 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); font-si
 /* ── DASHBOARD ── */
 .dash-stats {
   display: grid;
-  grid-template-columns: repeat(3, 1fr) 0.8fr 0.8fr 0.6fr;
+  grid-template-columns: 1fr 1fr 0.9fr 0.9fr;
   gap: 12px;
   margin-bottom: 20px;
   align-items: stretch;
@@ -685,7 +685,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   <div class="sidebar-logo">
     <div style="font-size:10px;color:var(--sidebar-text);opacity:0.6;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
     <h1>FocusBase</h1>
-    <span>Dit system · Din flow · v1.62</span>
+    <span>Dit system · Din flow · v1.64</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
@@ -734,32 +734,21 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
     <!-- DASHBOARD -->
     <div class="view active" id="view-dashboard">
       <div class="dash-stats" id="dash-stats-grid">
-        <div class="stat-card" id="sc-proj" style="transition:background 0.5s,border-color 0.5s;order:1;">
-          <div class="s-label" id="sc-proj-label">Åbne opgaver</div>
-          <div class="s-val" id="stat-proj">0</div>
-          <div class="s-sub" id="sc-proj-sub"></div>
-        </div>
-        <div class="stat-card" id="sc-subs" style="transition:background 0.5s,border-color 0.5s;order:2;">
-          <div class="s-label" id="sc-subs-label">Åbne delopgaver</div>
-          <div class="s-val" id="stat-done">0</div>
-          <div class="s-sub" id="sc-subs-sub"></div>
-        </div>
-        <div class="stat-card" id="sc-dl" style="transition:background 0.5s,border-color 0.5s;order:3;">
+        <!-- 1: Deadlines denne uge -->
+        <div class="stat-card" id="sc-dl" style="transition:background 0.5s,border-color 0.5s;order:1;">
           <div class="s-label">Deadlines denne uge</div>
           <div class="s-val" id="stat-deadlines">0</div>
           <div class="s-sub" id="sc-dl-sub" style="white-space:normal;line-height:1.4;"></div>
         </div>
-        <!-- Temaer cirkeldiagram -->
-        <div class="stat-card" style="order:5;padding:10px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-            <span class="s-label" style="margin:0;">◈ Projekter</span>
-            <span id="tema-chart-count" style="font-size:9px;color:var(--text-muted);"></span>
-          </div>
-          <canvas id="tema-pie" width="140" height="140" style="display:block;margin:0 auto;"></canvas>
-          <div id="tema-pie-legend" style="margin-top:6px;display:flex;flex-direction:column;gap:2px;"></div>
+        <!-- 2: Åbne opgaver + flows -->
+        <div class="stat-card" id="sc-proj" style="transition:background 0.5s,border-color 0.5s;order:2;">
+          <div class="s-label" id="sc-proj-label">Åbne opgaver</div>
+          <div class="s-val" id="stat-proj">0</div>
+          <div class="s-sub" id="sc-proj-sub"></div>
+          <div id="sc-flows-sub" style="font-size:10px;color:var(--text-muted);margin-top:4px;"></div>
         </div>
-        <!-- SoMe cirkeldiagram med afventer -->
-        <div class="stat-card" style="order:6;padding:10px;">
+        <!-- 3: SoMe cirkeldiagram -->
+        <div class="stat-card" style="order:3;padding:10px;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:3px;">
             <span class="s-label" style="margin:0;">◈ SoMe</span>
             <div style="display:flex;gap:2px;">
@@ -781,9 +770,14 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
             </div>
           </div>
         </div>
-        <!-- Kat – større nu -->
-        <div class="stat-card" id="sc-cat" style="transition:border-color 0.5s;padding:0;overflow:hidden;cursor:default;order:7;grid-column:span 1;">
-          <img id="cat-img" src="" alt="" style="width:100%;height:100%;object-fit:cover;display:block;min-height:120px;transition:opacity 0.4s;border-radius:var(--radius-lg);">
+        <!-- 4: Projekter cirkeldiagram -->
+        <div class="stat-card" style="order:4;padding:10px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <span class="s-label" style="margin:0;">◈ Projekter</span>
+            <span id="tema-chart-count" style="font-size:9px;color:var(--text-muted);"></span>
+          </div>
+          <canvas id="tema-pie" width="140" height="140" style="display:block;margin:0 auto;"></canvas>
+          <div id="tema-pie-legend" style="margin-top:6px;display:flex;flex-direction:column;gap:2px;"></div>
         </div>
       </div>
 
@@ -837,10 +831,6 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
               </button>
             </div>
             <div class="card-body" id="dash-interviews"></div>
-          </div>
-          <div class="card">
-            <div class="card-header">◈ SoMe · Afventer</div>
-            <div class="card-body" id="dash-some"></div>
           </div>
         </div>
       </div>
@@ -1799,6 +1789,8 @@ function parseSupabaseData(r) {
   if(typeof obj !== 'object' || Array.isArray(obj)) return null;
   obj.id = r.id;
   if(!Array.isArray(obj.subtasks)) obj.subtasks = [];
+  // Mark as inbox item if no temaId and no faser (came from Todoist/email)
+  if(!obj.temaId && !obj.faser) obj.inboxItem = true;
 
   // Try to parse Pocket summarization JSON from desc
   if(obj.desc && typeof obj.desc === 'string' && obj.desc.includes('actionItems')) {
@@ -3812,11 +3804,12 @@ function updateBadge() {
 
 // ── INDBAKKE ──
 function renderInbox() {
+  // Show projects that haven't been planned yet – no temaId and no faser
   const inbox = state.projects.filter(p =>
     !p.done &&
-    !p.deadline &&
-    (p.subtasks||[]).length === 0 &&
-    (p.cat === 'Generelt' || !p.cat)
+    !p.temaId &&
+    !p.faser &&
+    (p.cat === 'Generelt' || p.cat === 'Andet' || !p.cat)
   );
 
   const card = document.getElementById('dash-inbox-card');
@@ -4233,18 +4226,14 @@ function renderDashboard() {
     updateTopbarColor();
   }
 
-  // Stat 1: Åbne opgaver – dominant cat by project count
+  // Stat 1: Åbne opgaver + flows
   const dominantProj = dominantCatAmong(openProjects);
+  const openFlows = [...new Set(openProjects.filter(p=>p.flowId).map(p=>p.flowId))];
   document.getElementById('stat-proj').textContent = openProjects.length;
   document.getElementById('sc-proj-sub').textContent = dominantProj ? `Flest: ${dominantProj}` : '';
+  const flowsSub = document.getElementById('sc-flows-sub');
+  if(flowsSub) flowsSub.textContent = openFlows.length ? `📣 ${openFlows.length} aktive flows` : '';
   styleStatCard('sc-proj', dominantProj, null, null);
-
-  // Stat 2: Åbne delopgaver – dominant cat by PROJECT count (not subtask count)
-  // Count which projects have open subtasks, group by their category
-  const projsWithOpenSubs = openProjects.filter(p=>(p.subtasks||[]).some(s=>!s.done&&!s.skipped));
-  const dominantSubs = dominantCatAmong(projsWithOpenSubs); // one vote per PROJECT
-  document.getElementById('stat-done').textContent = openSubs.length;
-  document.getElementById('sc-subs-sub').textContent = dominantSubs ? `Flest: ${dominantSubs}` : '';
   styleStatCard('sc-subs', dominantSubs, null, null);
 
   // Stat 3: Deadlines denne uge + overskredte
@@ -4260,7 +4249,7 @@ function renderDashboard() {
     const overdueHtml = `<span style="color:#e44258;">⚠️ ${overdue.length} overskredet${dlSoon.length?` · ${dlSoon.length} denne uge`:''}</span>
       <div style="margin-top:6px;border-top:1px solid rgba(228,66,88,0.25);padding-top:6px;">
         ${overdue.slice(0,4).map(p=>`
-          <div style="display:flex;align-items:center;gap:6px;padding:2px 0;">
+          <div onclick="nav('projects')" style="display:flex;align-items:center;gap:6px;padding:2px 0;cursor:pointer;">
             <span style="width:7px;height:7px;border-radius:50%;background:${p.color};flex-shrink:0;display:inline-block;"></span>
             <span style="font-size:10px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(p.title)}</span>
             <span style="font-size:9px;color:#e44258;white-space:nowrap;">${formatDate(p.deadline)}</span>
@@ -6887,7 +6876,16 @@ function toast(msg){const t=document.createElement('div');t.className='toast';t.
 // ── AI ASSISTANT ──
 // ── UTILS ──
 function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function formatDate(d){if(!d)return'';try{return new Date(d+'T12:00:00').toLocaleDateString('da-DK',{day:'numeric',month:'short'});}catch(e){return d;}}
+function formatDate(d){
+  if(!d) return '';
+  try {
+    // Handle ISO datetime strings from Todoist (2026-06-26T00:00:00)
+    const clean = typeof d === 'string' ? d.substring(0,10) : d;
+    const date = new Date(clean + 'T12:00:00');
+    if(isNaN(date.getTime())) return '';
+    return date.toLocaleDateString('da-DK',{day:'numeric',month:'short'});
+  } catch(e){ return ''; }
+}
 function formatDatetime(s){try{return new Date(s).toLocaleString('da-DK',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});}catch(e){return s;}}
 
 async function forceRefreshFromSupabase() {
