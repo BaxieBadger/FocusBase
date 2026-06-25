@@ -685,7 +685,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   <div class="sidebar-logo">
     <div style="font-size:10px;color:var(--sidebar-text);opacity:0.6;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
     <h1>FocusBase</h1>
-    <span>Dit system · Din flow · v1.64</span>
+    <span>Dit system · Din flow · v1.65</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
@@ -5194,15 +5194,12 @@ function renderDashboard() {
   const dominantProj = dominantCatAmong(openProjects);
   document.getElementById('stat-proj').textContent = openProjects.length;
   document.getElementById('sc-proj-sub').textContent = dominantProj ? `Flest: ${dominantProj}` : '';
+  const flowsSub2 = document.getElementById('sc-flows-sub');
+  if(flowsSub2) {
+    const openFlows2 = [...new Set(openProjects.filter(p=>p.flowId).map(p=>p.flowId))];
+    flowsSub2.textContent = openFlows2.length ? `📣 ${openFlows2.length} aktive flows` : '';
+  }
   styleStatCard('sc-proj', dominantProj, null, null);
-
-  // Stat 2: Åbne delopgaver – dominant cat by PROJECT count (not subtask count)
-  // Count which projects have open subtasks, group by their category
-  const projsWithOpenSubs = openProjects.filter(p=>(p.subtasks||[]).some(s=>!s.done&&!s.skipped));
-  const dominantSubs = dominantCatAmong(projsWithOpenSubs); // one vote per PROJECT
-  document.getElementById('stat-done').textContent = openSubs.length;
-  document.getElementById('sc-subs-sub').textContent = dominantSubs ? `Flest: ${dominantSubs}` : '';
-  styleStatCard('sc-subs', dominantSubs, null, null);
 
   // Stat 3: Deadlines denne uge + overskredte
   const dlSoon = openProjects.filter(p=>p.deadline&&new Date(p.deadline+'T23:59:59')<=weekEnd);
