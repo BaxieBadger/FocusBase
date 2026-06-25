@@ -685,7 +685,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   <div class="sidebar-logo">
     <div style="font-size:10px;color:var(--sidebar-text);opacity:0.6;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
     <h1>FocusBase</h1>
-    <span>Dit system · Din flow · v1.68</span>
+    <span>Dit system · Din flow · v1.69</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
@@ -2196,7 +2196,7 @@ function openFlowCreate(editFlowId=null) {
       (state.temaer||[]).map(t=>`<option value="${t.id}" ${flow?.temaId===t.id?'selected':''}>${t.emoji} ${t.navn}</option>`).join('');
   }
   document.getElementById('fc-navn').value = flow?.navn || '';
-  document.getElementById('fc-modal-title').textContent = editFlowId ? '📣 Rediger flow' : '📣 Nyt flow';
+  document.getElementById('modal-flow-create').dataset.editFlowId = editFlowId || '';
   document.getElementById('fc-save-btn').textContent = editFlowId ? 'Gem ændringer' : 'Opret flow';
   document.getElementById('fc-delete-btn').style.display = editFlowId ? 'block' : 'none';
 
@@ -2281,28 +2281,27 @@ function saveFlowCreate() {
 }
 
 function deleteCurrentFlow() {
-  if(!_editingFlowId) return;
-  const flow = (state.flows||[]).find(f=>f.id===_editingFlowId);
+  const modal = document.getElementById('modal-flow-create');
+  const flowId = _editingFlowId || modal?.dataset.editFlowId;
+  if(!flowId) return;
+  const flow = (state.flows||[]).find(f=>f.id===flowId);
   if(!flow) return;
 
-  const flowProjs = state.projects.filter(p=>p.flowId===_editingFlowId);
+  const flowProjs = state.projects.filter(p=>p.flowId===flowId);
   const msg = flowProjs.length
     ? `Slet flowet "${flow.navn}" og alle ${flowProjs.length} tilknyttede opgaver?`
     : `Slet flowet "${flow.navn}"?`;
   if(!confirm(msg)) return;
 
-  // Delete all projects in flow
   const idsToDelete = flowProjs.map(p=>p.id);
-  state.projects = state.projects.filter(p=>p.flowId!==_editingFlowId);
+  state.projects = state.projects.filter(p=>p.flowId!==flowId);
   if(!state.deletedIds) state.deletedIds = [];
   idsToDelete.forEach(id => {
     if(!state.deletedIds.includes(id)) state.deletedIds.push(id);
     if(sbReady) fetch(`${SUPABASE_URL}/rest/v1/projects?id=eq.${id}`, { method:'DELETE', headers:sbHeaders() }).catch(()=>{});
   });
 
-  // Remove flow
-  state.flows = (state.flows||[]).filter(f=>f.id!==_editingFlowId);
-
+  state.flows = (state.flows||[]).filter(f=>f.id!==flowId);
   save();
   closeModal('modal-flow-create');
   toast(`📣 Flow "${flow.navn}" slettet`);
@@ -5415,114 +5414,6 @@ function styleStatCard(cardId, cat, valColor, textColor) {
   }
 }
 
-function renderDashboard() {
-  const openProjects = state.projects.filter(p=>!p.done);
-  const openSubs = openProjects.flatMap(p=>(p.subtasks||[]).filter(s=>!s.done&&!s.skipped));
-  const now = new Date();
-  const weekEnd = new Date(now); weekEnd.setDate(now.getDate()+7);
-  const todayStr = now.toISOString().split('T')[0];
-
-  // Check overdue – based on projects only
-  const overdue = openProjects.filter(p=>p.deadline && p.deadline < todayStr);
-  const hasOverdue = overdue.length > 0;
-
-  // Topbar blood red if overdue
-  const topbar = document.getElementById('main-topbar');
-  if(hasOverdue) {
-    topbar.style.background   = '#8b0000';
-    topbar.style.borderBottom = 'none';
-    document.querySelector('.topbar-title').style.color = '#fff';
-    document.getElementById('clock').style.color = 'rgba(255,255,255,0.7)';
-    document.querySelectorAll('#main-topbar .btn').forEach(b => {
-      b.style.background='rgba(255,255,255,0.15)'; b.style.color='#fff'; b.style.borderColor='rgba(255,255,255,0.3)';
-    });
-  } else {
-    updateTopbarColor();
-  }
-
-  // Stat 1: Åbne opgaver – dominant cat by project count
-  const dominantProj = dominantCatAmong(openProjects);
-  document.getElementById('stat-proj').textContent = openProjects.length;
-  document.getElementById('sc-proj-sub').textContent = dominantProj ? `Flest: ${dominantProj}` : '';
-  const flowsSub2 = document.getElementById('sc-flows-sub');
-  if(flowsSub2) {
-    const openFlows2 = [...new Set(openProjects.filter(p=>p.flowId).map(p=>p.flowId))];
-    flowsSub2.textContent = openFlows2.length ? `📣 ${openFlows2.length} aktive flows` : '';
-  }
-  styleStatCard('sc-proj', dominantProj, null, null);
-
-  // Stat 3: Deadlines denne uge + overskredte
-  const dlSoon = openProjects.filter(p=>p.deadline&&new Date(p.deadline+'T23:59:59')<=weekEnd);
-  const dominantDl = dominantCatAmong(dlSoon);
-  const totalDl = dlSoon.length + overdue.length;
-  document.getElementById('stat-deadlines').textContent = totalDl;
-
-  const dlSubEl = document.getElementById('sc-dl-sub');
-  const scDl = document.getElementById('sc-dl');
-
-  if(hasOverdue) {
-    const overdueHtml = `<span style="color:#e44258;">⚠️ ${overdue.length} overskredet${dlSoon.length?` · ${dlSoon.length} denne uge`:''}</span>
-      <div style="margin-top:6px;border-top:1px solid rgba(228,66,88,0.25);padding-top:6px;">
-        ${overdue.slice(0,4).map(p=>`
-          <div style="display:flex;align-items:center;gap:6px;padding:2px 0;">
-            <span style="width:7px;height:7px;border-radius:50%;background:${p.color};flex-shrink:0;display:inline-block;"></span>
-            <span style="font-size:10px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(p.title)}</span>
-            <span style="font-size:9px;color:#e44258;white-space:nowrap;">${formatDate(p.deadline)}</span>
-          </div>`).join('')}
-        ${overdue.length>4?`<div style="font-size:9px;color:rgba(228,66,88,0.7);margin-top:2px;">+${overdue.length-4} mere</div>`:''}
-      </div>`;
-    dlSubEl.innerHTML = overdueHtml;
-    dlSubEl.style.whiteSpace = 'normal';
-    scDl.style.background  = hexToRgba('#e44258', 0.08);
-    scDl.style.borderColor = '#e44258';
-    scDl.querySelector('.s-label').style.color = '#e44258';
-    scDl.querySelector('.s-val').style.color   = '#e44258';
-    scDl.classList.add('overdue');
-  } else {
-    dlSubEl.innerHTML = dominantDl||'';
-    dlSubEl.style.whiteSpace = '';
-    scDl.classList.remove('overdue');
-    styleStatCard('sc-dl', dominantDl, null, null);
-  }
-
-  // SoMe: planlagte og afventer i SoMe-kortet
-  const pending  = state.some.filter(s=>s.status==='ready');
-  const planned  = state.some.filter(s=>s.status==='scheduled'||s.status==='draft');
-  const somePlanned = document.getElementById('stat-some-planned');
-  const somePending = document.getElementById('stat-some');
-  if(somePlanned) somePlanned.textContent = planned.length;
-  if(somePending) somePending.textContent = pending.length;
-
-  if(dashView === 'agenda') renderAgenda(); else renderKanban();
-
-  checkWorkdayWarnings();
-  renderDashboardInterviews();
-  renderInbox();
-  renderDashboardAvis();
-  renderDashboardCharts();
-  updateCatWidget();
-
-  const projEl = document.getElementById('dash-projects');
-  const soon = openProjects.filter(p=>p.deadline).sort((a,b)=>a.deadline.localeCompare(b.deadline)).slice(0,5);
-  projEl.innerHTML = soon.length ? soon.map(p=>`
-    <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);">
-      <span style="width:8px;height:8px;border-radius:3px;background:${p.color};flex-shrink:0;display:inline-block;"></span>
-      <span style="font-size:12px;flex:1;">${esc(p.title)}</span>
-      <span class="project-deadline ${getDeadlineClass(p.deadline)}" style="font-size:10px;">⏰ ${formatDate(p.deadline)}</span>
-    </div>`).join('') : '<div class="empty" style="padding:16px 0;"><div class="emoji">📅</div>Ingen deadlines sat</div>';
-
-  const someEl = document.getElementById('dash-some');
-  someEl.innerHTML = pending.length ? pending.map(s=>{
-    const pc = platColor(s.platform);
-    return `<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);">
-      <span style="font-size:11px;font-weight:700;color:${pc.bg};">${esc(s.platform)}</span>
-      <span style="font-size:11px;color:var(--text-muted);flex:1;">${esc(s.content).substring(0,50)}…</span>
-      <button class="btn sm success" onclick="markPosted(${s.id})" style="font-size:10px;padding:3px 8px;">✓ Postet</button>
-    </div>`;
-  }).join('') : '<div class="empty" style="padding:16px 0;"><div class="emoji">✓</div>Ingen afventer</div>';
-}
-
-// ── WORKDAY WARNING ──
 function countWorkdays(fromDate, toDate) {
   let count = 0;
   const d = new Date(fromDate);
