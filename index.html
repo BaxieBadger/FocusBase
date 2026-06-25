@@ -685,7 +685,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   <div class="sidebar-logo">
     <div style="font-size:10px;color:var(--sidebar-text);opacity:0.6;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
     <h1>FocusBase</h1>
-    <span>Dit system · Dit flow · v1.72</span>
+    <span>Dit system · Dit flow · v1.73</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
@@ -2958,6 +2958,16 @@ function migrateColors() {
   state.projects.forEach(p => {
     if(p.avisTag && !p.temaId) { p.temaId = 'vaeresteds'; changed = true; }
   });
+  // Recover orphaned flows
+  if(!state.flows) state.flows = [];
+  const knownFlowIds = new Set(state.flows.map(f=>f.id));
+  state.projects.forEach(p => {
+    if(p.flowId && !knownFlowIds.has(p.flowId)) {
+      state.flows.push({ id: p.flowId, navn: p.flowName || 'Gendannet flow', temaId: p.temaId||'', createdAt: new Date().toISOString() });
+      knownFlowIds.add(p.flowId);
+      changed = true;
+    }
+  });
   if(changed) save();
 }
 
@@ -4511,7 +4521,6 @@ function renderDashboard() {
   const flowsSub = document.getElementById('sc-flows-sub');
   if(flowsSub) flowsSub.textContent = openFlows.length ? `📣 ${openFlows.length} aktive flows` : '';
   styleStatCard('sc-proj', dominantProj, null, null);
-  styleStatCard('sc-subs', dominantSubs, null, null);
 
   // Stat 3: Deadlines denne uge + overskredte
   const dlSoon = openProjects.filter(p=>p.deadline&&new Date(p.deadline+'T23:59:59')<=weekEnd);
