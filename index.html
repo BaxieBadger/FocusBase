@@ -685,7 +685,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   <div class="sidebar-logo">
     <div style="font-size:10px;color:var(--sidebar-text);opacity:0.6;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
     <h1>FocusBase</h1>
-    <span>Dit system · Dit flow · v1.73</span>
+    <span>Dit system · Dit flow · v1.74</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
@@ -3426,7 +3426,8 @@ function updateTopbarColor() {
 function openTaskModal(id=null) { openProjectModal(id); }
 
 function openProjectModal(id=null) {
-  state.editingProjectId = id;
+  // Always set to null for new, or numeric ID for edit
+  state.editingProjectId = (id && typeof id === 'number') ? id : null;
   const p = id ? state.projects.find(x=>x.id===id) : null;
   document.getElementById('modal-project-title').textContent = p ? 'Rediger opgave' : 'Ny opgave';
   const libBtn = document.getElementById('modal-subtask-lib-btn');
