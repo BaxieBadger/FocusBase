@@ -3,25 +3,26 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FocusBase</title>
+<title>Nooty</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='18' fill='%231a5228'/><ellipse cx='50' cy='44' rx='22' ry='28' stroke='white' stroke-width='7' fill='none'/><polyline points='36,46 46,57 70,30' stroke='white' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'/></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #f5f6f8;
+  --bg: #f4f6f4;
   --surface: #ffffff;
-  --surface2: #f0f1f3;
-  --border: #e0e2e7;
-  --border2: #c8ccd6;
-  --sidebar-bg: #1a1f36;
-  --sidebar-text: #b8bdd6;
+  --surface2: #eef2ee;
+  --border: #d4ddd4;
+  --border2: #b8ccb8;
+  --sidebar-bg: #1a5228;
+  --sidebar-text: #a8c9a8;
   --sidebar-active: #ffffff;
-  --sidebar-active-bg: rgba(255,255,255,0.1);
-  --sidebar-hover: rgba(255,255,255,0.06);
-  --accent: #6c63ff;
-  --accent-light: #ede9ff;
-  --accent2: #00c875;
-  --accent2-light: #e0f9ee;
-  --accent3: #ff5ac4;
+  --sidebar-active-bg: rgba(255,255,255,0.12);
+  --sidebar-hover: rgba(255,255,255,0.07);
+  --accent: #2a7a3b;
+  --accent-light: #e0f0e3;
+  --accent2: #1a9e4a;
+  --accent2-light: #d4f0dc;
+  --accent3: #5cb85c;
   --danger: #e44258;
   --danger-light: #fde8eb;
   --warning: #f5a623;
@@ -96,15 +97,26 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); font-si
 /* ── TOPBAR ── */
 .topbar {
   height:52px; display:flex; align-items:center; gap:10px;
-  padding:0 24px; background:var(--surface);
-  border-bottom:1px solid var(--border);
+  padding:0 24px; background:#1a5228;
+  border-bottom:1px solid #143d1e;
   flex-shrink:0;
   transition: background 0.6s ease, border-color 0.6s ease;
 }
-.topbar-title { font-size:16px; font-weight:600; flex:1; transition: color 0.4s; }
-.topbar-time { font-size:11px; font-variant-numeric:tabular-nums; transition: color 0.4s; }
+.topbar-title { font-size:16px; font-weight:600; flex:1; transition: color 0.4s; color:#fff; }
+.topbar-time { font-size:11px; font-variant-numeric:tabular-nums; transition: color 0.4s; color:rgba(255,255,255,0.7); }
 .topbar .btn.secondary {
   transition: background 0.3s, color 0.3s, border-color 0.3s;
+  background: rgba(255,255,255,0.12);
+  border-color: rgba(255,255,255,0.25);
+  color: #fff;
+}
+.topbar .btn.secondary:hover {
+  background: rgba(255,255,255,0.2);
+}
+.topbar .btn:not(.secondary) {
+  background: rgba(255,255,255,0.2);
+  border-color: rgba(255,255,255,0.4);
+  color: #fff;
 }
 
 /* ── BUTTONS ── */
@@ -683,9 +695,16 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
 <!-- SIDEBAR -->
 <nav class="sidebar">
   <div class="sidebar-logo">
-    <div style="font-size:10px;color:var(--sidebar-text);opacity:0.6;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
-    <h1>FocusBase</h1>
-    <span>Dit system · Dit flow · v1.74</span>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+      <svg width="32" height="32" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="100" height="100" rx="18" fill="rgba(255,255,255,0.12)"/>
+        <ellipse cx="50" cy="44" rx="22" ry="28" stroke="white" stroke-width="7" fill="none"/>
+        <polyline points="36,46 46,57 70,30" stroke="white" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <h1 style="font-size:22px;font-weight:700;color:#fff;letter-spacing:-0.5px;">nooty</h1>
+    </div>
+    <div style="font-size:10px;color:var(--sidebar-text);opacity:0.7;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
+    <span>Dit system · Dit flow · v2.02</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
@@ -4431,7 +4450,7 @@ function updateCatWidget() {
     return diff > 2 && diff <= 7;
   });
 
-  const BASE = 'https://BaxieBadger.github.io/FocusBase/';
+  const BASE = 'https://BaxieBadger.github.io/Nooty/';
   let img, border;
 
   if(overdue.length)       { img = BASE+'kat-overskredent.png';    border = '#8b0000'; }
@@ -4759,7 +4778,7 @@ function downloadReportsPDF() {
     @media print{button{display:none;}}
   </style></head><body>
   <h1>Afrapportering</h1>
-  <div class="sub">FocusBase · ${new Date().toLocaleDateString('da-DK',{day:'numeric',month:'long',year:'numeric'})}</div>
+  <div class="sub">Nooty · ${new Date().toLocaleDateString('da-DK',{day:'numeric',month:'long',year:'numeric'})}</div>
   ${content}
   <script>window.onload=()=>window.print();<\/script>
   </body></html>`);
@@ -5400,7 +5419,7 @@ function updateCatWidget() {
     return diff > 2 && diff <= 7;
   });
 
-  const BASE = 'https://BaxieBadger.github.io/FocusBase/';
+  const BASE = 'https://BaxieBadger.github.io/Nooty/';
   let img, border;
 
   if(overdue.length)       { img = BASE+'kat-overskredent.png';    border = '#8b0000'; }
@@ -5614,7 +5633,7 @@ function downloadReportsPDF() {
     @media print{button{display:none;}}
   </style></head><body>
   <h1>Afrapportering</h1>
-  <div class="sub">FocusBase · ${new Date().toLocaleDateString('da-DK',{day:'numeric',month:'long',year:'numeric'})}</div>
+  <div class="sub">Nooty · ${new Date().toLocaleDateString('da-DK',{day:'numeric',month:'long',year:'numeric'})}</div>
   ${content}
   <script>window.onload=()=>window.print();<\/script>
   </body></html>`);
@@ -6969,7 +6988,7 @@ function requestNotificationPermission() {
 
 function sendNotification(title, body) {
   if('Notification' in window && Notification.permission === 'granted') {
-    new Notification(title, { body, icon: 'https://baxiebadger.github.io/FocusBase/cat1.jpg' });
+    new Notification(title, { body, icon: 'https://baxiebadger.github.io/Nooty/cat1.jpg' });
   }
 }
 document.addEventListener('visibilitychange', () => {
