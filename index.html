@@ -1401,6 +1401,44 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
       <div id="sb-connected-info" style="display:none;background:var(--accent2-light);border:1px solid var(--accent2);border-radius:var(--radius);padding:10px 12px;font-size:11px;color:var(--accent2);">
         ✓ Forbundet til Supabase – data synkroniserer automatisk
       </div>
+
+      <hr class="divider">
+      <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Data &amp; sikkerhed</div>
+      <p style="font-size:11.5px;color:var(--text-muted);line-height:1.6;margin-top:0;margin-bottom:10px;">
+        Tag altid en backup, før du rydder op – det kan ikke fortrydes.
+      </p>
+      <div class="flex gap8">
+        <button class="btn secondary" onclick="exportBackup()" style="flex:1;">📤 Eksportér backup</button>
+        <button class="btn danger" onclick="openWipeModal()" style="flex:1;">🗑 Ryd opgaver og start forfra</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- WIPE / NULSTIL MODAL -->
+<div class="modal-overlay" id="modal-wipe">
+  <div class="modal" style="width:480px;">
+    <div class="modal-header">
+      <div class="modal-title" style="color:var(--danger);">🗑 Ryd opgaver og start forfra</div>
+      <button class="modal-close" onclick="closeModal('modal-wipe')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:12.5px;color:var(--text);line-height:1.6;">
+        Dette sletter <strong>alle opgaver og delopgaver</strong> permanent fra Supabase-databasen (tabellen <code>projects</code>) og rydder de lokale kopier på denne enhed.
+        SoMe-opslag, Noter og Dagbog rører vi ikke.
+      </p>
+      <p style="font-size:12.5px;color:var(--danger);line-height:1.6;font-weight:600;">
+        Dette kan ikke fortrydes. Har du taget en backup?
+      </p>
+      <div class="field">
+        <label>Skriv SLET for at bekræfte</label>
+        <input type="text" id="wipe-confirm-input" placeholder="SLET" style="width:100%;">
+      </div>
+      <div id="wipe-status" style="font-size:11px;color:var(--text-muted);margin-top:4px;min-height:16px;"></div>
+      <div class="flex gap8">
+        <button class="btn danger" onclick="runWipe()" style="flex:1;">Ryd databasen nu</button>
+        <button class="btn secondary" onclick="closeModal('modal-wipe')">Annuller</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1848,9 +1886,12 @@ async function loadFromSupabase() {
       sbSelect('system_state'),
     ]);
 
-    if(projects?.length) {
+    if(projects) {
+      // projects er en (evt. tom) array her - sbSelect() returnerer kun null hvis selve hentningen fejlede.
+      // Er projects tom (fx lige efter en rydning af databasen), SKAL det IKKE tolkes som en fejl,
+      // for så ville en rydning aldrig kunne slå igennem på denne enhed.
       const parsed = projects.map(r=>parseSupabaseData(r)).filter(Boolean);
-      if(parsed.length > 0) {
+      if(parsed.length > 0 || projects.length === 0) {
         // Filter out locally deleted IDs
         const deletedSet = new Set((state.deletedIds||[]).map(String));
         const filteredParsed = parsed.filter(p => !deletedSet.has(String(p.id)));
@@ -1858,10 +1899,10 @@ async function loadFromSupabase() {
         const localOnly = state.projects.filter(p=>!sbIds.has(String(p.id)) && !deletedSet.has(String(p.id)));
         state.projects = [...filteredParsed, ...localOnly];
         // Update nextId to avoid collisions
-        const maxId = Math.max(...state.projects.map(p=>Number(p.id)||0), state.nextId);
+        const maxId = Math.max(...state.projects.map(p=>Number(p.id)||0), state.nextId, 1);
         if(maxId >= state.nextId) state.nextId = maxId + 1;
       }
-      // If parsed.length === 0, keep existing state.projects (parse failed)
+      // Hvis Supabase gav rækker, men INGEN af dem kunne parses, er det formentlig en reel fejl - behold lokal data.
     }
     if(some?.length) {
       const parsed = some.map(r=>parseSupabaseData(r)).filter(Boolean);
@@ -2106,7 +2147,7 @@ function saveKilde() {
     const k = state.kilder.find(x=>x.id===editId);
     if(k) { k.navn=navn; k.titel=document.getElementById('kilde-titel').value; k.org=document.getElementById('kilde-org').value; k.tlf=document.getElementById('kilde-tlf').value; k.email=document.getElementById('kilde-email').value; k.noter=document.getElementById('kilde-noter').value; }
   } else {
-    state.kilder.push({ id:state.nextId++, navn, titel:document.getElementById('kilde-titel').value, org:document.getElementById('kilde-org').value, tlf:document.getElementById('kilde-tlf').value, email:document.getElementById('kilde-email').value, noter:document.getElementById('kilde-noter').value, createdAt:new Date().toISOString() });
+    state.kilder.push({ id:newId(), navn, titel:document.getElementById('kilde-titel').value, org:document.getElementById('kilde-org').value, tlf:document.getElementById('kilde-tlf').value, email:document.getElementById('kilde-email').value, noter:document.getElementById('kilde-noter').value, createdAt:new Date().toISOString() });
   }
   save(); closeModal('modal-kilde'); renderKilder();
 }
@@ -2182,7 +2223,7 @@ function runMigration() {
     // Gamle delopgaver bliver til selvstændige opgaver med parentId
     (p.subtasks||[]).forEach(s => {
       state.projects.push({
-        id: state.nextId++,
+        id: newId(),
         title: s.title || 'Delopgave',
         type: typeId,
         underkat: underkat,
@@ -2839,7 +2880,7 @@ function saveProject() {
     save(); closeModal('modal-project'); renderProjects(); renderDashboard(); updateBadge(); renderDiary();
   } else {
     const newProj = {
-      id:state.nextId++, title, desc:document.getElementById('p-desc').value,
+      id:newId(), title, desc:document.getElementById('p-desc').value,
       prio:document.getElementById('p-prio').value,
       procestrin: document.getElementById('p-procestrin').value.trim(),
       type, underkat,
@@ -3595,7 +3636,7 @@ function savePocketReview() {
     const deadline = dateStr ? parseSmartDate(dateStr) : (item.dueDate||'');
     if(!title) return;
     state.projects.push({
-      id: state.nextId++, title, type: typeId, underkat, parentId: p.id,
+      id: newId(), title, type: typeId, underkat, parentId: p.id,
       deadline, deadlineFinal:'', done: !!item.isCompleted, prio:'mid',
       color: getOpgaveType(typeId).color, notes:'', procestrin:'', interviews:[],
       createdAt: new Date().toISOString(),
@@ -4388,7 +4429,7 @@ function saveSome(){
   const fbEmne = plat==='Facebook' ? document.getElementById('s-fb-emne')?.value||'' : '';
   const liType = plat==='LinkedIn' ? document.getElementById('s-li-type')?.value||'' : '';
   if(editId){const s=state.some.find(x=>x.id===editId);if(s){s.platform=plat;s.content=content;s.date=document.getElementById('s-date').value;s.status=document.getElementById('s-status').value;s.fbEmne=fbEmne;s.liType=liType;}}
-  else{state.some.push({id:state.nextId++,platform:plat,content,date:document.getElementById('s-date').value,status:document.getElementById('s-status').value,fbEmne,liType,checks:[false,false,false,false,false],createdAt:new Date().toISOString()});}
+  else{state.some.push({id:newId(),platform:plat,content,date:document.getElementById('s-date').value,status:document.getElementById('s-status').value,fbEmne,liType,checks:[false,false,false,false,false],createdAt:new Date().toISOString()});}
   save();closeModal('modal-some');renderSome();renderDashboard();
 }
 function toggleSomeCheck(id,idx,val){
@@ -4412,7 +4453,7 @@ function renderNotes(){
   if(!state.notes.length){items.innerHTML='<div class="empty"><div class="emoji">📝</div>Ingen notater</div>';return;}
   items.innerHTML=state.notes.map(n=>`<div class="note-list-item ${n.id===state.currentNoteId?'active':''}" onclick="selectNote(${n.id})"><h4>${esc(n.title)||'Ingen titel'}</h4><p>${esc(n.body).substring(0,50)||'Tom note'}</p></div>`).join('');
 }
-function newNote(){const n={id:state.nextId++,title:'',body:'',cat:'general',createdAt:new Date().toISOString()};state.notes.unshift(n);state.currentNoteId=n.id;save();renderNotes();loadNoteEditor();}
+function newNote(){const n={id:newId(),title:'',body:'',cat:'general',createdAt:new Date().toISOString()};state.notes.unshift(n);state.currentNoteId=n.id;save();renderNotes();loadNoteEditor();}
 function selectNote(id){state.currentNoteId=id;renderNotes();loadNoteEditor();}
 function loadNoteEditor(){const n=state.notes.find(x=>x.id===state.currentNoteId);if(!n)return;document.getElementById('note-title').value=n.title;document.getElementById('note-body').value=n.body;document.getElementById('note-cat').value=n.cat;}
 function saveCurrentNote(){const n=state.notes.find(x=>x.id===state.currentNoteId);if(!n)return;n.title=document.getElementById('note-title').value;n.body=document.getElementById('note-body').value;n.cat=document.getElementById('note-cat').value;save();renderNotes();}
@@ -4447,7 +4488,7 @@ let captureOpen=false;
 function toggleCapture(){captureOpen=!captureOpen;document.getElementById('capture-modal').classList.toggle('open',captureOpen);if(captureOpen)setTimeout(()=>document.getElementById('capture-input').focus(),50);}
 function doCapture(){
   const inp=document.getElementById('capture-input');const title=inp.value.trim();if(!title)return;
-  state.projects.push({id:state.nextId++,title,desc:'',prio:'mid',deadline:'',color:'#7A8088',done:false,createdAt:new Date().toISOString()});
+  state.projects.push({id:newId(),title,desc:'',prio:'mid',deadline:'',color:'#7A8088',done:false,createdAt:new Date().toISOString()});
   inp.value='';save();renderProjects();renderDashboard();updateBadge();renderDiary();
   toast(`⚡ Fanget: "${title}"`);toggleCapture();
 }
@@ -4701,6 +4742,9 @@ function toast(msg){const t=document.createElement('div');t.className='toast';t.
 // ── AI ASSISTANT ──
 // ── UTILS ──
 function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+// Kollisionssikkert id – bruges i stedet for state.nextId++, så to enheder (fx desktop + mobil)
+// aldrig kan finde på at give en ny opgave samme nummer, selvom de arbejder samtidig.
+function newId(){ return Date.now()*1000 + Math.floor(Math.random()*1000); }
 function formatDate(d){
   if(!d) return '';
   try {
@@ -4782,6 +4826,109 @@ function updateSbButton() {
   } else {
     btn.title = 'Supabase: ikke forbundet';
     btn.classList.remove('ok');
+  }
+}
+
+// ── DATA & SIKKERHED (backup / ryd databasen) ──
+async function exportBackup() {
+  if(!sbReady) { alert('Forbind til Supabase først, før du kan tage en backup.'); return; }
+  const statusEl = document.getElementById('sb-status');
+  if(statusEl) statusEl.textContent = '⏳ Henter data til backup...';
+  try {
+    const [projects, some, notes, diary, sys] = await Promise.all([
+      sbSelect('projects'),
+      sbSelect('some_posts'),
+      sbSelect('notes'),
+      sbSelect('diary_entries'),
+      sbSelect('system_state'),
+    ]);
+    if(projects === null) throw new Error('kunne ikke hente opgaver fra Supabase');
+    const backup = {
+      type: 'focusbase-backup',
+      exportedAt: new Date().toISOString(),
+      tables: {
+        projects:      projects || [],
+        some_posts:    some     || [],
+        notes:         notes    || [],
+        diary_entries: diary    || [],
+        system_state:  sys      || [],
+      }
+    };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const stamp = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+    a.href = url;
+    a.download = `focusbase-backup-${stamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 2000);
+    if(statusEl) statusEl.textContent = '✓ Backup downloadet';
+    toast('📤 Backup downloadet ✓');
+  } catch(e) {
+    if(statusEl) statusEl.textContent = '❌ Backup fejlede: ' + e.message;
+    toast('Backup fejlede – prøv igen');
+  }
+}
+
+function openWipeModal() {
+  closeModal('modal-supabase');
+  const input  = document.getElementById('wipe-confirm-input');
+  const status = document.getElementById('wipe-status');
+  if(input)  input.value = '';
+  if(status) status.textContent = '';
+  document.getElementById('modal-wipe').classList.add('open');
+}
+
+async function runWipe() {
+  const input  = document.getElementById('wipe-confirm-input');
+  const status = document.getElementById('wipe-status');
+  const typed  = (input?.value || '').trim().toUpperCase();
+  if(typed !== 'SLET') {
+    if(status) status.textContent = 'Skriv "SLET" for at bekræfte.';
+    return;
+  }
+  if(!sbReady) {
+    if(status) status.textContent = 'Ikke forbundet til Supabase.';
+    return;
+  }
+  if(status) status.textContent = '⏳ Rydder databasen...';
+
+  try {
+    // Husk alle nuværende id'er, så hverken denne eller andre enheder (fx mobilen) ved et uheld
+    // kan komme til at genuploade dem, selvom de har en gammel lokal kopi liggende.
+    const allIds = state.projects.map(p => String(p.id));
+    state.deletedIds = Array.from(new Set([...(state.deletedIds||[]), ...allIds]));
+
+    // Slet alle rækker i 'projects' (opgaver + delopgaver) i Supabase.
+    // Alle id'er er positive tal, så id=gt.0 matcher alt - kun denne tabel røres.
+    const delRes = await fetch(`${SUPABASE_URL}/rest/v1/projects?id=gt.0`, {
+      method:  'DELETE',
+      headers: sbHeaders(),
+    });
+    if(!delRes.ok) throw new Error('HTTP ' + delRes.status);
+
+    // Nulstil nextId-bogføringen og gem den udvidede deletedIds-liste i system_state,
+    // så andre enheder også respekterer rydningen, når de synkroniserer.
+    await sbUpsert('system_state', { key: 'meta', value: {
+      nextId:     1,
+      kilder:     state.kilder || [],
+      deletedIds: state.deletedIds,
+    }});
+
+    // Ryd lokalt
+    state.projects = [];
+    state.nextId = 1;
+    localStorage.setItem('focusbase_v2', JSON.stringify(state));
+    renderAll();
+
+    if(status) status.textContent = '✓ Databasen er ryddet';
+    toast('🗑 Opgaver og delopgaver er ryddet – klar til at starte forfra');
+    setTimeout(()=>closeModal('modal-wipe'), 900);
+  } catch(e) {
+    if(status) status.textContent = '❌ Rydning fejlede: ' + e.message;
+    toast('Rydning fejlede – prøv igen');
   }
 }
 

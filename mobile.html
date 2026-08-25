@@ -251,6 +251,8 @@ const OPGAVE_TYPES = [
 function getOpgaveType(id){ return OPGAVE_TYPES.find(t=>t.id===id) || OPGAVE_TYPES[OPGAVE_TYPES.length-1]; }
 function getUnderkategorier(id){ return getOpgaveType(id).underkategorier; }
 function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+// Kollisionssikkert id - matcher desktop-udgaven, så to enheder aldrig kan give en ny opgave samme nummer.
+function newId(){ return Date.now()*1000 + Math.floor(Math.random()*1000); }
 function formatDate(d){ if(!d) return ''; const dt=new Date(d+'T12:00:00'); const M=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec']; return `${dt.getDate()}. ${M[dt.getMonth()]}`; }
 
 // ══════════════════════════ STATE ══════════════════════════
@@ -501,7 +503,7 @@ function saveEdit(){
     toast('Gemt ✓');
   } else {
     const p = {
-      id: state.nextId++, title, type:typeId, underkat, parentId: editingParentId||null,
+      id: newId(), title, type:typeId, underkat, parentId: editingParentId||null,
       deadline, deadlineFinal:'', procestrin, prio, color, done:false,
       notes:'', interviews:[], createdAt: new Date().toISOString(),
     };
