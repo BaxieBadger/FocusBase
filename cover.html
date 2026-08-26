@@ -98,19 +98,20 @@
   .dot-btn.active{background:var(--accent);}
 
   .card{flex:1; min-height:0; border-radius:28px; padding:26px 30px; display:flex; flex-direction:column; gap:10px;
-    box-shadow:var(--shadow-md); transition:transform .22s ease; cursor:pointer;}
+    box-shadow:var(--shadow-md); transition:transform .22s ease; cursor:pointer; overflow:hidden;}
   .card.dragging{transition:none;}
-  .card-top{display:flex; align-items:center; gap:6px; flex-wrap:wrap;}
+  .card-top{display:flex; align-items:center; gap:6px; flex-wrap:wrap; flex:none;}
   .chip{font-size:11.5px; font-weight:700; padding:4px 12px; border-radius:999px; white-space:nowrap;}
   .card-date{margin-left:auto; font-size:12.5px; font-weight:700; opacity:.9; flex:none;}
   .card-date.late{color:var(--danger); opacity:1;}
-  .card-title{font-family:var(--font-heading); font-size:clamp(24px, 4vw, 40px); line-height:1.14;}
-  .card-note{font-size:14px; opacity:.85; line-height:1.45; overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;}
-  .card-bottom{display:flex; align-items:center; gap:10px; margin-top:auto;}
+  .card-title{font-family:var(--font-heading); font-size:clamp(24px, 4vw, 40px); line-height:1.14;
+    overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; flex:none;}
+  .card-note{font-size:14px; opacity:.85; line-height:1.45; overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; flex:none;}
+  .card-bottom{display:flex; align-items:center; gap:10px; margin-top:auto; flex:none;}
   .track{flex:1; height:8px; border-radius:999px; overflow:hidden;}
   .bar{height:100%; border-radius:999px;}
   .subcount{font-size:12px; font-weight:700;}
-  .card-hint{font-size:11px; opacity:.65; text-align:right;}
+  .card-hint{font-size:5.5px; opacity:.65; text-align:right; flex:none;}
 
   .mid-controls{display:flex; align-items:center; gap:8px;}
   .round-btn{width:36px;height:36px;border-radius:999px;border:1px solid var(--divider);background:transparent;
@@ -387,7 +388,7 @@ function render(){
   const upNext = open.slice().sort((a,b)=>{
     const da=daysUntil(a.deadline), db=daysUntil(b.deadline);
     if(da===null && db===null) return 0; if(da===null) return 1; if(db===null) return -1; return da-db;
-  }).slice(0,3);
+  }).slice(0,2);
 
   const isLate = task.deadline && task.deadline < todayStr() && !task.done;
   const subPct = kids.length ? Math.round(doneKids/kids.length*100) : (task.done ? 100 : 6);
@@ -412,7 +413,7 @@ function render(){
         </div>
       </div>
       <div class="rail-next">
-        <div class="rail-next-title">NÆSTE OP</div>
+        <div class="rail-next-title">NÆSTE DEADLINE</div>
         ${upNext.map(t=>`<button class="up-item ${t.id===task.id?'active':''}" onclick="goTo(deck().findIndex(x=>x.id===${t.id}))">
           <span class="t">${esc(t.title)}</span><span class="d">${formatDate(t.deadline)}</span>
         </button>`).join('') || '<div class="empty-hint">Ingen åbne opgaver</div>'}
