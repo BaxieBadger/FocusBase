@@ -47,7 +47,7 @@
     .rail-donut{ flex:1 1 auto; }
     .rail-next{ flex:1 1 100%; margin-top:0 !important; }
     .mid{ width:100% !important; }
-    .notes-col{ min-height:280px; }
+    .notes-drawer{ width:100% !important; border-radius:0 !important; }
   }
 
   /* ── RAIL ── */
@@ -88,7 +88,7 @@
   .up-item .d{font-size:10.5px; opacity:.85; flex:none;}
 
   /* ── MIDDLE: swipeable card ── */
-  .mid{width:38%; min-width:300px; flex:none; padding:18px 20px; display:flex; flex-direction:column; gap:10px;
+  .mid{flex:1; min-width:0; padding:22px 26px; display:flex; flex-direction:column; gap:12px;
     touch-action:pan-y; cursor:grab; overflow:hidden;}
   .mid:active{cursor:grabbing;}
   .mid-head{display:flex; align-items:center; gap:8px;}
@@ -97,19 +97,20 @@
   .dot-btn{height:7px; border-radius:999px; border:none; padding:0; background:var(--neutral-300); cursor:pointer; transition:width .2s ease;}
   .dot-btn.active{background:var(--accent);}
 
-  .card{flex:1; min-height:0; border-radius:24px; padding:16px 18px; display:flex; flex-direction:column; gap:7px;
-    box-shadow:var(--shadow-md); transition:transform .22s ease;}
+  .card{flex:1; min-height:0; border-radius:28px; padding:26px 30px; display:flex; flex-direction:column; gap:10px;
+    box-shadow:var(--shadow-md); transition:transform .22s ease; cursor:pointer;}
   .card.dragging{transition:none;}
   .card-top{display:flex; align-items:center; gap:6px; flex-wrap:wrap;}
-  .chip{font-size:10.5px; font-weight:700; padding:3px 10px; border-radius:999px; white-space:nowrap;}
-  .card-date{margin-left:auto; font-size:11px; font-weight:700; opacity:.9; flex:none;}
+  .chip{font-size:11.5px; font-weight:700; padding:4px 12px; border-radius:999px; white-space:nowrap;}
+  .card-date{margin-left:auto; font-size:12.5px; font-weight:700; opacity:.9; flex:none;}
   .card-date.late{color:var(--danger); opacity:1;}
-  .card-title{font-family:var(--font-heading); font-size:22px; line-height:1.14;}
-  .card-note{font-size:12.5px; opacity:.85; line-height:1.4; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;}
-  .card-bottom{display:flex; align-items:center; gap:8px; margin-top:auto;}
-  .track{flex:1; height:7px; border-radius:999px; overflow:hidden;}
+  .card-title{font-family:var(--font-heading); font-size:clamp(24px, 4vw, 40px); line-height:1.14;}
+  .card-note{font-size:14px; opacity:.85; line-height:1.45; overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;}
+  .card-bottom{display:flex; align-items:center; gap:10px; margin-top:auto;}
+  .track{flex:1; height:8px; border-radius:999px; overflow:hidden;}
   .bar{height:100%; border-radius:999px;}
-  .subcount{font-size:11px; font-weight:700;}
+  .subcount{font-size:12px; font-weight:700;}
+  .card-hint{font-size:11px; opacity:.65; text-align:right;}
 
   .mid-controls{display:flex; align-items:center; gap:8px;}
   .round-btn{width:36px;height:36px;border-radius:999px;border:1px solid var(--divider);background:transparent;
@@ -119,14 +120,21 @@
   .done-btn.on{background:var(--neutral-300); color:var(--text);}
   .prio-label{margin-left:auto; font-size:11px; color:var(--neutral-700); white-space:nowrap;}
 
-  /* ── RIGHT: notes/subs ── */
-  .notes-col{flex:1; min-width:0; background:var(--panel); padding:18px 18px 14px 20px; display:flex; flex-direction:column; gap:10px;}
+  /* ── NOTER/DELOPGAVER: skjult skuffe, åbnes ved klik på opgavekortet ── */
+  .notes-backdrop{position:fixed; inset:0; background:color-mix(in srgb, var(--neutral-900) 34%, transparent);
+    z-index:54; opacity:0; pointer-events:none; transition:opacity .22s ease;}
+  .notes-backdrop.open{opacity:1; pointer-events:auto;}
+  .notes-drawer{position:fixed; top:0; right:0; height:100%; width:min(400px, 92vw); background:var(--panel);
+    box-shadow:var(--shadow-lg); border-radius:28px 0 0 28px; z-index:55; display:flex; flex-direction:column; gap:10px;
+    padding:calc(20px + var(--safe-t)) calc(20px + var(--safe-r)) calc(16px + var(--safe-b)) 22px;
+    transform:translateX(100%); transition:transform .26s cubic-bezier(.32,.72,0,1);}
+  .notes-drawer.open{transform:translateX(0);}
   .notes-head{display:flex; align-items:center; gap:8px;}
   .notes-head h2{margin:0; font-family:var(--font-heading); font-weight:400; font-size:15px;}
   .notes-meta{font-size:11px; color:var(--neutral-600);}
-  .add-note-btn{margin-left:auto; border:none; background:var(--accent); color:var(--bg); border-radius:999px;
-    padding:6px 13px; font-size:11.5px; font-weight:700;}
-  .add-note-btn:hover{background:var(--accent-600);}
+  .notes-close{margin-left:auto; border:none; background:var(--surface); width:30px; height:30px; border-radius:999px;
+    display:flex; align-items:center; justify-content:center; font-size:13px;}
+  .notes-close:hover{background:var(--neutral-300);}
   .scrollpane{flex:1; overflow-y:auto; padding-right:6px; display:flex; flex-direction:column; gap:8px;}
   .scrollpane::-webkit-scrollbar{width:5px;}
   .scrollpane::-webkit-scrollbar-thumb{background:var(--neutral-400); border-radius:999px;}
@@ -233,7 +241,8 @@ let SUPABASE_URL = localStorage.getItem('fb_sb_url') || '';
 let SUPABASE_KEY = localStorage.getItem('fb_sb_key') || '';
 let sbReady = false;
 let i = 0;          // active card index
-let drag = 0, dragging = false, dragStartX = 0;
+let drag = 0, dragging = false, dragStartX = 0, wasDragged = false;
+let notesOpen = false; // noter/delopgave-skuffen for den viste opgave
 
 function sbHeaders(){ return { 'Content-Type':'application/json', 'apikey':SUPABASE_KEY, 'Authorization':'Bearer '+SUPABASE_KEY, 'Prefer':'resolution=merge-duplicates' }; }
 async function sbUpsert(row){ if(!sbReady) return; try{ await fetch(`${SUPABASE_URL}/rest/v1/projects`, { method:'POST', headers:sbHeaders(), body: JSON.stringify({ id: row.id, data: row }) }); }catch(e){ console.warn('Supabase write error:', e); } }
@@ -287,17 +296,28 @@ function deck(){
 function clampIndex(){ const d=deck(); if(!d.length){ i=0; return; } if(i>=d.length) i=d.length-1; if(i<0) i=0; }
 
 // ══════════════════════════ NAVIGATION ══════════════════════════
-function go(delta){ const d=deck(); if(!d.length) return; i=(i+delta+d.length)%d.length; drag=0; dragging=false; render(); }
-function goTo(idx){ i=idx; drag=0; dragging=false; render(); }
-window.addEventListener('keydown', (e)=>{ if(e.key==='ArrowRight') go(1); if(e.key==='ArrowLeft') go(-1); });
+function go(delta){ const d=deck(); if(!d.length) return; i=(i+delta+d.length)%d.length; drag=0; dragging=false; notesOpen=false; render(); }
+function goTo(idx){ i=idx; drag=0; dragging=false; notesOpen=false; render(); }
+window.addEventListener('keydown', (e)=>{
+  if(e.key==='ArrowRight') go(1);
+  if(e.key==='ArrowLeft') go(-1);
+  if(e.key==='Escape' && notesOpen) closeNotesDrawer();
+});
+
+// ══════════════════════════ NOTER-SKUFFE ══════════════════════════
+function onCardTap(){ if(!wasDragged) toggleNotesDrawer(); }
+function toggleNotesDrawer(){ notesOpen = !notesOpen; render(); }
+function closeNotesDrawer(){ notesOpen = false; render(); }
 
 // ══════════════════════════ ACTIONS ══════════════════════════
 function toggleDone(id){
   const p = state.projects.find(x=>x.id===id);
   if(!p) return;
+  const wasMainTask = deck()[i] && deck()[i].id === id;
   p.done = !p.done;
   p.doneAt = p.done ? new Date().toISOString() : null;
   persist(p);
+  if(wasMainTask && p.done) notesOpen = false; // opgaven forsvinder fra dækket — luk skuffen for den
   clampIndex();
   render();
 }
@@ -404,7 +424,7 @@ function render(){
         <div class="mid-pos">OPGAVE ${i+1} AF ${d.length}</div>
         <div class="dots">${d.map((t,j)=>`<button class="dot-btn ${j===i?'active':''}" style="width:${j===i?'20px':'7px'}" onclick="goTo(${j})"></button>`).join('')}</div>
       </div>
-      <div class="card ${dragging?'dragging':''}" id="card" style="background:${task.done?'var(--neutral-200)':type.fill}; color:${task.done?'var(--neutral-700)':type.text}; transform:translateX(${dragX}px) rotate(${(drag*0.012).toFixed(2)}deg); opacity:${task.done?0.75:1}">
+      <div class="card ${dragging?'dragging':''}" id="card" onclick="onCardTap()" style="background:${task.done?'var(--neutral-200)':type.fill}; color:${task.done?'var(--neutral-700)':type.text}; transform:translateX(${dragX}px) rotate(${(drag*0.012).toFixed(2)}deg); opacity:${task.done?0.75:1}">
         <div class="card-top">
           <span class="chip" style="background:${type.chip}">${esc(task.underkat||type.navn)}</span>
           ${task.procestrin ? `<span class="chip" style="background:${type.chip}">${esc(task.procestrin)}</span>` : ''}
@@ -418,6 +438,7 @@ function render(){
           </div>
           <span class="subcount">${kids.length ? doneKids+'/'+kids.length : '—'}</span>
         </div>
+        <div class="card-hint">${notesOpen ? 'Tryk for at lukke noter ‹' : 'Tryk for noter &amp; delopgaver ›'}</div>
       </div>
       <div class="mid-controls">
         <button class="round-btn" onclick="go(-1)" title="Forrige">←</button>
@@ -426,25 +447,26 @@ function render(){
         <span class="prio-label">${PRIO_LABEL[task.prio]||''}</span>
       </div>
     </div>
-
-    <div class="notes-col">
-      <div class="notes-head">
-        <h2>Noter &amp; delopgaver</h2>
-        <span class="notes-meta">${kids.length?doneKids+'/'+kids.length+' delopgaver':'ingen delopgaver'}</span>
+  </div>
+  <div class="notes-backdrop ${notesOpen?'open':''}" onclick="closeNotesDrawer()"></div>
+  <div class="notes-drawer ${notesOpen?'open':''}">
+    <div class="notes-head">
+      <h2>Noter &amp; delopgaver</h2>
+      <span class="notes-meta">${kids.length?doneKids+'/'+kids.length+' delopgaver':'ingen delopgaver'}</span>
+      <button class="notes-close" onclick="closeNotesDrawer()">✕</button>
+    </div>
+    <div class="scrollpane">
+      ${kids.map(k=>`<div class="sub-row ${k.done?'done':''}" onclick="toggleDone(${k.id})">
+        <span class="sub-dot ${k.done?'on':''}"></span>${esc(k.title)}
+      </div>`).join('')}
+      <div class="sub-add">
+        <input type="text" id="sub-input" placeholder="Ny delopgave…" onkeydown="if(event.key==='Enter'){addSub(${task.id}, this.value); this.value='';}">
+        <button onclick="const el=document.getElementById('sub-input'); addSub(${task.id}, el.value); el.value='';">+</button>
       </div>
-      <div class="scrollpane">
-        ${kids.map(k=>`<div class="sub-row ${k.done?'done':''}" onclick="toggleDone(${k.id})">
-          <span class="sub-dot ${k.done?'on':''}"></span>${esc(k.title)}
-        </div>`).join('')}
-        <div class="sub-add">
-          <input type="text" id="sub-input" placeholder="Ny delopgave…" onkeydown="if(event.key==='Enter'){addSub(${task.id}, this.value); this.value='';}">
-          <button onclick="const el=document.getElementById('sub-input'); addSub(${task.id}, el.value); el.value='';">+</button>
-        </div>
-        ${notesList(task.notes)}
-        <div class="sub-add">
-          <input type="text" id="note-input" placeholder="Skriv en note…" onkeydown="if(event.key==='Enter'){addNote(${task.id}, this.value); this.value='';}">
-          <button onclick="const el=document.getElementById('note-input'); addNote(${task.id}, el.value); el.value='';">＋ Note</button>
-        </div>
+      ${notesList(task.notes)}
+      <div class="sub-add">
+        <input type="text" id="note-input" placeholder="Skriv en note…" onkeydown="if(event.key==='Enter'){addNote(${task.id}, this.value); this.value='';}">
+        <button onclick="const el=document.getElementById('note-input'); addNote(${task.id}, el.value); el.value='';">＋ Note</button>
       </div>
     </div>
   </div>`;
@@ -476,8 +498,8 @@ function notesList(notesStr){
 function bindDrag(){
   const mid = document.getElementById('mid');
   if(!mid) return;
-  mid.onpointerdown = (e)=>{ dragStartX = e.clientX; dragging = true; drag = 0; updateCardTransform(); };
-  mid.onpointermove = (e)=>{ if(!dragging) return; drag = e.clientX - dragStartX; updateCardTransform(); };
+  mid.onpointerdown = (e)=>{ dragStartX = e.clientX; dragging = true; drag = 0; wasDragged = false; updateCardTransform(); };
+  mid.onpointermove = (e)=>{ if(!dragging) return; drag = e.clientX - dragStartX; if(Math.abs(drag) > 8) wasDragged = true; updateCardTransform(); };
   mid.onpointerup = mid.onpointercancel = ()=>{
     if(!dragging) return;
     const d = drag;
