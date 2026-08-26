@@ -2688,7 +2688,7 @@ function renderAgenda() {
                 ${notePreview}
               </div>
               <span style="font-size:9px;font-weight:600;padding:2px 7px;border-radius:10px;background:rgba(0,0,0,0.15);color:${tc};white-space:nowrap;">⏰ ${formatDate(p.deadline)}</span>
-              ${children.length ? `<span onclick="toggleAgendaSubtasks(${p.id}, event)" style="cursor:pointer;display:flex;align-items:center;gap:3px;">${pill}<span style="font-size:8px;color:${tc};">${expanded?'▲':'▼'}</span></span>` : ''}
+              ${children.length ? `<button onclick="toggleAgendaSubtasks(${p.id}, event)" style="cursor:pointer;display:flex;align-items:center;gap:5px;background:rgba(0,0,0,0.14);border:none;border-radius:var(--radius-pill);padding:4px 8px 4px 10px;color:${tc};font-size:10px;font-weight:600;white-space:nowrap;" title="Vis/skjul delopgaver">${children.filter(c=>c.done).length}/${children.length}<span style="font-size:8px;">${expanded?'▲':'▼'}</span></button>` : ''}
             <span style="font-size:9px;font-weight:600;padding:2px 7px;border-radius:10px;background:rgba(0,0,0,0.15);color:${tc};">${type.emoji} ${esc(p.underkat||type.navn)}</span>
             <button onclick="toggleProjectDone(${p.id})" style="${getBtnStyle(p.color)}border-radius:50%;width:26px;height:26px;min-width:26px;padding:0;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">✓</button>
             </div>
@@ -2728,7 +2728,7 @@ function renderAgenda() {
                 <div style="font-size:13px;font-weight:600;">${esc(p.title)}${nextSub?`<span style="font-size:10px;font-weight:400;color:${mc};margin-left:8px;">→ ${esc(nextSub)}</span>`:''}</div>
                 ${notePreview}
               </div>
-              ${children.length ? `<span onclick="toggleAgendaSubtasks(${p.id}, event)" style="cursor:pointer;display:flex;align-items:center;gap:3px;">${pill}<span style="font-size:8px;color:${tc};">${expanded?'▲':'▼'}</span></span>` : ''}
+              ${children.length ? `<button onclick="toggleAgendaSubtasks(${p.id}, event)" style="cursor:pointer;display:flex;align-items:center;gap:5px;background:rgba(0,0,0,0.14);border:none;border-radius:var(--radius-pill);padding:4px 8px 4px 10px;color:${tc};font-size:10px;font-weight:600;white-space:nowrap;" title="Vis/skjul delopgaver">${children.filter(c=>c.done).length}/${children.length}<span style="font-size:8px;">${expanded?'▲':'▼'}</span></button>` : ''}
             <span style="font-size:9px;font-weight:600;padding:2px 7px;border-radius:10px;background:rgba(0,0,0,0.15);color:${tc};">${type.emoji} ${esc(p.underkat||type.navn)}</span>
             <button onclick="toggleProjectDone(${p.id})" style="${getBtnStyle(p.color)}border-radius:50%;width:26px;height:26px;min-width:26px;padding:0;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">✓</button>
             </div>
@@ -3495,8 +3495,18 @@ function renderDashboard() {
   // Stat 1: Åbne opgaver
   const dominantProj = dominantCatAmong(openProjects);
   document.getElementById('stat-proj').textContent = openProjects.length;
-  document.getElementById('sc-proj-sub').textContent = dominantProj ? `Flest: ${getOpgaveType(dominantProj).emoji} ${getOpgaveType(dominantProj).navn}` : '';
-  styleStatCard('sc-proj', dominantProj, null, null);
+  document.getElementById('sc-proj-sub').innerHTML = dominantProj
+    ? `Flest: <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${getOpgaveType(dominantProj).color};margin:0 2px;"></span> ${esc(getOpgaveType(dominantProj).navn)}`
+    : '';
+  {
+    const projCard = document.getElementById('sc-proj');
+    const fixedGreen = '#1a5228';
+    projCard.style.background  = hexToRgba(fixedGreen, 0.08);
+    projCard.style.borderColor = hexToRgba(fixedGreen, 0.35);
+    projCard.querySelector('.s-label').style.color = fixedGreen;
+    projCard.querySelector('.s-val').style.color   = fixedGreen;
+    if(projCard.querySelector('.s-sub')) projCard.querySelector('.s-sub').style.color = fixedGreen;
+  }
 
   // Stat 3: Deadlines denne uge + overskredte
   const dlSoon = openProjects.filter(p=>p.deadline&&new Date(p.deadline+'T23:59:59')<=weekEnd);
