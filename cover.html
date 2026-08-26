@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#c67139">
+<title>Nooty – Cover</title>
+<link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f5ead8; --surface:#ebddc5; --panel:#f9f4ed; --text:#201e1d;
+    --divider:rgba(32,30,29,.16);
+    --neutral-200:#eee7db; --neutral-300:#dcd3c4; --neutral-400:#c0b6a5;
+    --neutral-500:#a19786; --neutral-600:#82796a; --neutral-700:#645c50; --neutral-800:#474238; --neutral-900:#2e2b25;
+    --accent:#c67139;
+    --accent-200:#ffe1d0; --accent-300:#ffc6a5; --accent-500:#d67f48; --accent-600:#b2622d; --accent-700:#8c491a; --accent-900:#402310;
+    --sage:#7a8a5e;
+    --sage-100:#f0fae1; --sage-200:#e1eecc; --sage-300:#ccdbb2; --sage-500:#8fa073; --sage-600:#728157; --sage-700:#56633f; --sage-800:#3d472b; --sage-900:#272e1b;
+    --danger:#a83a2c;
+    --shadow-sm:0 1px 2px rgba(46,43,37,.14);
+    --shadow-md:0 3px 10px rgba(46,43,37,.16);
+    --shadow-lg:0 12px 32px rgba(46,43,37,.22);
+    --font-heading:'Caprasimo',system-ui,sans-serif;
+    --font-body:'Figtree',system-ui,sans-serif;
+    --safe-t: env(safe-area-inset-top, 0px); --safe-b: env(safe-area-inset-bottom, 0px);
+    --safe-l: env(safe-area-inset-left, 0px); --safe-r: env(safe-area-inset-right, 0px);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;height:100%;background:var(--neutral-900);overflow:hidden;}
+  body{font-family:var(--font-body); color:var(--text); -webkit-font-smoothing:antialiased; overscroll-behavior:none;}
+  button{font-family:inherit; cursor:pointer;}
+  :focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+
+  #app{
+    width:100vw; height:100dvh; background:var(--bg);
+    display:flex; flex-direction:row; user-select:none;
+    padding-top:var(--safe-t); padding-bottom:var(--safe-b); padding-left:var(--safe-l); padding-right:var(--safe-r);
+  }
+  /* Narrow / portrait fallback: stack instead of three columns */
+  @media (max-aspect-ratio: 4/3){
+    #app{ flex-direction:column; overflow-y:auto; height:auto; min-height:100dvh; }
+    .rail{ width:100% !important; height:auto !important; flex-direction:row !important; flex-wrap:wrap; gap:10px !important; padding:16px !important; }
+    .rail-kpis{ flex:1 1 100%; }
+    .rail-donut{ flex:1 1 auto; }
+    .rail-next{ flex:1 1 100%; margin-top:0 !important; }
+    .mid{ width:100% !important; }
+    .notes-col{ min-height:280px; }
+  }
+
+  /* ── RAIL ── */
+  .rail{
+    width:26%; min-width:230px; flex:none; background:var(--sage-800); color:var(--sage-100);
+    padding:22px 22px 18px; display:flex; flex-direction:column; gap:12px; overflow:hidden;
+  }
+  .rail-head{display:flex; align-items:center; gap:9px;}
+  .rail-badge{width:26px;height:26px;border-radius:999px;background:var(--sage-200);color:var(--sage-800);
+    display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-size:13px;flex:none;}
+  .rail-date{font-size:10.5px; letter-spacing:0.08em; font-weight:700; opacity:.78; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .inbox-pill{margin-left:auto; font-size:10px; font-weight:700; padding:3px 9px; border-radius:999px;
+    background:var(--accent-300); color:var(--accent-900); white-space:nowrap; flex:none; cursor:default;}
+
+  .rail-kpis{display:flex; gap:10px;}
+  .kpi{flex:1; background:color-mix(in srgb, var(--sage-100) 12%, transparent); border-radius:18px; padding:10px 12px; min-width:0;}
+  .kpi.warn{background:var(--accent-200); color:var(--accent-900);}
+  .kpi .v{font-family:var(--font-heading); font-size:28px; line-height:1;}
+  .kpi .l{font-size:10px; opacity:.85; margin-top:2px;}
+
+  .rail-donut{display:flex; align-items:center; gap:12px; background:color-mix(in srgb, var(--sage-100) 9%, transparent);
+    border-radius:18px; padding:10px 12px;}
+  .donut{width:54px;height:54px;border-radius:999px;flex:none;display:flex;align-items:center;justify-content:center;}
+  .donut-hole{width:32px;height:32px;border-radius:999px;background:var(--sage-800);display:flex;align-items:center;justify-content:center;
+    font-family:var(--font-heading); font-size:12px;}
+  .legend{display:flex; flex-direction:column; gap:4px; font-size:10.5px; min-width:0; flex:1;}
+  .legend-row{display:flex; align-items:center; gap:6px; overflow:hidden;}
+  .legend-dot{width:7px;height:7px;border-radius:999px;flex:none;}
+  .legend-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .legend-n{margin-left:auto; opacity:.75; flex:none;}
+
+  .rail-next{margin-top:auto; display:flex; flex-direction:column; gap:6px; min-height:0;}
+  .rail-next-title{font-size:10px; letter-spacing:0.08em; font-weight:700; opacity:.75;}
+  .up-item{display:flex; align-items:center; gap:8px; width:100%; text-align:left; border:none; border-radius:999px;
+    padding:8px 12px; font-size:12px; font-weight:600; background:color-mix(in srgb, var(--sage-100) 11%, transparent); color:var(--sage-100);}
+  .up-item.active{background:var(--sage-500);}
+  .up-item .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;}
+  .up-item .d{font-size:10.5px; opacity:.85; flex:none;}
+
+  /* ── MIDDLE: swipeable card ── */
+  .mid{width:38%; min-width:300px; flex:none; padding:18px 20px; display:flex; flex-direction:column; gap:10px;
+    touch-action:pan-y; cursor:grab; overflow:hidden;}
+  .mid:active{cursor:grabbing;}
+  .mid-head{display:flex; align-items:center; gap:8px;}
+  .mid-pos{font-size:10px; letter-spacing:0.08em; font-weight:700; color:var(--neutral-600);}
+  .dots{margin-left:auto; display:flex; gap:5px;}
+  .dot-btn{height:7px; border-radius:999px; border:none; padding:0; background:var(--neutral-300); cursor:pointer; transition:width .2s ease;}
+  .dot-btn.active{background:var(--accent);}
+
+  .card{flex:1; min-height:0; border-radius:24px; padding:16px 18px; display:flex; flex-direction:column; gap:7px;
+    box-shadow:var(--shadow-md); transition:transform .22s ease;}
+  .card.dragging{transition:none;}
+  .card-top{display:flex; align-items:center; gap:6px; flex-wrap:wrap;}
+  .chip{font-size:10.5px; font-weight:700; padding:3px 10px; border-radius:999px; white-space:nowrap;}
+  .card-date{margin-left:auto; font-size:11px; font-weight:700; opacity:.9; flex:none;}
+  .card-date.late{color:var(--danger); opacity:1;}
+  .card-title{font-family:var(--font-heading); font-size:22px; line-height:1.14;}
+  .card-note{font-size:12.5px; opacity:.85; line-height:1.4; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;}
+  .card-bottom{display:flex; align-items:center; gap:8px; margin-top:auto;}
+  .track{flex:1; height:7px; border-radius:999px; overflow:hidden;}
+  .bar{height:100%; border-radius:999px;}
+  .subcount{font-size:11px; font-weight:700;}
+
+  .mid-controls{display:flex; align-items:center; gap:8px;}
+  .round-btn{width:36px;height:36px;border-radius:999px;border:1px solid var(--divider);background:transparent;
+    font-size:14px; display:flex; align-items:center; justify-content:center;}
+  .round-btn:hover{background:var(--surface);}
+  .done-btn{border:none; border-radius:999px; padding:9px 18px; font-size:12.5px; font-weight:700; background:var(--accent); color:var(--bg);}
+  .done-btn.on{background:var(--neutral-300); color:var(--text);}
+  .prio-label{margin-left:auto; font-size:11px; color:var(--neutral-700); white-space:nowrap;}
+
+  /* ── RIGHT: notes/subs ── */
+  .notes-col{flex:1; min-width:0; background:var(--panel); padding:18px 18px 14px 20px; display:flex; flex-direction:column; gap:10px;}
+  .notes-head{display:flex; align-items:center; gap:8px;}
+  .notes-head h2{margin:0; font-family:var(--font-heading); font-weight:400; font-size:15px;}
+  .notes-meta{font-size:11px; color:var(--neutral-600);}
+  .add-note-btn{margin-left:auto; border:none; background:var(--accent); color:var(--bg); border-radius:999px;
+    padding:6px 13px; font-size:11.5px; font-weight:700;}
+  .add-note-btn:hover{background:var(--accent-600);}
+  .scrollpane{flex:1; overflow-y:auto; padding-right:6px; display:flex; flex-direction:column; gap:8px;}
+  .scrollpane::-webkit-scrollbar{width:5px;}
+  .scrollpane::-webkit-scrollbar-thumb{background:var(--neutral-400); border-radius:999px;}
+  .scrollpane::-webkit-scrollbar-track{background:transparent;}
+
+  .sub-row{display:flex; align-items:center; gap:9px; font-size:12.5px; font-weight:600; padding:8px 12px;
+    border-radius:999px; background:var(--bg); cursor:pointer;}
+  .sub-row:hover{background:var(--neutral-200);}
+  .sub-row.done{color:var(--neutral-600); text-decoration:line-through;}
+  .sub-dot{width:11px;height:11px;border-radius:999px;flex:none;border:2px solid var(--neutral-400);}
+  .sub-dot.on{background:var(--sage-600); border-color:var(--sage-600);}
+  .sub-add{display:flex; gap:6px;}
+  .sub-add input{flex:1; padding:8px 11px; border:1.5px solid var(--divider); border-radius:999px; background:var(--bg); font-size:12.5px; font-family:inherit; outline:none;}
+  .sub-add button{border:none; border-radius:999px; padding:0 12px; background:var(--sage-600); color:var(--sage-100); font-weight:700; font-size:11.5px;}
+
+  .note-card{background:var(--bg); border-radius:16px; padding:10px 12px; display:flex; flex-direction:column; gap:2px;}
+  .note-meta{display:flex; align-items:center; gap:7px; font-size:10px; color:var(--neutral-600);}
+  .note-who{font-weight:700; color:var(--accent-700);}
+  .note-text{font-size:12px; line-height:1.45;}
+  .empty-hint{font-size:11.5px; color:var(--neutral-600);}
+
+  /* ── connect / settings ── */
+  .connect{width:100vw; height:100dvh; background:var(--bg); display:flex; align-items:center; justify-content:center; padding:24px;}
+  .connect-box{max-width:340px; text-align:center; display:flex; flex-direction:column; gap:12px; align-items:center;}
+  .connect-box h2{font-family:var(--font-heading); font-weight:400; margin:0; font-size:20px;}
+  .connect-box p{font-size:13px; color:var(--neutral-700); margin:0; line-height:1.5;}
+  .field{width:100%; text-align:left;}
+  .field label{display:block; font-size:11px; font-weight:700; color:var(--neutral-700); margin-bottom:4px;}
+  .field input{width:100%; padding:9px 12px; border:1.5px solid var(--divider); border-radius:999px; background:var(--surface);
+    font-size:13px; font-family:inherit; outline:none;}
+  .field input:focus-visible{border-color:var(--accent);}
+  .btn{border:none; border-radius:999px; padding:10px 22px; font-size:13px; font-weight:700; background:var(--accent); color:var(--bg);}
+  .btn:hover{background:var(--accent-600);}
+  .settings-btn{position:fixed; top:calc(10px + var(--safe-t)); right:calc(10px + var(--safe-r)); z-index:50;
+    width:30px; height:30px; border-radius:999px; border:none; background:color-mix(in srgb, var(--neutral-900) 55%, transparent);
+    color:var(--bg); font-size:13px; display:flex; align-items:center; justify-content:center; opacity:.55;}
+  .settings-btn:hover{opacity:1;}
+  .sb-dot{width:6px;height:6px;border-radius:999px;background:var(--danger);position:absolute;margin-left:16px;margin-top:-16px;}
+  .sb-dot.ok{background:var(--sage-500);}
+  .overlay{position:fixed; inset:0; background:color-mix(in srgb, var(--neutral-900) 40%, transparent); z-index:60;
+    display:flex; align-items:center; justify-content:center;}
+  .modal{background:var(--bg); border-radius:24px; padding:24px 26px; width:min(360px,88vw); display:flex; flex-direction:column; gap:14px; box-shadow:var(--shadow-lg);}
+  .modal h3{margin:0; font-family:var(--font-heading); font-weight:400; font-size:18px;}
+  .modal-actions{display:flex; gap:8px; justify-content:flex-end;}
+  .btn-secondary{background:transparent; border:1px solid var(--divider); color:var(--text);}
+  .btn-secondary:hover{background:var(--surface);}
+
+  .toast{position:fixed; bottom:calc(18px + var(--safe-b)); left:50%; transform:translateX(-50%);
+    background:var(--neutral-900); color:var(--bg); padding:9px 16px; border-radius:999px; font-size:12px; font-weight:600;
+    z-index:200; opacity:0; pointer-events:none; transition:opacity .25s, transform .25s;}
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(-6px);}
+</style>
+</head>
+<body>
+
+<button class="settings-btn" id="settings-btn" onclick="openSettings()" title="Forbindelse">⚙<span class="sb-dot" id="sb-dot"></span></button>
+<div id="root"></div>
+<div class="toast" id="toast"></div>
+
+<!-- settings overlay -->
+<div class="overlay" id="ov-settings" style="display:none" onclick="if(event.target===this) closeSettings()">
+  <div class="modal">
+    <h3>Forbindelse</h3>
+    <p style="font-size:12.5px;color:var(--neutral-700);margin:0;">Cover-skærmen bruger samme Supabase-database som desktop og mobil. Samme URL og nøgle virker her.</p>
+    <div class="field"><label>Supabase URL</label><input type="text" id="set-url" placeholder="https://xxxx.supabase.co"></div>
+    <div class="field"><label>Supabase anon key</label><input type="text" id="set-key" placeholder="eyJ..."></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeSettings()">Luk</button>
+      <button class="btn" onclick="saveSettings()">Gem og forbind</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════ DATA MODEL (delt med desktop + mobil-Nooty) ══════════════════════════
+const OPGAVE_TYPES = [
+  { id:'vaeresteds',    navn:'Værestedsavisen', emoji:'📰', underkategorier:['Artikel','Administrativt','Andet'],
+    fill:'var(--sage-700)', text:'var(--sage-100)', chip:'color-mix(in srgb, var(--sage-100) 22%, transparent)', dot:'var(--sage-600)' },
+  { id:'projekt',       navn:'Projekt',         emoji:'🧩', underkategorier:['Craft','Sundhed','Natur','Det Digitale Værested','Andet'],
+    fill:'var(--accent-300)', text:'var(--accent-900)', chip:'color-mix(in srgb, var(--accent-900) 14%, transparent)', dot:'var(--accent-500)' },
+  { id:'aktivitet',     navn:'Aktivitet',       emoji:'🎪', underkategorier:['Sport for Livet','Ferie Camp','Royal Side Run','Landsmøde','Den Nationale Værestedsdag','Temadage','Andet'],
+    fill:'var(--surface)', text:'var(--text)', chip:'color-mix(in srgb, var(--text) 10%, transparent)', dot:'var(--neutral-500)' },
+  { id:'kommunikation', navn:'Kommunikation',   emoji:'📢', underkategorier:['Website','Nyhedsbrev','Presse','Intern','SoMe'],
+    fill:'var(--sage-300)', text:'var(--sage-900)', chip:'color-mix(in srgb, var(--sage-900) 14%, transparent)', dot:'var(--sage-500)' },
+  { id:'andet',         navn:'Andet',           emoji:'🗂', underkategorier:['Andet'],
+    fill:'var(--neutral-300)', text:'var(--neutral-800)', chip:'color-mix(in srgb, var(--text) 8%, transparent)', dot:'var(--neutral-600)' },
+];
+function getOpgaveType(id){ return OPGAVE_TYPES.find(t=>t.id===id) || OPGAVE_TYPES[OPGAVE_TYPES.length-1]; }
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function newId(){ return Date.now()*1000 + Math.floor(Math.random()*1000); }
+function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function addDays(str,n){ const d=new Date(str+'T12:00:00'); d.setDate(d.getDate()+n); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function daysUntil(deadline){ if(!deadline) return null; const a=new Date(todayStr()+'T00:00:00'), b=new Date(deadline+'T00:00:00'); return Math.round((b-a)/86400000); }
+function formatDate(d){ if(!d) return 'Ingen dato'; const dt=new Date(d+'T12:00:00'); const M=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec']; return `${dt.getDate()}. ${M[dt.getMonth()]}`; }
+const PRIO_LABEL = { low:'Lav prioritet', mid:'Middel prioritet', high:'Høj prioritet' };
+
+// ══════════════════════════ STATE ══════════════════════════
+let state = { projects: [] };
+let SUPABASE_URL = localStorage.getItem('fb_sb_url') || '';
+let SUPABASE_KEY = localStorage.getItem('fb_sb_key') || '';
+let sbReady = false;
+let i = 0;          // active card index
+let drag = 0, dragging = false, dragStartX = 0;
+
+function sbHeaders(){ return { 'Content-Type':'application/json', 'apikey':SUPABASE_KEY, 'Authorization':'Bearer '+SUPABASE_KEY, 'Prefer':'resolution=merge-duplicates' }; }
+async function sbUpsert(row){ if(!sbReady) return; try{ await fetch(`${SUPABASE_URL}/rest/v1/projects`, { method:'POST', headers:sbHeaders(), body: JSON.stringify({ id: row.id, data: row }) }); }catch(e){ console.warn('Supabase write error:', e); } }
+function parseRow(r){
+  if(!r || r.data===undefined || r.data===null) return null;
+  let obj = r.data;
+  if(typeof obj === 'string'){ try{ obj = JSON.parse(obj); }catch(e){ return null; } }
+  if(typeof obj !== 'object' || Array.isArray(obj)) return null;
+  obj.id = r.id;
+  if(!obj.title) return null;
+  if(!obj.prio) obj.prio = 'mid';
+  if(obj.done === undefined) obj.done = false;
+  return obj;
+}
+async function loadFromSupabase(){
+  if(!sbReady) return;
+  try{
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/projects?select=*&limit=1000`, { headers:{...sbHeaders(),'Range':'0-999'} });
+    if(r.ok){
+      const rows = await r.json();
+      state.projects = rows.map(parseRow).filter(Boolean);
+      localStorage.setItem('nooty_cover_cache', JSON.stringify(state));
+      clampIndex();
+    } else { toast('Kunne ikke hente data'); }
+  }catch(e){ toast('Ingen forbindelse'); }
+  render();
+}
+function persist(p){ localStorage.setItem('nooty_cover_cache', JSON.stringify(state)); sbUpsert(p); }
+
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(window._tt); window._tt=setTimeout(()=>t.classList.remove('show'),2200); }
+
+// ══════════════════════════ DERIVED DATA ══════════════════════════
+function children(id){ return state.projects.filter(c=>c.parentId===id); }
+function topLevel(){ return state.projects.filter(p=>!p.parentId && p.type); }
+function untriaged(){ return state.projects.filter(p=>!p.type && !p.parentId); }
+
+function deck(){
+  // Every real task (open + done) — swipe further to see finished work too.
+  const all = topLevel();
+  return [...all].sort((a,b)=>{
+    if(a.done !== b.done) return a.done ? 1 : -1;
+    const da = daysUntil(a.deadline), db = daysUntil(b.deadline);
+    if(da===null && db===null) return 0;
+    if(da===null) return 1;
+    if(db===null) return -1;
+    return da - db;
+  });
+}
+function clampIndex(){ const d=deck(); if(!d.length){ i=0; return; } if(i>=d.length) i=d.length-1; if(i<0) i=0; }
+
+// ══════════════════════════ NAVIGATION ══════════════════════════
+function go(delta){ const d=deck(); if(!d.length) return; i=(i+delta+d.length)%d.length; drag=0; dragging=false; render(); }
+function goTo(idx){ i=idx; drag=0; dragging=false; render(); }
+window.addEventListener('keydown', (e)=>{ if(e.key==='ArrowRight') go(1); if(e.key==='ArrowLeft') go(-1); });
+
+// ══════════════════════════ ACTIONS ══════════════════════════
+function toggleDone(id){
+  const p = state.projects.find(x=>x.id===id);
+  if(!p) return;
+  p.done = !p.done;
+  p.doneAt = p.done ? new Date().toISOString() : null;
+  persist(p);
+  clampIndex();
+  render();
+}
+function addNote(taskId, text){
+  const p = state.projects.find(x=>x.id===taskId);
+  if(!p || !text.trim()) return;
+  const now = new Date();
+  const ts = now.toLocaleDateString('da-DK',{day:'numeric',month:'short'}) + ' ' + now.toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'});
+  p.notes = p.notes ? p.notes + '\n' + `[${ts}] ${text.trim()}` : `[${ts}] ${text.trim()}`;
+  persist(p);
+  render();
+  toast('Note gemt ✓');
+}
+function addSub(parentId, title){
+  if(!title.trim()) return;
+  const parent = state.projects.find(x=>x.id===parentId);
+  const p = { id:newId(), title:title.trim(), type:parent?parent.type:'andet', underkat:parent?parent.underkat:'Andet',
+    parentId, deadline:'', deadlineFinal:'', procestrin:'', prio:'mid', done:false, notes:'', interviews:[], createdAt:new Date().toISOString() };
+  state.projects.push(p);
+  persist(p);
+  render();
+  toast('Delopgave tilføjet ✓');
+}
+
+// ══════════════════════════ RENDER ══════════════════════════
+function render(){
+  const root = document.getElementById('root');
+  document.getElementById('settings-btn').style.display = sbReady ? 'flex' : 'none';
+  document.getElementById('sb-dot').classList.toggle('ok', sbReady);
+
+  if(!sbReady){
+    root.innerHTML = `<div class="connect"><div class="connect-box">
+      <h2>Forbind Cover-skærmen</h2>
+      <p>Indtast din Supabase-adresse og nøgle for at hente opgaverne — samme oplysninger som i mobil- og desktop-udgaven.</p>
+      <button class="btn" onclick="openSettings()">Forbind nu</button>
+    </div></div>`;
+    return;
+  }
+
+  const d = deck();
+  if(!d.length){
+    root.innerHTML = `<div class="connect"><div class="connect-box">
+      <h2>Ingen opgaver endnu</h2>
+      <p>Opret opgaver i Nooty på desktop eller mobil — de dukker op her.</p>
+    </div></div>`;
+    return;
+  }
+  clampIndex();
+  const task = d[i];
+  const type = getOpgaveType(task.type);
+  const kids = children(task.id);
+  const doneKids = kids.filter(k=>k.done).length;
+  const open = topLevel().filter(t=>!t.done);
+  const weekEnd = addDays(todayStr(), 7);
+  const dueWeek = open.filter(t=>t.deadline && t.deadline>=todayStr() && t.deadline<=weekEnd).length;
+  const overdue = open.filter(t=>t.deadline && t.deadline<todayStr()).length;
+  const inbox = untriaged();
+
+  // donut
+  const counts = {};
+  open.forEach(t=>{ const k=t.type||'andet'; counts[k]=(counts[k]||0)+1; });
+  const total = open.length || 1;
+  let acc = 0;
+  const stops = Object.keys(counts).map(k=>{ const from=acc/total*100; acc+=counts[k]; return getOpgaveType(k).dot+' '+from.toFixed(1)+'% '+(acc/total*100).toFixed(1)+'%'; });
+  const donutBg = stops.length ? `conic-gradient(${stops.join(', ')})` : 'conic-gradient(var(--neutral-400) 0 100%)';
+
+  const upNext = open.slice().sort((a,b)=>{
+    const da=daysUntil(a.deadline), db=daysUntil(b.deadline);
+    if(da===null && db===null) return 0; if(da===null) return 1; if(db===null) return -1; return da-db;
+  }).slice(0,3);
+
+  const isLate = task.deadline && task.deadline < todayStr() && !task.done;
+  const subPct = kids.length ? Math.round(doneKids/kids.length*100) : (task.done ? 100 : 6);
+  const dragX = Math.max(-70, Math.min(70, drag));
+
+  root.innerHTML = `
+  <div id="app">
+    <div class="rail">
+      <div class="rail-head">
+        <div class="rail-badge">N</div>
+        <div class="rail-date">${dateHeader()}</div>
+        ${inbox.length ? `<div class="inbox-pill" title="Ikke-planlagte opgaver, se desktop">${inbox.length} i indbakke</div>` : ''}
+      </div>
+      <div class="rail-kpis">
+        <div class="kpi"><div class="v">${dueWeek}</div><div class="l">deadline i denne uge</div></div>
+        <div class="kpi warn"><div class="v">${open.length}</div><div class="l">åbne opgaver${overdue?` · ${overdue} forsinket${overdue!==1?'e':''}`:''}</div></div>
+      </div>
+      <div class="rail-donut">
+        <div class="donut" style="background:${donutBg}"><div class="donut-hole">${open.length}</div></div>
+        <div class="legend">
+          ${Object.keys(counts).map(k=>{ const t=getOpgaveType(k); return `<div class="legend-row"><span class="legend-dot" style="background:${t.dot}"></span><span class="legend-label">${t.emoji} ${t.navn}</span><span class="legend-n">${counts[k]}</span></div>`; }).join('') || '<div class="legend-row"><span class="empty-hint">Intet at vise</span></div>'}
+        </div>
+      </div>
+      <div class="rail-next">
+        <div class="rail-next-title">NÆSTE OP</div>
+        ${upNext.map(t=>`<button class="up-item ${t.id===task.id?'active':''}" onclick="goTo(deck().findIndex(x=>x.id===${t.id}))">
+          <span class="t">${esc(t.title)}</span><span class="d">${formatDate(t.deadline)}</span>
+        </button>`).join('') || '<div class="empty-hint">Ingen åbne opgaver</div>'}
+      </div>
+    </div>
+
+    <div class="mid" id="mid">
+      <div class="mid-head">
+        <div class="mid-pos">OPGAVE ${i+1} AF ${d.length}</div>
+        <div class="dots">${d.map((t,j)=>`<button class="dot-btn ${j===i?'active':''}" style="width:${j===i?'20px':'7px'}" onclick="goTo(${j})"></button>`).join('')}</div>
+      </div>
+      <div class="card ${dragging?'dragging':''}" id="card" style="background:${task.done?'var(--neutral-200)':type.fill}; color:${task.done?'var(--neutral-700)':type.text}; transform:translateX(${dragX}px) rotate(${(drag*0.012).toFixed(2)}deg); opacity:${task.done?0.75:1}">
+        <div class="card-top">
+          <span class="chip" style="background:${type.chip}">${type.emoji} ${esc(task.underkat||type.navn)}</span>
+          ${task.procestrin ? `<span class="chip" style="background:${type.chip}">${esc(task.procestrin)}</span>` : ''}
+          <span class="card-date ${isLate?'late':''}">${formatDate(task.deadline)}</span>
+        </div>
+        <div class="card-title">${esc(task.title)}</div>
+        ${task.desc ? `<div class="card-note">→ ${esc(task.desc)}</div>` : ''}
+        <div class="card-bottom">
+          <div class="track" style="background:color-mix(in srgb, ${task.done?'var(--sage-600)':type.text} 22%, transparent)">
+            <div class="bar" style="width:${subPct}%; background:${task.done?'var(--sage-600)':type.text}"></div>
+          </div>
+          <span class="subcount">${kids.length ? doneKids+'/'+kids.length : '—'}</span>
+        </div>
+      </div>
+      <div class="mid-controls">
+        <button class="round-btn" onclick="go(-1)" title="Forrige">←</button>
+        <button class="round-btn" onclick="go(1)" title="Næste">→</button>
+        <button class="done-btn ${task.done?'on':''}" onclick="toggleDone(${task.id})">${task.done?'Genåbn':'Markér færdig'}</button>
+        <span class="prio-label">${PRIO_LABEL[task.prio]||''}</span>
+      </div>
+    </div>
+
+    <div class="notes-col">
+      <div class="notes-head">
+        <h2>Noter &amp; delopgaver</h2>
+        <span class="notes-meta">${kids.length?doneKids+'/'+kids.length+' delopgaver':'ingen delopgaver'}</span>
+      </div>
+      <div class="scrollpane">
+        ${kids.map(k=>`<div class="sub-row ${k.done?'done':''}" onclick="toggleDone(${k.id})">
+          <span class="sub-dot ${k.done?'on':''}"></span>${esc(k.title)}
+        </div>`).join('')}
+        <div class="sub-add">
+          <input type="text" id="sub-input" placeholder="Ny delopgave…" onkeydown="if(event.key==='Enter'){addSub(${task.id}, this.value); this.value='';}">
+          <button onclick="const el=document.getElementById('sub-input'); addSub(${task.id}, el.value); el.value='';">+</button>
+        </div>
+        ${notesList(task.notes)}
+        <div class="sub-add">
+          <input type="text" id="note-input" placeholder="Skriv en note…" onkeydown="if(event.key==='Enter'){addNote(${task.id}, this.value); this.value='';}">
+          <button onclick="const el=document.getElementById('note-input'); addNote(${task.id}, el.value); el.value='';">＋ Note</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+  bindDrag();
+}
+
+function dateHeader(){
+  const d = new Date();
+  const W=['SØNDAG','MANDAG','TIRSDAG','ONSDAG','TORSDAG','FREDAG','LØRDAG'];
+  const M=['JAN','FEB','MAR','APR','MAJ','JUN','JUL','AUG','SEP','OKT','NOV','DEC'];
+  const jan1 = new Date(d.getFullYear(),0,1);
+  const week = Math.ceil((((d - jan1) / 86400000) + jan1.getDay()+1)/7);
+  return `${W[d.getDay()]} ${d.getDate()}. ${M[d.getMonth()]} · UGE ${week}`;
+}
+
+function notesList(notesStr){
+  const lines = (notesStr||'').split('\n').filter(Boolean).reverse();
+  if(!lines.length) return '<div class="empty-hint">Ingen noter endnu</div>';
+  return lines.map(line=>{
+    const m = line.match(/^\[([^\]]+)\] (.+)$/);
+    return `<div class="note-card">
+      ${m ? `<div class="note-meta">${esc(m[1])}</div><div class="note-text">${esc(m[2])}</div>` : `<div class="note-text">${esc(line)}</div>`}
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════ DRAG / SWIPE ══════════════════════════
+function bindDrag(){
+  const mid = document.getElementById('mid');
+  if(!mid) return;
+  mid.onpointerdown = (e)=>{ dragStartX = e.clientX; dragging = true; drag = 0; updateCardTransform(); };
+  mid.onpointermove = (e)=>{ if(!dragging) return; drag = e.clientX - dragStartX; updateCardTransform(); };
+  mid.onpointerup = mid.onpointercancel = ()=>{
+    if(!dragging) return;
+    const d = drag;
+    dragging = false;
+    if(d < -60) go(1);
+    else if(d > 60) go(-1);
+    else { drag = 0; updateCardTransform(); }
+  };
+}
+function updateCardTransform(){
+  const card = document.getElementById('card');
+  if(!card) return;
+  card.classList.toggle('dragging', dragging);
+  const dragX = Math.max(-70, Math.min(70, drag));
+  card.style.transform = `translateX(${dragX}px) rotate(${(drag*0.012).toFixed(2)}deg)`;
+}
+
+// ══════════════════════════ SETTINGS ══════════════════════════
+function openSettings(){
+  document.getElementById('set-url').value = SUPABASE_URL;
+  document.getElementById('set-key').value = SUPABASE_KEY;
+  document.getElementById('ov-settings').style.display = 'flex';
+}
+function closeSettings(){ document.getElementById('ov-settings').style.display = 'none'; }
+function saveSettings(){
+  const url = document.getElementById('set-url').value.trim().replace(/\/$/,'');
+  const key = document.getElementById('set-key').value.trim();
+  if(!url || !key){ toast('Udfyld begge felter'); return; }
+  SUPABASE_URL = url; SUPABASE_KEY = key;
+  localStorage.setItem('fb_sb_url', url);
+  localStorage.setItem('fb_sb_key', key);
+  sbReady = true;
+  closeSettings();
+  toast('Forbundet – henter opgaver...');
+  loadFromSupabase();
+}
+
+// ══════════════════════════ INIT ══════════════════════════
+(function init(){
+  const cached = localStorage.getItem('nooty_cover_cache');
+  if(cached){ try{ state = JSON.parse(cached); }catch(e){} }
+  if(SUPABASE_URL && SUPABASE_KEY){ sbReady = true; render(); loadFromSupabase(); }
+  else { render(); }
+})();
+</script>
+</body>
+</html>
