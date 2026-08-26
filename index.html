@@ -7,36 +7,52 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='18' fill='%231a5228'/><ellipse cx='50' cy='44' rx='22' ry='28' stroke='white' stroke-width='7' fill='none'/><polyline points='36,46 46,57 70,30' stroke='white' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'/></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700;900&family=Nunito:wght@400;500;600;700;800&family=Caveat:wght@600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #f4f6f4;
-  --surface: #ffffff;
-  --surface2: #eef2ee;
-  --border: #d4ddd4;
-  --border2: #b8ccb8;
-  --sidebar-bg: #1a5228;
-  --sidebar-text: #a8c9a8;
-  --sidebar-active: #ffffff;
-  --sidebar-active-bg: rgba(255,255,255,0.12);
-  --sidebar-hover: rgba(255,255,255,0.07);
-  --accent: #2a7a3b;
-  --accent-light: #e0f0e3;
-  --accent2: #1a9e4a;
-  --accent2-light: #d4f0dc;
-  --accent3: #5cb85c;
+  /* ── Ny designpalette: varm, rundet, terracotta/salvie ── */
+  --bg: #f5ead8;            /* sidebund (var. cream) */
+  --surface: #f9f4ed;       /* panel/kort på bunden (neutral-100) — primær kort-bg */
+  --panel: #f9f4ed;         /* alias for --surface */
+  --surface2: #ebddc5;      /* sand — segmentbaggrunde, sekundære kort/hover */
+  --sand: #ebddc5;          /* alias for --surface2 */
+  --border: rgba(32,30,29,.16);
+  --border2: #c0b6a5;
+  --sidebar-bg: #3d472b;        /* sage-800 */
+  --sidebar-text: #c9d4b3;      /* sage-300/400-agtig, læsbar på sage-800 */
+  --sidebar-active: #272e1b;    /* sage-900 tekst på aktiv-baggrund */
+  --sidebar-active-bg: #8fa073; /* sage-500 */
+  --sidebar-hover: rgba(255,255,255,0.08);
+  --accent: #c67139;        /* terracotta, primær */
+  --accent-light: #ffe1d0;  /* accent-200 */
+  --accent2: #7a8a5e;       /* salvie, sekundær (var. gl. accent2-rolle) */
+  --accent2-light: #e1eecc; /* sage-200 */
+  --accent3: #8fa073;       /* sage-500 */
   --danger: #e44258;
   --danger-light: #fde8eb;
   --warning: #f5a623;
   --warning-light: #fef3e0;
-  --text: #1f2134;
-  --text-muted: #676879;
-  --text-dim: #9699a6;
-  --success: #00c875;
-  --radius: 6px;
-  --radius-lg: 10px;
-  --font: 'Inter', sans-serif;
-  --shadow: 0 1px 4px rgba(0,0,0,0.08), 0 0 1px rgba(0,0,0,0.06);
-  --shadow-md: 0 4px 16px rgba(0,0,0,0.1), 0 0 1px rgba(0,0,0,0.06);
+  --text: #201e1d;
+  --text-muted: #82796a;    /* neutral-600 */
+  --text-dim: #a19786;      /* neutral-500 */
+  --success: #728157;       /* sage-600 */
+  --radius: 16px;           /* radius-md */
+  --radius-lg: 28px;
+  --radius-sm: 8px;
+  --radius-pill: 999px;
+  --font: 'Figtree', sans-serif;
+  --font-heading: 'Caprasimo', serif;
+  --shadow: 0 1px 2px rgba(46,43,37,.14);
+  --shadow-md: 0 3px 10px rgba(46,43,37,.16);
+  --shadow-lg: 0 12px 32px rgba(46,43,37,.22);
+
+  /* ── Fulde farveskalaer til komponent-specifikke overrides ── */
+  --neutral-200:#eee7db; --neutral-300:#dcd3c4; --neutral-400:#c0b6a5;
+  --neutral-500:#a19786; --neutral-600:#82796a; --neutral-700:#645c50; --neutral-900:#2e2b25;
+  --accent-200:#ffe1d0; --accent-300:#ffc6a5; --accent-400:#f6a06b;
+  --accent-500:#d67f48; --accent-600:#b2622d; --accent-700:#8c491a; --accent-800:#643312; --accent-900:#402310;
+  --sage-200:#e1eecc; --sage-300:#ccdbb2; --sage-400:#aebf92;
+  --sage-500:#8fa073; --sage-600:#728157; --sage-700:#56633f; --sage-800:#3d472b; --sage-900:#272e1b;
 }
 * { margin:0; padding:0; box-sizing:border-box; }
 body { background:var(--bg); color:var(--text); font-family:var(--font); font-size:13px; min-height:100vh; overflow-x:hidden; }
@@ -64,15 +80,15 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); font-si
 }
 .nav-item {
   display:flex; align-items:center; gap:10px;
-  padding:8px 18px; cursor:pointer;
+  padding:9px 14px; margin:2px 10px; cursor:pointer;
   color:var(--sidebar-text); font-size:13px; font-weight:400;
-  border-radius:0; transition:all 0.15s;
-  border-left:3px solid transparent;
+  border-radius:var(--radius-pill); transition:all 0.15s;
   position:relative;
 }
 .nav-item:hover { color:#fff; background:var(--sidebar-hover); }
-.nav-item.active { color:var(--sidebar-active); background:var(--sidebar-active-bg); border-left-color:var(--accent); font-weight:500; }
+.nav-item.active { color:var(--sidebar-active); background:var(--sidebar-active-bg); font-weight:700; }
 .nav-item .ni-icon { font-size:15px; width:20px; text-align:center; color:#fff; display:inline-flex; align-items:center; justify-content:center; }
+.nav-item.active .ni-icon { color:var(--sidebar-active); }
 .nav-item .ni-badge {
   margin-left:auto; background:var(--danger); color:#fff;
   font-size:9px; padding:1px 6px; border-radius:10px; font-weight:600;
@@ -185,11 +201,11 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); font-si
 .btn {
   display:inline-flex; align-items:center; gap:5px;
   background:var(--accent); color:#fff; border:none;
-  padding:7px 14px; font-family:var(--font); font-size:12px;
-  font-weight:500; cursor:pointer; border-radius:var(--radius);
-  transition:opacity 0.15s; white-space:nowrap;
+  padding:7px 16px; font-family:var(--font); font-size:12px; font-weight:700;
+  cursor:pointer; border-radius:var(--radius-pill);
+  transition:opacity 0.15s, transform 0.15s; white-space:nowrap;
 }
-.btn:hover { opacity:0.88; }
+.btn:hover { opacity:0.92; transform:translateY(-1px); }
 .btn.secondary { background:var(--surface); color:var(--text); border:1px solid var(--border); }
 .btn.secondary:hover { background:var(--surface2); }
 .btn.success { background:var(--accent2); }
@@ -213,7 +229,8 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); font-si
 }
 .card-header {
   padding:14px 18px; border-bottom:1px solid var(--border);
-  display:flex; align-items:center; gap:8px; font-weight:600; font-size:13px;
+  display:flex; align-items:center; gap:8px;
+  font-family:var(--font-heading); font-weight:400; font-size:16px; letter-spacing:-0.01em;
 }
 .card-body { padding:16px 18px; }
 
@@ -243,8 +260,8 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); font-si
   border-radius:var(--radius-lg); padding:16px 18px;
   box-shadow:var(--shadow); transition:background 0.5s, border-color 0.5s;
 }
-.stat-card .s-label { font-size:11px; font-weight:500; margin-bottom:6px; }
-.stat-card .s-val { font-size:28px; font-weight:700; line-height:1; }
+.stat-card .s-label { font-size:11px; font-weight:700; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.08em; }
+.stat-card .s-val { font-family:var(--font-heading); font-weight:400; font-size:34px; line-height:1; }
 .stat-card .s-sub { font-size:10px; margin-top:4px; opacity:0.7; }
 .stat-card.accent .s-val { color:var(--accent); }
 .stat-card.green .s-val  { color:var(--accent2); }
@@ -510,10 +527,26 @@ select { cursor:pointer; }
   padding:18px 22px; border-bottom:1px solid var(--border);
   display:flex; align-items:center; justify-content:space-between;
 }
-.modal-title { font-size:16px; font-weight:600; }
+.modal-title { font-family:var(--font-heading); font-weight:400; font-size:20px; letter-spacing:-0.01em; }
 .modal-close { background:none; border:none; font-size:18px; cursor:pointer; color:var(--text-muted); padding:2px 6px; border-radius:4px; }
 .modal-close:hover { background:var(--surface2); }
 .modal-body { padding:22px; display:flex; flex-direction:column; gap:14px; }
+
+/* ── OPGAVE-DETALJEPANEL: højre udtræk (kun #modal-project) ── */
+#modal-project.modal-overlay {
+  justify-content:flex-end; align-items:stretch;
+  background:rgba(32,30,29,0.34); backdrop-filter:blur(2px);
+}
+#modal-project .modal {
+  width:460px; max-width:92vw; height:100%; max-height:100%;
+  border-radius:var(--radius-lg) 0 0 var(--radius-lg);
+  box-shadow:var(--shadow-lg); border:none; border-left:1px solid var(--border);
+  animation:drawerIn 0.22s ease;
+}
+@keyframes drawerIn { from{ transform:translateX(24px); opacity:0; } to{ transform:translateX(0); opacity:1; } }
+@media (max-width:700px) {
+  #modal-project .modal { width:100%; border-radius:0; }
+}
 .field label { display:block; font-size:11px; font-weight:500; color:var(--text-muted); margin-bottom:5px; }
 .field input, .field select, .field textarea { width:100%; }
 .row2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
@@ -737,12 +770,15 @@ select { cursor:pointer; }
 .agenda-color-bar { width:3px; border-radius:2px; align-self:stretch; flex-shrink:0; min-height:20px; }
 .agenda-check {
   width:16px; height:16px; border:1.5px solid var(--border2);
-  border-radius:4px; cursor:pointer; display:flex; align-items:center;
+  border-radius:50%; cursor:pointer; display:flex; align-items:center;
   justify-content:center; flex-shrink:0; margin-top:1px;
   transition:all 0.15s; font-size:9px;
 }
 .agenda-check:hover { border-color:var(--accent2); }
 .agenda-check.done { background:var(--accent2); border-color:var(--accent2); color:#fff; }
+.agenda-bar { transition:filter 0.15s ease, transform 0.15s ease; }
+.agenda-bar:hover { filter:brightness(1.04); transform:translateX(2px); }
+.agenda-project-card { transition:transform 0.1s; }
 .agenda-body { flex:1; }
 .agenda-title { font-size:12px; font-weight:500; margin-bottom:2px; }
 .agenda-title.done { text-decoration:line-through; color:var(--text-muted); }
@@ -767,13 +803,13 @@ select { cursor:pointer; }
 
 /* ── VIEW TOGGLE ── */
 .view-toggle {
-  background:transparent; border:none; padding:5px 12px;
-  font-family:var(--font); font-size:11px; font-weight:500;
-  color:var(--text-muted); cursor:pointer; border-radius:4px;
+  background:transparent; border:none; padding:6px 14px;
+  font-family:var(--font); font-size:11px; font-weight:700;
+  color:var(--text-muted); cursor:pointer; border-radius:var(--radius-pill);
   transition:all 0.15s; white-space:nowrap;
 }
 .view-toggle:hover { color:var(--text); background:var(--surface); }
-.view-toggle.active { background:var(--surface); color:var(--accent); box-shadow:var(--shadow); }
+.view-toggle.active { background:var(--surface); color:var(--text); box-shadow:var(--shadow); }
 
 /* ── KANBAN ── */
 .kanban-board {
@@ -872,12 +908,10 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
 <nav class="sidebar collapsed" id="main-sidebar" onclick="expandSidebar()">
   <div class="sidebar-logo">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
-      <svg width="32" height="32" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect width="100" height="100" rx="18" fill="rgba(255,255,255,0.12)"/>
-        <ellipse cx="50" cy="44" rx="22" ry="28" stroke="white" stroke-width="7" fill="none"/>
-        <polyline points="36,46 46,57 70,30" stroke="white" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      <h1 class="sidebar-label-text" style="font-size:22px;font-weight:700;color:#fff;letter-spacing:-0.5px;">nooty</h1>
+      <div style="width:36px;height:36px;min-width:36px;border-radius:50%;background:var(--sage-200);display:flex;align-items:center;justify-content:center;">
+        <span style="font-family:var(--font-heading);font-size:18px;color:var(--sage-900);line-height:1;">n</span>
+      </div>
+      <h1 class="sidebar-label-text" style="font-size:22px;font-weight:400;color:#fff;font-family:var(--font-heading);letter-spacing:-0.01em;">nooty</h1>
     </div>
     <div class="sidebar-label-text" style="font-size:10px;color:var(--sidebar-text);opacity:0.7;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
     <span class="sidebar-label-text">Dit system · Dit flow · v2.02</span>
@@ -1741,15 +1775,15 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
 // Top-niveau (tidl. "Projekter"/Temaer) → 5 faste Opgave-typer.
 // Hver type har sin egen liste af underkategorier at vælge imellem.
 const OPGAVE_TYPES = [
-  { id:'vaeresteds',     navn:'Værestedsavisen', emoji:'📰', color:'#C9A800',
+  { id:'vaeresteds',     navn:'Værestedsavisen', emoji:'📰', color:'#F6A06B',
     underkategorier:['Artikel','Administrativt','Andet'] },
-  { id:'projekt',        navn:'Projekt',         emoji:'🧩', color:'#1B8BB0',
+  { id:'projekt',        navn:'Projekt',         emoji:'🧩', color:'#AEBF92',
     underkategorier:['Craft','Sundhed','Natur','Det Digitale Værested','Andet'] },
-  { id:'aktivitet',      navn:'Aktivitet',       emoji:'🎪', color:'#265E3A',
+  { id:'aktivitet',      navn:'Aktivitet',       emoji:'🎪', color:'#EEE7DB',
     underkategorier:['Sport for Livet','Ferie Camp','Royal Side Run','Landsmøde','Den Nationale Værestedsdag','Temadage','Andet'] },
-  { id:'kommunikation',  navn:'Kommunikation',   emoji:'📢', color:'#C15A1A',
+  { id:'kommunikation',  navn:'Kommunikation',   emoji:'📢', color:'#CCDBB2',
     underkategorier:['Website','Nyhedsbrev','Presse','Intern','SoMe'] },
-  { id:'andet',          navn:'Andet',           emoji:'🗂', color:'#7A8088',
+  { id:'andet',          navn:'Andet',           emoji:'🗂', color:'#DCD3C4',
     underkategorier:['Andet'] },
 ];
 function getOpgaveType(id) { return OPGAVE_TYPES.find(t=>t.id===id) || OPGAVE_TYPES[OPGAVE_TYPES.length-1]; }
@@ -2493,6 +2527,22 @@ function migrateColors() {
       if(newColor) { p.color = newColor; changed = true; }
     }
   });
+
+  // Sync opgave-farve til opgavetypens NUVÆRENDE farve (håndterer rotation af type-paletten,
+  // fx når Værestedsavisen/Aktivitet/Kommunikation bytter farve indbyrdes).
+  // Rammer kun opgaver hvis farve stadig er en af typernes tidligere/nuværende palette-farver,
+  // så en evt. manuelt valgt afvigende farve ikke overskrives.
+  const typeColorPalette = new Set(OPGAVE_TYPES.map(t => t.color).concat(['#265E3A','#C15A1A','#C9A800','#1B8BB0','#7A8088']).map(c=>c.toUpperCase()));
+  state.projects.forEach(p => {
+    if(!p.type || p.cat === 'Kommunikationsflow' || !p.color) return;
+    const currentTypeColor = getOpgaveType(p.type).color;
+    const pColorUpper = p.color.toUpperCase();
+    if(pColorUpper !== currentTypeColor.toUpperCase() && typeColorPalette.has(pColorUpper)) {
+      p.color = currentTypeColor;
+      changed = true;
+    }
+  });
+
   if(changed) save();
 }
 
@@ -2631,7 +2681,7 @@ function renderAgenda() {
           const lastNoteClean = lastNoteRaw ? lastNoteRaw.replace(/^\[[^\]]+\] /, '') : '';
           const notePreview = lastNoteClean ? `<div style="font-size:10px;color:${mc};margin-top:3px;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">📝 ${esc(lastNoteClean)}</div>` : '';
           return `<div class="agenda-project-card">
-            <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:${expanded?'var(--radius) var(--radius) 0 0':'var(--radius)'};background:${p.color};color:${tc};margin-bottom:${expanded?'0':'5px'};">
+            <div class="agenda-bar" style="display:flex;align-items:center;gap:10px;padding:15px 20px 15px 24px;border-radius:${expanded?'var(--radius-pill) var(--radius-pill) 0 0':'var(--radius-pill)'};background:${p.color};color:${tc};margin-bottom:${expanded?'0':'8px'};">
               <div style="flex:1;cursor:pointer;" onclick="openTaskFromDashboard(${p.id})" title="Åbn i Opgaveview">
                 <div style="font-size:13px;font-weight:600;">${esc(p.title)}${nextSub?`<span style="font-size:10px;font-weight:400;color:${mc};margin-left:8px;">→ ${esc(nextSub)}</span>`:''}</div>
                 <div style="display:flex;gap:8px;margin-top:3px;flex-wrap:wrap;">${eventInfo}</div>
@@ -2640,7 +2690,7 @@ function renderAgenda() {
               <span style="font-size:9px;font-weight:600;padding:2px 7px;border-radius:10px;background:rgba(0,0,0,0.15);color:${tc};white-space:nowrap;">⏰ ${formatDate(p.deadline)}</span>
               ${children.length ? `<span onclick="toggleAgendaSubtasks(${p.id}, event)" style="cursor:pointer;display:flex;align-items:center;gap:3px;">${pill}<span style="font-size:8px;color:${tc};">${expanded?'▲':'▼'}</span></span>` : ''}
             <span style="font-size:9px;font-weight:600;padding:2px 7px;border-radius:10px;background:rgba(0,0,0,0.15);color:${tc};">${type.emoji} ${esc(p.underkat||type.navn)}</span>
-            <button onclick="toggleProjectDone(${p.id})" style="${getBtnStyle(p.color)}border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;">✓</button>
+            <button onclick="toggleProjectDone(${p.id})" style="${getBtnStyle(p.color)}border-radius:50%;width:26px;height:26px;min-width:26px;padding:0;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">✓</button>
             </div>
             ${expanded ? `<div style="background:var(--surface2);border:1px solid ${p.color};border-top:none;border-radius:0 0 var(--radius) var(--radius);padding:6px 12px;margin-bottom:5px;">
               ${children.map(c => `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--border);">
@@ -2673,14 +2723,14 @@ function renderAgenda() {
           const lastNoteClean = lastNoteRaw ? lastNoteRaw.replace(/^\[[^\]]+\] /, '') : '';
           const notePreview = lastNoteClean ? `<div style="font-size:10px;color:${mc};margin-top:3px;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">📝 ${esc(lastNoteClean)}</div>` : '';
           return `<div class="agenda-project-card" style="opacity:0.85;">
-            <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:${expanded?'var(--radius) var(--radius) 0 0':'var(--radius)'};background:${p.color};color:${tc};margin-bottom:${expanded?'0':'5px'};">
+            <div class="agenda-bar" style="display:flex;align-items:center;gap:10px;padding:15px 20px 15px 24px;border-radius:${expanded?'var(--radius-pill) var(--radius-pill) 0 0':'var(--radius-pill)'};background:${p.color};color:${tc};margin-bottom:${expanded?'0':'8px'};">
               <div style="flex:1;cursor:pointer;" onclick="openTaskFromDashboard(${p.id})" title="Åbn i Opgaveview">
                 <div style="font-size:13px;font-weight:600;">${esc(p.title)}${nextSub?`<span style="font-size:10px;font-weight:400;color:${mc};margin-left:8px;">→ ${esc(nextSub)}</span>`:''}</div>
                 ${notePreview}
               </div>
               ${children.length ? `<span onclick="toggleAgendaSubtasks(${p.id}, event)" style="cursor:pointer;display:flex;align-items:center;gap:3px;">${pill}<span style="font-size:8px;color:${tc};">${expanded?'▲':'▼'}</span></span>` : ''}
             <span style="font-size:9px;font-weight:600;padding:2px 7px;border-radius:10px;background:rgba(0,0,0,0.15);color:${tc};">${type.emoji} ${esc(p.underkat||type.navn)}</span>
-            <button onclick="toggleProjectDone(${p.id})" style="${getBtnStyle(p.color)}border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;">✓</button>
+            <button onclick="toggleProjectDone(${p.id})" style="${getBtnStyle(p.color)}border-radius:50%;width:26px;height:26px;min-width:26px;padding:0;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">✓</button>
             </div>
             ${expanded ? `<div style="background:var(--surface2);border:1px solid ${p.color};border-top:none;border-radius:0 0 var(--radius) var(--radius);padding:6px 12px;margin-bottom:5px;">
               ${children.map(c => `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--border);">
@@ -2743,7 +2793,7 @@ function renderAgenda() {
             <span style="font-size:11px;font-weight:600;color:${tc};flex:1;">📁 ${esc(p.title)}${nextSub?`<span style="font-size:10px;font-weight:400;color:${mc};margin-left:8px;">→ ${esc(nextSub)}</span>`:''}</span>
             ${pill}
             ${showDeadline ? `<span style="font-size:10px;font-weight:500;padding:2px 7px;border-radius:10px;background:rgba(0,0,0,0.15);color:${tc};white-space:nowrap;">⏰ ${formatDate(p.deadline)}</span>` : ''}
-            <button onclick="toggleProjectDone(${p.id})" style="${getBtnStyle(p.color)}border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;">✓</button>
+            <button onclick="toggleProjectDone(${p.id})" style="${getBtnStyle(p.color)}border-radius:50%;width:26px;height:26px;min-width:26px;padding:0;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">✓</button>
           </div>
           ${kids.map(c => `
             <div class="agenda-subtask-row ${c.done?'done-item':''}" style="background:${subtaskBg};border-color:${p.color};margin-left:10px;">
