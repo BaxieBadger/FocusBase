@@ -72,7 +72,7 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); font-si
 }
 .nav-item:hover { color:#fff; background:var(--sidebar-hover); }
 .nav-item.active { color:var(--sidebar-active); background:var(--sidebar-active-bg); border-left-color:var(--accent); font-weight:500; }
-.nav-item .ni-icon { font-size:15px; width:20px; text-align:center; }
+.nav-item .ni-icon { font-size:15px; width:20px; text-align:center; color:#fff; display:inline-flex; align-items:center; justify-content:center; }
 .nav-item .ni-badge {
   margin-left:auto; background:var(--danger); color:#fff;
   font-size:9px; padding:1px 6px; border-radius:10px; font-weight:600;
@@ -86,7 +86,7 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); font-si
 }
 .sidebar-icon-btn {
   aspect-ratio:1; display:flex; align-items:center; justify-content:center;
-  font-size:15px; color:var(--sidebar-text);
+  font-size:15px; color:#fff;
   background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1);
   border-radius:var(--radius); cursor:pointer; transition:all 0.15s; position:relative;
 }
@@ -95,6 +95,66 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); font-si
 .focus-bar-label { font-size:10px; color:var(--sidebar-text); margin-bottom:4px; }
 .focus-bar { height:3px; background:rgba(255,255,255,0.1); border-radius:2px; }
 .focus-bar-fill { height:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); border-radius:2px; transition:width 0.4s; }
+.sidebar-clock {
+  font-size:12px; font-variant-numeric:tabular-nums; color:var(--sidebar-text);
+  text-align:center; margin-bottom:10px; padding:6px; border-radius:var(--radius);
+  background:rgba(255,255,255,0.06);
+}
+.sidebar.collapsed .sidebar-clock { font-size:11px; padding:5px 2px; }
+
+/* ── SIDEBAR: COLLAPSED (default) / EXPANDED ── */
+.sidebar {
+  width:232px; min-width:232px;
+  transition:width 0.18s ease, min-width 0.18s ease;
+  cursor:pointer;
+}
+.sidebar.collapsed { width:68px; min-width:68px; }
+.sidebar.collapsed .sidebar-label-text,
+.sidebar.collapsed .sidebar-section-label,
+.sidebar.collapsed .nav-item .ni-badge { display:none; }
+.sidebar.collapsed .sidebar-logo { display:flex; flex-direction:column; align-items:center; padding:20px 0 16px; }
+.sidebar.collapsed .nav-item { justify-content:center; padding:10px 0; gap:0; }
+.sidebar.collapsed .nav-item .ni-icon { width:auto; }
+.sidebar.collapsed .sidebar-icon-grid { grid-template-columns:1fr; }
+.sidebar.collapsed .sidebar-footer { padding:14px 10px; }
+/* tooltip for collapsed nav items */
+.sidebar.collapsed .nav-item { position:relative; }
+.sidebar.collapsed .nav-item[data-label]:hover::after {
+  content:attr(data-label);
+  position:absolute; left:100%; top:50%; transform:translateY(-50%);
+  margin-left:8px; background:#1a1a1a; color:#fff; font-size:11px;
+  padding:4px 8px; border-radius:4px; white-space:nowrap; z-index:500;
+  pointer-events:none;
+}
+
+/* ── Visually removed (code kept): Skift design + Fokus-score ── */
+.feature-hidden { display:none !important; }
+
+/* ── TOPBAR: hidden by default, replaced by FAB ── */
+.topbar { display:none !important; }
+
+/* ── FAB SPEED-DIAL (Pomodoro / Pomodoro+ / Ny opgave) ── */
+.fab-wrap { position:fixed; bottom:24px; right:24px; z-index:400; display:flex; flex-direction:column; align-items:flex-end; gap:10px; }
+.fab-option {
+  display:flex; align-items:center; gap:8px;
+  background:var(--surface); color:var(--text); border:1px solid var(--border);
+  padding:8px 14px; border-radius:999px; box-shadow:var(--shadow-md);
+  font-size:12px; font-weight:500; cursor:pointer; white-space:nowrap;
+  opacity:0; transform:translateY(8px) scale(0.95); pointer-events:none;
+  transition:opacity 0.15s ease, transform 0.15s ease;
+}
+.fab-option:hover { background:var(--surface2); }
+.fab-wrap.open .fab-option { opacity:1; transform:translateY(0) scale(1); pointer-events:auto; }
+.fab-wrap.open .fab-option:nth-child(2) { transition-delay:0.02s; }
+.fab-wrap.open .fab-option:nth-child(3) { transition-delay:0.04s; }
+.fab-main {
+  width:52px; height:52px; border-radius:50%; border:none;
+  background:var(--accent); color:#fff; font-size:22px;
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; box-shadow:var(--shadow-md); transition:transform 0.2s ease, background 0.2s ease;
+}
+.fab-main:hover { background:var(--accent2); }
+.fab-wrap.open .fab-main { transform:rotate(45deg); }
 
 /* ── TOPBAR ── */
 .topbar {
@@ -809,7 +869,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
 <div class="shell">
 
 <!-- SIDEBAR -->
-<nav class="sidebar">
+<nav class="sidebar collapsed" id="main-sidebar" onclick="expandSidebar()">
   <div class="sidebar-logo">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
       <svg width="32" height="32" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -817,36 +877,41 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
         <ellipse cx="50" cy="44" rx="22" ry="28" stroke="white" stroke-width="7" fill="none"/>
         <polyline points="36,46 46,57 70,30" stroke="white" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
-      <h1 style="font-size:22px;font-weight:700;color:#fff;letter-spacing:-0.5px;">nooty</h1>
+      <h1 class="sidebar-label-text" style="font-size:22px;font-weight:700;color:#fff;letter-spacing:-0.5px;">nooty</h1>
     </div>
-    <div style="font-size:10px;color:var(--sidebar-text);opacity:0.7;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
-    <span>Dit system · Dit flow · v2.02</span>
+    <div class="sidebar-label-text" style="font-size:10px;color:var(--sidebar-text);opacity:0.7;letter-spacing:1px;text-transform:uppercase;">Brian Brawn</div>
+    <span class="sidebar-label-text">Dit system · Dit flow · v2.02</span>
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
-    <div class="nav-item active" onclick="nav('dashboard')"><span class="ni-icon">⊞</span> Dashboard</div>
+    <div class="nav-item active" data-label="Dashboard" onclick="nav('dashboard')"><span class="ni-icon">⊞</span><span class="sidebar-label-text"> Dashboard</span></div>
     <div class="sidebar-section-label">Arbejde</div>
-    <div class="nav-item" onclick="nav('projects')" id="nav-projects">
-      <span class="ni-icon">◫</span> Opgaver
+    <div class="nav-item" data-label="Opgaver" onclick="nav('projects')" id="nav-projects">
+      <span class="ni-icon">◫</span><span class="sidebar-label-text"> Opgaver</span>
       <span class="ni-badge" id="proj-badge" style="display:none">0</span>
     </div>
-    <div class="nav-item" onclick="nav('calendar')"><span class="ni-icon">◷</span> Kalender</div>
-    <div class="nav-item" onclick="nav('some')"><span class="ni-icon">◈</span> SoMe</div>
+    <div class="nav-item" data-label="Kalender" onclick="nav('calendar')"><span class="ni-icon">◷</span><span class="sidebar-label-text"> Kalender</span></div>
+    <div class="nav-item" data-label="SoMe" onclick="nav('some')"><span class="ni-icon">◈</span><span class="sidebar-label-text"> SoMe</span></div>
     <div class="sidebar-section-label">Arkiv</div>
-    <div class="nav-item" onclick="nav('notes')" style="display:none;"><span class="ni-icon">◱</span> Notater</div>
-    <div class="nav-item" onclick="nav('diary')" style="display:none;"><span class="ni-icon">◎</span> Dagbog</div>
-    <div class="nav-item" onclick="nav('kilder')"><span class="ni-icon">📋</span> Kilder</div>
-    <div class="nav-item" onclick="nav('reports')"><span class="ni-icon">📋</span> Afrapportering</div>
+    <div class="nav-item" data-label="Notater" onclick="nav('notes')" style="display:none;"><span class="ni-icon">◱</span><span class="sidebar-label-text"> Notater</span></div>
+    <div class="nav-item" data-label="Dagbog" onclick="nav('diary')" style="display:none;"><span class="ni-icon">◎</span><span class="sidebar-label-text"> Dagbog</span></div>
+    <div class="nav-item" data-label="Kilder" onclick="nav('kilder')"><span class="ni-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="sidebar-label-text"> Kilder</span></div>
+    <div class="nav-item" data-label="Afrapportering" onclick="nav('reports')"><span class="ni-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6"/><path d="M9 17h6"/></svg></span><span class="sidebar-label-text"> Afrapportering</span></div>
+    <div class="nav-item" data-label="Ugerapport" onclick="event.stopPropagation(); generateWeekReport();"><span class="ni-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/></svg></span><span class="sidebar-label-text"> Ugerapport</span></div>
   </div>
   <div class="sidebar-footer">
-    <div class="sidebar-icon-grid">
-      <button class="sidebar-icon-btn" onclick="forceRefreshFromSupabase()" id="refresh-btn" title="Opdater">⟳</button>
-      <button class="sidebar-icon-btn" onclick="openMigrationWizard()" id="migration-btn" title="Konvertér opgaver">⚡</button>
-      <button class="sidebar-icon-btn" onclick="openThemeModal()" title="Skift design">🎨</button>
-      <button class="sidebar-icon-btn" onclick="openSupabaseModal()" id="sb-btn" title="Supabase: ikke forbundet">☁</button>
+    <div class="sidebar-clock" id="sidebar-clock-wrap" title="Klokken">
+      <span id="clock">--:--</span>
     </div>
-    <div class="focus-bar-label" id="focus-label">Fokus-score: 0%</div>
-    <div class="focus-bar"><div class="focus-bar-fill" id="focus-fill" style="width:0%"></div></div>
+    <div class="sidebar-icon-grid">
+      <button class="sidebar-icon-btn" onclick="event.stopPropagation(); handleSyncButtonClick();" id="sync-btn" title="Supabase: ikke forbundet">⟳</button>
+      <button class="sidebar-icon-btn" onclick="event.stopPropagation(); openMigrationWizard();" id="migration-btn" title="Konvertér opgaver"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 21l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></button>
+      <button class="sidebar-icon-btn feature-hidden" onclick="event.stopPropagation(); openThemeModal();" title="Skift design">🎨</button>
+    </div>
+    <div class="feature-hidden">
+      <div class="focus-bar-label" id="focus-label">Fokus-score: 0%</div>
+      <div class="focus-bar"><div class="focus-bar-fill" id="focus-fill" style="width:0%"></div></div>
+    </div>
   </div>
 </nav>
 
@@ -854,7 +919,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
 <div class="main">
   <div class="topbar" id="main-topbar">
     <div class="topbar-title" id="page-title">Dashboard</div>
-    <div class="topbar-time" id="clock">--:--</div>
+    <div class="topbar-time" id="clock-topbar-legacy">--:--</div>
     <button class="btn secondary sm" onclick="startPomodoro()">⏱ Pomodoro</button>
     <button class="btn secondary sm" onclick="startPomodoroPlus()" title="Start med den mest presserende opgave">⚡ Pomodoro+</button>
     <button class="btn secondary sm" onclick="generateWeekReport()">📊 Ugerapport</button>
@@ -878,13 +943,13 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
           <div class="s-sub" id="sc-proj-sub"></div>
         </div>
         <!-- 3: SoMe cirkeldiagram -->
-        <div class="stat-card" style="order:3;padding:10px;">
+        <div class="stat-card" style="order:3;padding:10px;cursor:pointer;" onclick="nav('some')" title="Gå til SoMe">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:3px;">
             <span class="s-label" style="margin:0;">◈ SoMe</span>
             <div style="display:flex;gap:2px;">
-              <button class="filter-pill active" id="some-chart-btn-0" onclick="setSomeChartView(0,this)" style="font-size:8px;padding:1px 5px;">FB/LI</button>
-              <button class="filter-pill" id="some-chart-btn-1" onclick="setSomeChartView(1,this)" style="font-size:8px;padding:1px 5px;">FB</button>
-              <button class="filter-pill" id="some-chart-btn-2" onclick="setSomeChartView(2,this)" style="font-size:8px;padding:1px 5px;">LI</button>
+              <button class="filter-pill active" id="some-chart-btn-0" onclick="event.stopPropagation(); setSomeChartView(0,this)" style="font-size:8px;padding:1px 5px;">FB/LI</button>
+              <button class="filter-pill" id="some-chart-btn-1" onclick="event.stopPropagation(); setSomeChartView(1,this)" style="font-size:8px;padding:1px 5px;">FB</button>
+              <button class="filter-pill" id="some-chart-btn-2" onclick="event.stopPropagation(); setSomeChartView(2,this)" style="font-size:8px;padding:1px 5px;">LI</button>
             </div>
           </div>
           <canvas id="some-pie" width="140" height="140" style="display:block;margin:0 auto;"></canvas>
@@ -1107,6 +1172,14 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
 
   </div>
 </div>
+</div>
+
+<!-- FAB SPEED-DIAL -->
+<div class="fab-wrap" id="fab-wrap">
+  <button class="fab-option" onclick="startPomodoro(); closeFab();">⏱ Pomodoro</button>
+  <button class="fab-option" onclick="startPomodoroPlus(); closeFab();" title="Start med den mest presserende opgave">⚡ Pomodoro+</button>
+  <button class="fab-option" onclick="openTaskModal(); closeFab();">+ Ny opgave</button>
+  <button class="fab-main" id="fab-main-btn" onclick="toggleFab()" title="Genveje">+</button>
 </div>
 
 <!-- PROJECT MODAL -->
@@ -1668,13 +1741,13 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
 // Top-niveau (tidl. "Projekter"/Temaer) → 5 faste Opgave-typer.
 // Hver type har sin egen liste af underkategorier at vælge imellem.
 const OPGAVE_TYPES = [
-  { id:'vaeresteds',     navn:'Værestedsavisen', emoji:'📰', color:'#265E3A',
+  { id:'vaeresteds',     navn:'Værestedsavisen', emoji:'📰', color:'#C9A800',
     underkategorier:['Artikel','Administrativt','Andet'] },
   { id:'projekt',        navn:'Projekt',         emoji:'🧩', color:'#1B8BB0',
     underkategorier:['Craft','Sundhed','Natur','Det Digitale Værested','Andet'] },
-  { id:'aktivitet',      navn:'Aktivitet',       emoji:'🎪', color:'#C15A1A',
+  { id:'aktivitet',      navn:'Aktivitet',       emoji:'🎪', color:'#265E3A',
     underkategorier:['Sport for Livet','Ferie Camp','Royal Side Run','Landsmøde','Den Nationale Værestedsdag','Temadage','Andet'] },
-  { id:'kommunikation',  navn:'Kommunikation',   emoji:'📢', color:'#C9A800',
+  { id:'kommunikation',  navn:'Kommunikation',   emoji:'📢', color:'#C15A1A',
     underkategorier:['Website','Nyhedsbrev','Presse','Intern','SoMe'] },
   { id:'andet',          navn:'Andet',           emoji:'🗂', color:'#7A8088',
     underkategorier:['Andet'] },
@@ -1913,7 +1986,7 @@ async function loadFromSupabase() {
       if(parsed.length) state.notes = parsed;
     }
     if(diary?.length) {
-      diary.forEach(r=>{ 
+      diary.forEach(r=>{
         const d = typeof r.data === 'string' ? JSON.parse(r.data) : r.data;
         if(d) state.diaryEntries[r.project_id] = d;
       });
@@ -2481,6 +2554,20 @@ function progressPill(total, done) {
   return `<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;background:${bg};color:${color};white-space:nowrap;">${done}/${total}</span>`;
 }
 
+// ── DASHBOARD → OPGAVEVIEW HUB ──
+let agendaExpandedIds = new Set();
+function toggleAgendaSubtasks(id, evt) {
+  if(evt) evt.stopPropagation();
+  if(agendaExpandedIds.has(id)) agendaExpandedIds.delete(id);
+  else agendaExpandedIds.add(id);
+  renderAgenda();
+}
+function openTaskFromDashboard(id, evt) {
+  if(evt) evt.stopPropagation();
+  nav('projects');
+  openTaskModal(id);
+}
+
 function renderAgenda() {
   const el = document.getElementById('dash-agenda');
   const today = new Date(); today.setHours(0,0,0,0);
@@ -2534,19 +2621,37 @@ function renderAgenda() {
           const pill  = children.length ? progressPill(children.length, children.filter(c=>c.done).length) : '';
           const nextSub = getNextSubtaskLabel(p);
           const type = getOpgaveType(p.type);
+          const expanded = agendaExpandedIds.has(p.id);
           // Show event-felter hvis udfyldt (typisk Aktivitet)
           const eventInfo = (p.evStart||p.evEnd||p.evAddress||p.evResponsible) ? `
             ${p.evStart||p.evEnd?`<span style="font-size:10px;color:${mc};">🕐 ${p.evStart||''}${p.evEnd?' – '+p.evEnd:''}</span>`:''}
             ${p.evAddress?`<span style="font-size:10px;color:${mc};">📍 ${esc(p.evAddress)}</span>`:''}
             ${p.evResponsible?`<span style="font-size:10px;color:${mc};">👤 ${esc(p.evResponsible)}</span>`:''}` : '';
-          return `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--radius);background:${p.color};color:${tc};margin-bottom:5px;">
-            <div style="flex:1;">
-              <div style="font-size:13px;font-weight:600;">${esc(p.title)}${nextSub?`<span style="font-size:10px;font-weight:400;color:${mc};margin-left:8px;">→ ${esc(nextSub)}</span>`:''}</div>
-              <div style="display:flex;gap:8px;margin-top:3px;flex-wrap:wrap;">${eventInfo}</div>
-            </div>
-            ${pill}
+          const lastNoteRaw = p.notes ? p.notes.split('\n').filter(Boolean).pop() : '';
+          const lastNoteClean = lastNoteRaw ? lastNoteRaw.replace(/^\[[^\]]+\] /, '') : '';
+          const notePreview = lastNoteClean ? `<div style="font-size:10px;color:${mc};margin-top:3px;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">📝 ${esc(lastNoteClean)}</div>` : '';
+          return `<div class="agenda-project-card">
+            <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:${expanded?'var(--radius) var(--radius) 0 0':'var(--radius)'};background:${p.color};color:${tc};margin-bottom:${expanded?'0':'5px'};">
+              <div style="flex:1;cursor:pointer;" onclick="openTaskFromDashboard(${p.id})" title="Åbn i Opgaveview">
+                <div style="font-size:13px;font-weight:600;">${esc(p.title)}${nextSub?`<span style="font-size:10px;font-weight:400;color:${mc};margin-left:8px;">→ ${esc(nextSub)}</span>`:''}</div>
+                <div style="display:flex;gap:8px;margin-top:3px;flex-wrap:wrap;">${eventInfo}</div>
+                ${notePreview}
+              </div>
+              <span style="font-size:9px;font-weight:600;padding:2px 7px;border-radius:10px;background:rgba(0,0,0,0.15);color:${tc};white-space:nowrap;">⏰ ${formatDate(p.deadline)}</span>
+              ${children.length ? `<span onclick="toggleAgendaSubtasks(${p.id}, event)" style="cursor:pointer;display:flex;align-items:center;gap:3px;">${pill}<span style="font-size:8px;color:${tc};">${expanded?'▲':'▼'}</span></span>` : ''}
             <span style="font-size:9px;font-weight:600;padding:2px 7px;border-radius:10px;background:rgba(0,0,0,0.15);color:${tc};">${type.emoji} ${esc(p.underkat||type.navn)}</span>
             <button onclick="toggleProjectDone(${p.id})" style="${getBtnStyle(p.color)}border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;">✓</button>
+            </div>
+            ${expanded ? `<div style="background:var(--surface2);border:1px solid ${p.color};border-top:none;border-radius:0 0 var(--radius) var(--radius);padding:6px 12px;margin-bottom:5px;">
+              ${children.map(c => `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--border);">
+                <div class="agenda-check ${c.done?'done':''}" onclick="toggleProjectDone(${c.id})" style="${c.done?'':'border-color:'+p.color+';'}">${c.done?'✓':''}</div>
+                <div style="flex:1;cursor:pointer;" onclick="openTaskFromDashboard(${p.id})">
+                  <span style="font-size:12px;${c.done?'text-decoration:line-through;color:var(--text-muted);':''}">${esc(c.title)}</span>
+                  ${c.procestrin?`<span style="font-size:10px;color:var(--text-muted);margin-left:6px;">→ ${esc(c.procestrin)}</span>`:''}
+                </div>
+                ${c.deadline?`<span style="font-size:10px;color:var(--text-muted);white-space:nowrap;">${formatDate(c.deadline)}</span>`:''}
+              </div>`).join('')}
+            </div>` : ''}
           </div>`;
         }).join('')}
       </div>`;
@@ -2559,14 +2664,34 @@ function renderAgenda() {
         ${noDeadlineProjects.map(p => {
           const tc = getContrastText(p.color||'#7A8088');
           const mc = getMuted(p.color||'#7A8088');
+          const children = state.projects.filter(c=>c.parentId===p.id);
+          const pill  = children.length ? progressPill(children.length, children.filter(c=>c.done).length) : '';
           const nextSub = getNextSubtaskLabel(p);
           const type = getOpgaveType(p.type);
-          return `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--radius);background:${p.color};color:${tc};margin-bottom:5px;opacity:0.85;">
-            <div style="flex:1;">
-              <div style="font-size:13px;font-weight:600;">${esc(p.title)}${nextSub?`<span style="font-size:10px;font-weight:400;color:${mc};margin-left:8px;">→ ${esc(nextSub)}</span>`:''}</div>
-            </div>
+          const expanded = agendaExpandedIds.has(p.id);
+          const lastNoteRaw = p.notes ? p.notes.split('\n').filter(Boolean).pop() : '';
+          const lastNoteClean = lastNoteRaw ? lastNoteRaw.replace(/^\[[^\]]+\] /, '') : '';
+          const notePreview = lastNoteClean ? `<div style="font-size:10px;color:${mc};margin-top:3px;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">📝 ${esc(lastNoteClean)}</div>` : '';
+          return `<div class="agenda-project-card" style="opacity:0.85;">
+            <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:${expanded?'var(--radius) var(--radius) 0 0':'var(--radius)'};background:${p.color};color:${tc};margin-bottom:${expanded?'0':'5px'};">
+              <div style="flex:1;cursor:pointer;" onclick="openTaskFromDashboard(${p.id})" title="Åbn i Opgaveview">
+                <div style="font-size:13px;font-weight:600;">${esc(p.title)}${nextSub?`<span style="font-size:10px;font-weight:400;color:${mc};margin-left:8px;">→ ${esc(nextSub)}</span>`:''}</div>
+                ${notePreview}
+              </div>
+              ${children.length ? `<span onclick="toggleAgendaSubtasks(${p.id}, event)" style="cursor:pointer;display:flex;align-items:center;gap:3px;">${pill}<span style="font-size:8px;color:${tc};">${expanded?'▲':'▼'}</span></span>` : ''}
             <span style="font-size:9px;font-weight:600;padding:2px 7px;border-radius:10px;background:rgba(0,0,0,0.15);color:${tc};">${type.emoji} ${esc(p.underkat||type.navn)}</span>
             <button onclick="toggleProjectDone(${p.id})" style="${getBtnStyle(p.color)}border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;">✓</button>
+            </div>
+            ${expanded ? `<div style="background:var(--surface2);border:1px solid ${p.color};border-top:none;border-radius:0 0 var(--radius) var(--radius);padding:6px 12px;margin-bottom:5px;">
+              ${children.map(c => `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--border);">
+                <div class="agenda-check ${c.done?'done':''}" onclick="toggleProjectDone(${c.id})" style="${c.done?'':'border-color:'+p.color+';'}">${c.done?'✓':''}</div>
+                <div style="flex:1;cursor:pointer;" onclick="openTaskFromDashboard(${p.id})">
+                  <span style="font-size:12px;${c.done?'text-decoration:line-through;color:var(--text-muted);':''}">${esc(c.title)}</span>
+                  ${c.procestrin?`<span style="font-size:10px;color:var(--text-muted);margin-left:6px;">→ ${esc(c.procestrin)}</span>`:''}
+                </div>
+                ${c.deadline?`<span style="font-size:10px;color:var(--text-muted);white-space:nowrap;">${formatDate(c.deadline)}</span>`:''}
+              </div>`).join('')}
+            </div>` : ''}
           </div>`;
         }).join('')}
       </div>`;
@@ -2618,6 +2743,7 @@ function renderAgenda() {
             <span style="font-size:11px;font-weight:600;color:${tc};flex:1;">📁 ${esc(p.title)}${nextSub?`<span style="font-size:10px;font-weight:400;color:${mc};margin-left:8px;">→ ${esc(nextSub)}</span>`:''}</span>
             ${pill}
             ${showDeadline ? `<span style="font-size:10px;font-weight:500;padding:2px 7px;border-radius:10px;background:rgba(0,0,0,0.15);color:${tc};white-space:nowrap;">⏰ ${formatDate(p.deadline)}</span>` : ''}
+            <button onclick="toggleProjectDone(${p.id})" style="${getBtnStyle(p.color)}border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;">✓</button>
           </div>
           ${kids.map(c => `
             <div class="agenda-subtask-row ${c.done?'done-item':''}" style="background:${subtaskBg};border-color:${p.color};margin-left:10px;">
@@ -2676,6 +2802,7 @@ function renderKanban() {
                   <div class="kanban-dot" style="background:${p.color};"></div>
                   <div class="kanban-card-title">${esc(p.title)}</div>
                   ${total?progressPill(total, doneN):''}
+                  <button onclick="event.stopPropagation();toggleProjectDone(${p.id})" title="${p.done?'Genåbn':'Markér færdig'}" style="background:none;border:1px solid var(--border);border-radius:4px;width:18px;height:18px;flex-shrink:0;cursor:pointer;font-size:10px;line-height:1;color:${p.done?'var(--accent2)':'var(--text-muted)'};display:flex;align-items:center;justify-content:center;padding:0;">${p.done?'↺':'✓'}</button>
                 </div>
                 <div class="kanban-card-meta">
                   <span class="prio-badge ${p.prio}">${p.prio==='high'?'Høj':p.prio==='mid'?'Middel':'Lav'}</span>
@@ -2953,7 +3080,10 @@ function renderProjects() {
   const list = document.getElementById('project-list');
   const temaContainer = document.getElementById('tema-sections');
   const sortBy = document.getElementById('proj-sort')?.value || 'tema';
-  let projects = [...state.projects];
+  // Kun top-niveau opgaver vises i denne visning – delopgaver (parentId sat)
+  // vises udelukkende nestet under deres forældreopgave (se renderChildrenPanel),
+  // så de ikke også dukker op som selvstændige kort i roden.
+  let projects = state.projects.filter(p=>!p.parentId);
 
   if(projFilter==='open') projects=projects.filter(p=>!p.done);
   if(projFilter==='high') projects=projects.filter(p=>p.prio==='high'&&!p.done);
@@ -4759,7 +4889,7 @@ function formatDatetime(s){try{return new Date(s).toLocaleString('da-DK',{day:'n
 
 async function forceRefreshFromSupabase() {
   if(!sbReady) { toast('Supabase er ikke forbundet'); return; }
-  const btn = document.getElementById('refresh-btn');
+  const btn = document.getElementById('sync-btn');
   if(btn) { btn.textContent = '⏳'; btn.title = 'Opdaterer...'; }
   const loaded = await loadFromSupabase();
   if(loaded) {
@@ -4769,7 +4899,13 @@ async function forceRefreshFromSupabase() {
   } else {
     toast('Kunne ikke hente data');
   }
-  if(btn) { btn.textContent = '⟳'; btn.title = 'Opdater'; }
+  if(btn) { btn.textContent = '⟳'; btn.title = sbReady ? 'Supabase: forbundet ✓ (klik for at opdatere)' : 'Supabase: ikke forbundet'; }
+}
+
+// Fælles knap: hvis ikke forbundet -> åbn opsætning, ellers -> opdatér data
+function handleSyncButtonClick() {
+  if (!sbReady) { openSupabaseModal(); }
+  else { forceRefreshFromSupabase(); }
 }
 
 // ── SUPABASE SETUP ──
@@ -4806,8 +4942,8 @@ async function saveSupabaseConfig() {
 
   document.getElementById('sb-connected-info').style.display = 'block';
   document.getElementById('sb-status').textContent = '';
-  document.getElementById('sb-btn').title = 'Supabase: forbundet ✓';
-  document.getElementById('sb-btn').classList.add('ok');
+  document.getElementById('sync-btn').title = 'Supabase: forbundet ✓ (klik for at opdatere)';
+  document.getElementById('sync-btn').classList.add('ok');
 
   // Initial full sync
   showSyncIndicator('Synkroniserer...');
@@ -4818,13 +4954,13 @@ async function saveSupabaseConfig() {
 }
 
 function updateSbButton() {
-  const btn = document.getElementById('sb-btn');
+  const btn = document.getElementById('sync-btn');
   if(!btn) return;
   if(sbReady) {
-    btn.title = 'Supabase: forbundet ✓';
+    btn.title = 'Supabase: forbundet ✓ (klik for at opdatere)';
     btn.classList.add('ok');
   } else {
-    btn.title = 'Supabase: ikke forbundet';
+    btn.title = 'Supabase: ikke forbundet (klik for at opsætte)';
     btn.classList.remove('ok');
   }
 }
@@ -4954,12 +5090,38 @@ function updateThemeModalSelection() {
   });
 }
 
+// ── SIDEBAR EXPAND/COLLAPSE ──
+function expandSidebar() {
+  const sb = document.getElementById('main-sidebar');
+  if (sb && sb.classList.contains('collapsed')) sb.classList.remove('collapsed');
+}
+document.addEventListener('click', function(e) {
+  const sb = document.getElementById('main-sidebar');
+  if (sb && !sb.classList.contains('collapsed') && !sb.contains(e.target)) {
+    sb.classList.add('collapsed');
+  }
+  const fab = document.getElementById('fab-wrap');
+  if (fab && fab.classList.contains('open') && !fab.contains(e.target)) {
+    fab.classList.remove('open');
+  }
+});
+
+// ── FAB SPEED-DIAL ──
+function toggleFab() {
+  document.getElementById('fab-wrap').classList.toggle('open');
+}
+function closeFab() {
+  document.getElementById('fab-wrap').classList.remove('open');
+}
+
 // ── INIT ──
 initStorage().then(() => {
   updateSbButton();
   updateTopbarColor();
   updateThemeModalSelection();
 });
+
+
 </script>
 </body>
 </html>
