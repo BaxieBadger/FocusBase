@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#c67139">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Nooty – Cover</title>
 <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
@@ -157,11 +160,12 @@
   .field input:focus-visible{border-color:var(--accent);}
   .btn{border:none; border-radius:999px; padding:10px 22px; font-size:13px; font-weight:700; background:var(--accent); color:var(--bg);}
   .btn:hover{background:var(--accent-600);}
-  .settings-btn{position:fixed; top:calc(10px + var(--safe-t)); right:calc(10px + var(--safe-r)); z-index:50;
+  .corner-btns{position:fixed; top:calc(10px + var(--safe-t)); right:calc(10px + var(--safe-r)); z-index:50; display:flex; gap:6px;}
+  .settings-btn, .fs-btn{position:relative;
     width:30px; height:30px; border-radius:999px; border:none; background:color-mix(in srgb, var(--neutral-900) 55%, transparent);
     color:var(--bg); font-size:13px; display:flex; align-items:center; justify-content:center; opacity:.55;}
-  .settings-btn:hover{opacity:1;}
-  .sb-dot{width:6px;height:6px;border-radius:999px;background:var(--danger);position:absolute;margin-left:16px;margin-top:-16px;}
+  .settings-btn:hover, .fs-btn:hover{opacity:1;}
+  .sb-dot{width:6px;height:6px;border-radius:999px;background:var(--danger);position:absolute;top:2px;right:2px;}
   .sb-dot.ok{background:var(--sage-500);}
   .overlay{position:fixed; inset:0; background:color-mix(in srgb, var(--neutral-900) 40%, transparent); z-index:60;
     display:flex; align-items:center; justify-content:center;}
@@ -179,7 +183,10 @@
 </head>
 <body>
 
-<button class="settings-btn" id="settings-btn" onclick="openSettings()" title="Forbindelse">⚙<span class="sb-dot" id="sb-dot"></span></button>
+<div class="corner-btns">
+  <button class="fs-btn" id="fs-btn" onclick="toggleFullscreen()" title="Fuld skærm">⛶</button>
+  <button class="settings-btn" id="settings-btn" onclick="openSettings()" title="Forbindelse">⚙<span class="sb-dot" id="sb-dot"></span></button>
+</div>
 <div id="root"></div>
 <div class="toast" id="toast"></div>
 
@@ -506,12 +513,44 @@ function saveSettings(){
   loadFromSupabase();
 }
 
+// ══════════════════════════ FULD SKÆRM ══════════════════════════
+// Chrome/Samsung Internet skjuler kun adresselinjen i browseren via Fullscreen API
+// (virker også når filen åbnes lokalt) eller ved at lægge siden på hjemmeskærmen som
+// app (kræver at filen ligger på https, fx GitHub Pages — se manifestet nedenfor).
+function toggleFullscreen(){
+  document.documentElement.requestFullscreen().then(()=>{
+    if(screen.orientation && screen.orientation.lock){ screen.orientation.lock('landscape').catch(()=>{}); }
+  }).catch(()=>toast('Kunne ikke gå i fuld skærm her'));
+}
+function syncFullscreenBtn(){
+  const btn = document.getElementById('fs-btn');
+  if(btn) btn.style.display = document.fullscreenElement ? 'none' : 'flex';
+}
+document.addEventListener('fullscreenchange', syncFullscreenBtn);
+
+// Manifest, så "Føj til startskærm" åbner uden browserens adresselinje/faner
+// (virker først når filen ligger på https, fx GitHub Pages — ikke ved lokal fil://).
+(function installManifest(){
+  const manifest = {
+    name: 'Nooty – Cover', short_name: 'Nooty Cover',
+    display: 'fullscreen', display_override: ['fullscreen', 'standalone'],
+    orientation: 'landscape', start_url: '.', scope: '.',
+    background_color: '#2e2b25', theme_color: '#c67139'
+  };
+  const blob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+  const link = document.createElement('link');
+  link.rel = 'manifest';
+  link.href = URL.createObjectURL(blob);
+  document.head.appendChild(link);
+})();
+
 // ══════════════════════════ INIT ══════════════════════════
 (function init(){
   const cached = localStorage.getItem('nooty_cover_cache');
   if(cached){ try{ state = JSON.parse(cached); }catch(e){} }
   if(SUPABASE_URL && SUPABASE_KEY){ sbReady = true; render(); loadFromSupabase(); }
   else { render(); }
+  syncFullscreenBtn();
 })();
 </script>
 </body>
