@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Nooty – Væg</title>
-<link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@900&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg:#f5ead8; --surface:#f9f4ed; --surface2:#ebddc5;
@@ -21,7 +21,7 @@
     --warning:#f5a623; --warning-light:#fef3e0;
     --text:#201e1d; --text-muted:#82796a; --text-dim:#a19786;
     --radius:16px; --radius-lg:28px; --radius-pill:999px;
-    --font:'Figtree',sans-serif; --font-heading:'Caprasimo',serif;
+    --font:'Figtree',sans-serif; --font-heading:'Fraunces',serif;
     --shadow-md:0 3px 10px rgba(46,43,37,.16);
     --shadow-lg:0 12px 32px rgba(46,43,37,.22);
     --safe-t: env(safe-area-inset-top, 0px); --safe-b: env(safe-area-inset-bottom, 0px);
@@ -35,76 +35,160 @@
 
   #app{
     width:100vw; height:100dvh; background:var(--bg);
-    display:flex; flex-direction:row; user-select:none;
+    display:flex; flex-direction:column; user-select:none;
     padding-top:var(--safe-t); padding-bottom:var(--safe-b); padding-left:var(--safe-l); padding-right:var(--safe-r);
   }
+
+  /* ── HEADER ── */
+  .wall-header{ flex:none; display:flex; align-items:center; gap:20px; background:var(--sage-900); color:#fff;
+    padding:0 clamp(14px,2vw,26px); height:clamp(48px,6vh,64px); }
+  .wall-logo{ display:flex; align-items:center; gap:8px; }
+  .wl-badge{ width:28px; height:28px; border-radius:50%; background:var(--sage-200); color:var(--sage-900);
+    display:flex; align-items:center; justify-content:center; font-family:var(--font-heading); font-weight:900; font-size:14px; }
+  .wl-word{ font-size:clamp(14px,1.4vw,18px); font-weight:600; letter-spacing:-0.01em; }
+  .wall-tabs{ display:flex; gap:4px; background:rgba(255,255,255,0.08); border-radius:999px; padding:3px; }
+  .wall-tab{ border:none; background:none; color:var(--sidebar-text); font-size:clamp(11px,1vw,13px); font-weight:700;
+    padding:7px 16px; border-radius:999px; }
+  .wall-tab.active{ background:var(--sage-500); color:var(--sage-900); }
+  .wall-clock{ margin-left:auto; text-align:right; }
+  .wc-time{ font-family:var(--font-heading); font-weight:900; font-size:clamp(16px,1.6vw,22px); display:block; line-height:1.1; }
+  .wc-date{ font-size:clamp(9px,0.85vw,11px); color:var(--sidebar-text); text-transform:uppercase; letter-spacing:0.06em; }
+
+  /* ── VIEW SWITCHING ── */
+  .wall-content{ flex:1; min-height:0; position:relative; }
+  .wall-view{ display:none; height:100%; width:100%; }
+  .wall-view.active{ display:flex; }
+
   @media (max-aspect-ratio: 1/1){
-    #app{ flex-direction:column; }
-    .pomodoro-panel{ width:100% !important; height:42% !important; }
-    .deadlines-panel{ height:58%; }
+    #view-overview.active{ flex-direction:column; }
+    .wall-pills{ flex:0 0 26% !important; width:100% !important; }
+    .wall-deck{ flex:0 0 40% !important; }
+    .wall-side{ flex:1 !important; width:100% !important; }
   }
 
-  /* ── DEADLINES PANEL ── */
-  .deadlines-panel{ flex:1.4; min-width:0; display:flex; flex-direction:column; padding:clamp(16px,2.4vw,32px); overflow:hidden; }
-  .dl-header{ display:flex; align-items:center; gap:14px; margin-bottom:clamp(10px,1.6vw,20px); flex:none; }
-  .dl-title{ font-family:var(--font-heading); font-weight:400; font-size:clamp(20px,2.6vw,32px); color:var(--text); }
-  .dl-range{ font-size:clamp(11px,1vw,14px); color:var(--text-muted); font-weight:600; }
-  .dl-dots{ margin-left:auto; display:flex; gap:6px; }
-  .dl-dot{ width:9px; height:9px; border-radius:999px; background:var(--surface2); border:none; padding:0; cursor:pointer; }
-  .dl-dot.active{ background:var(--accent); }
-
-  .dl-swipe{ flex:1; min-height:0; touch-action:pan-y; cursor:grab; overflow:hidden; position:relative; }
-  .dl-swipe:active{ cursor:grabbing; }
-  .dl-list{ height:100%; overflow-y:auto; padding-right:4px; transition:transform .22s ease; }
-  .dl-list.dragging{ transition:none; }
-  .dl-list::-webkit-scrollbar{ width:6px; }
-  .dl-list::-webkit-scrollbar-thumb{ background:var(--text-dim); border-radius:999px; }
-
-  .dl-day-header{ font-size:clamp(10px,0.9vw,12px); font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-muted); margin:16px 0 8px; }
-  .dl-day-header:first-child{ margin-top:0; }
-  .dl-item{ display:flex; align-items:center; gap:12px; padding:clamp(10px,1.2vw,14px) clamp(12px,1.4vw,16px);
-    border-radius:var(--radius); background:var(--surface); margin-bottom:8px; border-left:5px solid transparent; }
+  /* ── OVERVIEW: PILL LIST ── */
+  .wall-pills{ flex:0 0 24%; min-width:0; display:flex; flex-direction:column; padding:clamp(14px,1.6vw,22px);
+    overflow-y:auto; border-right:1px solid var(--border); }
+  .wall-panel-title{ font-size:clamp(10px,0.9vw,12px); font-weight:700; letter-spacing:0.08em; text-transform:uppercase;
+    color:var(--text-muted); margin-bottom:10px; flex:none; }
+  .dl-day-header{ font-size:clamp(9px,0.8vw,11px); font-weight:700; letter-spacing:0.08em; text-transform:uppercase;
+    color:var(--text-muted); margin:14px 0 6px; }
+  .dl-day-header.overdue{ color:var(--danger); }
+  .dl-day-header:first-of-type{ margin-top:0; }
+  .dl-item{ display:flex; align-items:center; gap:10px; padding:clamp(8px,1vw,11px) clamp(10px,1.1vw,13px);
+    border-radius:var(--radius); background:var(--surface); margin-bottom:7px; border-left:4px solid transparent; cursor:pointer; }
   .dl-item.high{ background:var(--danger-light); border-left-color:var(--danger); }
-  .dl-type-dot{ width:10px; height:10px; border-radius:50%; flex:none; }
+  .dl-item svg{ flex:none; color:var(--text-muted); }
+  .dl-item.high svg{ color:var(--danger); }
   .dl-item-body{ flex:1; min-width:0; }
-  .dl-item-title{ font-size:clamp(13px,1.3vw,17px); font-weight:600; color:var(--text); line-height:1.3; }
-  .dl-item-sub{ font-size:clamp(10px,0.9vw,12px); color:var(--text-muted); margin-top:2px; }
-  .dl-prio-badge{ font-size:clamp(9px,0.85vw,11px); font-weight:700; padding:2px 9px; border-radius:999px; flex:none;
-    background:var(--danger-light); color:var(--danger); white-space:nowrap; }
-  .dl-empty{ font-size:clamp(12px,1.1vw,15px); color:var(--text-muted); padding:20px 0; text-align:center; }
+  .dl-item-title{ font-size:clamp(12px,1.1vw,14px); font-weight:600; color:var(--text); line-height:1.3;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .dl-item-sub{ font-size:clamp(9px,0.8vw,11px); color:var(--text-muted); margin-top:1px; }
+  .dl-prio-badge{ font-size:clamp(8px,0.75vw,10px); font-weight:700; padding:2px 8px; border-radius:999px; flex:none;
+    background:var(--danger); color:#fff; white-space:nowrap; }
+  .dl-empty{ font-size:clamp(11px,1vw,13px); color:var(--text-muted); padding:16px 0; text-align:center; }
+
+  /* ── OVERVIEW: SWIPEABLE DECK ── */
+  .wall-deck{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; padding:clamp(14px,1.8vw,26px); overflow:hidden; }
+  .deck-head{ display:flex; align-items:center; margin-bottom:10px; flex:none; }
+  .deck-pos{ font-size:clamp(10px,0.9vw,12px); font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-muted); }
+  .deck-dots{ margin-left:auto; display:flex; gap:5px; flex-wrap:wrap; max-width:50%; justify-content:flex-end; }
+  .deck-dot{ width:7px; height:7px; border-radius:999px; background:var(--surface2); border:none; padding:0; cursor:pointer; }
+  .deck-dot.active{ background:var(--accent); }
+  .deck-swipe{ flex:1; min-height:0; touch-action:pan-y; cursor:grab; overflow:hidden; }
+  .deck-swipe:active{ cursor:grabbing; }
+  .deck-card{ height:100%; border-radius:var(--radius-lg); padding:clamp(20px,3vw,40px); display:flex; flex-direction:column;
+    gap:14px; box-shadow:var(--shadow-md); transition:transform .22s ease; color:var(--text); overflow:hidden; }
+  .deck-card.dragging{ transition:none; }
+  .deck-card-top{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; flex:none; }
+  .deck-chip{ font-size:clamp(10px,1vw,13px); font-weight:700; padding:4px 13px; border-radius:999px; white-space:nowrap;
+    background:rgba(0,0,0,0.13); display:inline-flex; align-items:center; gap:5px; }
+  .deck-chip-high{ background:var(--danger); color:#fff; }
+  .deck-date{ margin-left:auto; font-size:clamp(12px,1.2vw,16px); font-weight:700; opacity:0.85; }
+  .deck-date.late{ color:var(--danger); opacity:1; }
+  .deck-title{ font-family:var(--font-heading); font-weight:900; font-size:clamp(26px,3.4vw,46px); line-height:1.1; flex:1; }
+  .deck-parent{ font-size:clamp(11px,1vw,13px); opacity:0.75; margin-top:-8px; }
+  .deck-done-btn{ align-self:flex-start; border:none; border-radius:999px; padding:10px 22px; font-size:clamp(12px,1.1vw,14px);
+    font-weight:700; background:rgba(0,0,0,0.14); color:var(--text); margin-top:auto; }
+  .deck-done-btn:hover{ background:rgba(0,0,0,0.22); }
+  .deck-empty{ height:100%; display:flex; align-items:center; justify-content:center; font-size:15px; color:var(--text-muted);
+    background:var(--surface); border-radius:var(--radius-lg); }
+
+  /* ── OVERVIEW: SIDE COLUMN (SoMe + Pomodoro) ── */
+  .wall-side{ flex:0 0 30%; min-width:0; display:flex; flex-direction:column; border-left:1px solid var(--border); }
+  .wall-some-list{ flex:0 0 auto; max-height:38%; overflow-y:auto; padding:clamp(14px,1.6vw,22px); border-bottom:1px solid var(--border); }
+  .some-list-item{ display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid var(--border); }
+  .some-list-item:last-child{ border-bottom:none; }
+  .some-dot{ width:8px; height:8px; border-radius:50%; flex:none; }
+  .some-item-body{ flex:1; min-width:0; }
+  .some-item-title{ font-size:clamp(11px,1vw,13px); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .some-item-sub{ font-size:clamp(9px,0.8vw,10px); color:var(--text-muted); }
+  .some-item-date{ font-size:clamp(9px,0.8vw,11px); color:var(--text-muted); flex:none; }
 
   /* ── POMODORO PANEL ── */
-  .pomodoro-panel{ width:38%; flex:none; background:var(--sage-800); color:#fff; position:relative;
-    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:clamp(10px,1.6vw,18px);
-    padding:clamp(20px,3vw,40px); overflow:hidden; }
-  .pm-label{ font-size:clamp(14px,1.6vw,20px); font-weight:700; letter-spacing:0.04em; color:var(--sidebar-text); text-align:center; }
-  .pm-focus-task{ display:none; width:100%; max-width:420px; padding:12px 16px; background:rgba(255,255,255,0.08);
+  .pomodoro-panel{ flex:1; min-height:0; width:100%; background:var(--sage-800); color:#fff; position:relative;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:clamp(8px,1.2vw,14px);
+    padding:clamp(16px,2vw,28px); overflow:hidden; }
+  .pm-label{ font-size:clamp(12px,1.2vw,16px); font-weight:700; letter-spacing:0.04em; color:var(--sidebar-text); text-align:center; }
+  .pm-focus-task{ display:none; width:100%; max-width:340px; padding:10px 14px; background:rgba(255,255,255,0.08);
     border-radius:var(--radius); border-left:4px solid var(--accent); }
-  .pm-focus-task .pm-ft-label{ font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--sidebar-text); margin-bottom:4px; }
-  .pm-focus-task .pm-ft-name{ font-size:clamp(13px,1.3vw,17px); font-weight:600; color:#fff; line-height:1.3; }
-  .pm-focus-task .pm-ft-proj{ font-size:clamp(11px,1vw,13px); color:var(--sidebar-text); margin-top:2px; }
-  .pm-focus-task .pm-ft-deadline{ font-size:clamp(11px,1vw,13px); font-weight:700; margin-top:4px; }
-  .pm-display{ font-family:var(--font-heading); font-weight:400; font-size:clamp(64px,10vw,160px); line-height:1;
+  .pm-focus-task .pm-ft-label{ font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--sidebar-text); margin-bottom:3px; }
+  .pm-focus-task .pm-ft-name{ font-size:clamp(11px,1.1vw,14px); font-weight:600; color:#fff; line-height:1.3; }
+  .pm-focus-task .pm-ft-proj{ font-size:clamp(10px,0.9vw,12px); color:var(--sidebar-text); margin-top:2px; }
+  .pm-focus-task .pm-ft-deadline{ font-size:clamp(10px,0.9vw,12px); font-weight:700; margin-top:3px; }
+  .pm-display{ font-family:var(--font-heading); font-weight:900; font-size:clamp(44px,6.5vw,110px); line-height:1;
     font-variant-numeric:tabular-nums; color:#fff; }
-  .pm-pressure-wrap{ display:none; width:100%; max-width:420px; height:6px; background:rgba(255,255,255,0.14); border-radius:3px; overflow:hidden; }
+  .pm-pressure-wrap{ display:none; width:100%; max-width:340px; height:5px; background:rgba(255,255,255,0.14); border-radius:3px; overflow:hidden; }
   .pm-pressure-bar{ height:100%; width:100%; background:var(--accent2); transition:width 1s linear,background 1s; }
-  .pm-controls{ display:flex; gap:10px; }
-  .pm-btn{ border:none; border-radius:var(--radius-pill); padding:12px 24px; font-size:clamp(13px,1.2vw,16px); font-weight:700;
+  .pm-controls{ display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+  .pm-btn{ border:none; border-radius:var(--radius-pill); padding:10px 18px; font-size:clamp(11px,1vw,14px); font-weight:700;
     background:rgba(255,255,255,0.12); color:#fff; }
   .pm-btn:hover{ background:rgba(255,255,255,0.2); }
   .pm-btn.primary{ background:var(--accent); }
   .pm-btn.primary:hover{ background:#b2622d; }
-
-  .pm-fab{ position:absolute; bottom:calc(24px + var(--safe-b)); right:calc(24px + var(--safe-r));
-    width:64px; height:64px; border-radius:50%; border:none; background:var(--accent); color:#fff;
-    font-size:26px; display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow-lg); }
+  .pm-fab{ position:absolute; bottom:16px; right:16px; width:52px; height:52px; border-radius:50%; border:none;
+    background:var(--accent); color:#fff; font-size:22px; display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow-lg); }
   .pm-fab:hover{ background:#b2622d; }
   .pm-fab.hidden{ display:none; }
+
+  /* ── CALENDAR VIEW (fuld skærm) ── */
+  #view-calendar{ flex-direction:column; padding:clamp(16px,2vw,28px); }
+  .cal-header{ display:flex; align-items:center; justify-content:center; gap:16px; margin-bottom:14px; flex:none; }
+  .cal-nav-btn{ border:1px solid var(--border); background:var(--surface); border-radius:999px; width:36px; height:36px;
+    font-size:16px; display:flex; align-items:center; justify-content:center; }
+  .cal-nav-btn:hover{ background:var(--surface2); }
+  .cal-title{ font-family:var(--font-heading); font-weight:900; font-size:clamp(18px,2vw,26px); min-width:200px; text-align:center; }
+  .cal-grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+  .cal-day-header{ font-size:clamp(10px,0.9vw,12px); font-weight:700; color:var(--text-muted); text-align:center; padding-bottom:6px;
+    text-transform:uppercase; letter-spacing:0.05em; }
+  .cal-body{ flex:1; min-height:0; grid-auto-rows:1fr; }
+  .cal-day{ background:var(--surface); border-radius:var(--radius); padding:6px; overflow:hidden; display:flex; flex-direction:column; gap:3px; }
+  .cal-day.other-month{ opacity:0.35; }
+  .cal-day.today{ border:2px solid var(--accent); }
+  .cal-day-num{ font-size:clamp(11px,1vw,14px); font-weight:700; color:var(--text-muted); flex:none; }
+  .cal-task-chip{ font-size:clamp(9px,0.85vw,11px); font-weight:600; padding:2px 6px; border-radius:6px; color:var(--text);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; }
+  .cal-more{ font-size:9px; color:var(--text-muted); }
+
+  /* ── KANBAN VIEW (fuld skærm) ── */
+  #view-kanban{ padding:clamp(16px,2vw,28px); overflow:hidden; }
+  .kanban-cols{ display:flex; gap:clamp(10px,1.4vw,18px); width:100%; height:100%; }
+  .kanban-col{ flex:1; min-width:0; display:flex; flex-direction:column; background:var(--surface2); border-radius:var(--radius-lg); overflow:hidden; }
+  .kanban-col-header{ display:flex; align-items:center; gap:8px; padding:clamp(10px,1.2vw,16px); font-size:clamp(12px,1.1vw,15px);
+    font-weight:700; background:var(--surface); flex:none; }
+  .kanban-count{ margin-left:auto; font-size:11px; background:rgba(0,0,0,0.1); padding:1px 9px; border-radius:999px; font-weight:700; }
+  .kanban-col-body{ flex:1; min-height:0; overflow-y:auto; padding:10px; display:flex; flex-direction:column; gap:8px; }
+  .kanban-card{ background:var(--surface); border-radius:var(--radius); padding:10px 12px; border-left:4px solid transparent; cursor:pointer; }
+  .kanban-card.high{ border-left-color:var(--danger); background:var(--danger-light); }
+  .kanban-card-title{ font-size:clamp(11px,1vw,13px); font-weight:600; line-height:1.3; }
+  .kanban-card-date{ font-size:clamp(10px,0.9vw,11px); color:var(--text-muted); margin-top:4px; font-weight:600; }
+  .kanban-card-date.late{ color:var(--danger); }
+  .kanban-empty{ font-size:12px; color:var(--text-muted); text-align:center; padding:20px 0; }
 
   /* ── connect / settings (delt mønster med cover.html) ── */
   .connect{ width:100vw; height:100dvh; background:var(--bg); display:flex; align-items:center; justify-content:center; padding:24px; }
   .connect-box{ max-width:340px; text-align:center; display:flex; flex-direction:column; gap:12px; align-items:center; }
-  .connect-box h2{ font-family:var(--font-heading); font-weight:400; margin:0; font-size:20px; }
+  .connect-box h2{ font-family:var(--font-heading); font-weight:900; margin:0; font-size:20px; }
   .connect-box p{ font-size:13px; color:var(--text-muted); margin:0; line-height:1.5; }
   .field{ width:100%; text-align:left; }
   .field label{ display:block; font-size:11px; font-weight:700; color:var(--text-muted); margin-bottom:4px; }
@@ -123,7 +207,7 @@
   .overlay{ position:fixed; inset:0; background:color-mix(in srgb, var(--sage-900) 40%, transparent); z-index:60;
     display:flex; align-items:center; justify-content:center; }
   .modal{ background:var(--bg); border-radius:24px; padding:24px 26px; width:min(360px,88vw); display:flex; flex-direction:column; gap:14px; box-shadow:var(--shadow-lg); }
-  .modal h3{ margin:0; font-family:var(--font-heading); font-weight:400; font-size:18px; }
+  .modal h3{ margin:0; font-family:var(--font-heading); font-weight:900; font-size:18px; }
   .modal-actions{ display:flex; gap:8px; justify-content:flex-end; }
   .btn-secondary{ background:transparent; border:1px solid var(--border); color:var(--text); }
   .btn-secondary:hover{ background:var(--surface2); }
@@ -158,22 +242,33 @@
 <script>
 // ══════════════════════════ DATA MODEL (delt med desktop/mobil-Nooty) ══════════════════════════
 const OPGAVE_TYPES = [
-  { id:'vaeresteds',    navn:'Værestedsavisen', color:'#F0E175' },
-  { id:'projekt',       navn:'Projekt',         color:'#a9c692' },
-  { id:'aktivitet',     navn:'Aktivitet',       color:'#C5B7DC' },
-  { id:'kommunikation', navn:'Kommunikation',   color:'#f69d6c' },
-  { id:'andet',         navn:'Andet',           color:'#dbd4c4' },
+  { id:'vaeresteds',    navn:'Værestedsavisen', color:'#F0E175',
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;vertical-align:-0.15em;flex-shrink:0"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"></path><path d="M18 14h-8"></path><path d="M15 18h-5"></path><path d="M10 6h8v4h-8V6Z"></path></svg>' },
+  { id:'projekt',       navn:'Projekt',         color:'#a9c692',
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;vertical-align:-0.15em;flex-shrink:0"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"></path><path d="M8 10v4"></path><path d="M12 10v2"></path><path d="M16 10v6"></path></svg>' },
+  { id:'aktivitet',     navn:'Aktivitet',       color:'#C5B7DC',
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;vertical-align:-0.15em;flex-shrink:0"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"></path></svg>' },
+  { id:'kommunikation', navn:'Kommunikation',   color:'#f69d6c',
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;vertical-align:-0.15em;flex-shrink:0"><path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z"></path><path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"></path></svg>' },
+  { id:'andet',         navn:'Andet',           color:'#dbd4c4',
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;vertical-align:-0.15em;flex-shrink:0"><rect width="20" height="5" x="2" y="3" rx="1"></rect><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"></path><path d="M10 12h4"></path></svg>' },
 ];
 function getOpgaveType(id){ return OPGAVE_TYPES.find(t=>t.id===id) || OPGAVE_TYPES[OPGAVE_TYPES.length-1]; }
 function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function formatDate(d){ if(!d) return ''; const dt=new Date(d+'T12:00:00'); const M=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec']; return `${dt.getDate()}. ${M[dt.getMonth()]}`; }
+function dateStr(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+
+const PLATFORM_COLORS = { 'LinkedIn':{bg:'#0077b5'}, 'Facebook':{bg:'#1877f2'}, 'Instagram':{bg:'#c13584'} };
+function platColor(p){ return PLATFORM_COLORS[p] || { bg:'#6c63ff' }; }
 
 // ══════════════════════════ STATE ══════════════════════════
-let state = { projects: [] };
+let state = { projects: [], some: [] };
 let SUPABASE_URL = localStorage.getItem('fb_sb_url') || '';
 let SUPABASE_KEY = localStorage.getItem('fb_sb_key') || '';
 let sbReady = false;
-let weekOffset = 0; // 0 = denne uge, 1 = næste uge
+let currentView = 'overview'; // 'overview' | 'calendar' | 'kanban'
+let deckIndex = 0;
+let calMonth = new Date().getMonth(), calYear = new Date().getFullYear();
 let drag = 0, dragging = false, dragStartX = 0;
 
 function sbHeaders(){ return { 'Content-Type':'application/json', 'apikey':SUPABASE_KEY, 'Authorization':'Bearer '+SUPABASE_KEY, 'Prefer':'resolution=merge-duplicates' }; }
@@ -188,29 +283,28 @@ function parseRow(r){
   if(obj.done === undefined) obj.done = false;
   return obj;
 }
+function parseSomeRow(r){
+  if(!r || r.data===undefined || r.data===null) return null;
+  let obj = r.data;
+  if(typeof obj === 'string'){ try{ obj = JSON.parse(obj); }catch(e){ return null; } }
+  if(typeof obj !== 'object' || Array.isArray(obj)) return null;
+  obj.id = r.id;
+  return obj;
+}
 async function loadFromSupabase(){
   if(!sbReady) return;
   try{
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/projects?select=*&limit=1000`, { headers:{...sbHeaders(),'Range':'0-999'} });
-    if(r.ok){
-      const rows = await r.json();
-      state.projects = rows.map(parseRow).filter(Boolean);
-      localStorage.setItem('nooty_wall_cache', JSON.stringify(state));
-    } else { toast('Kunne ikke hente data'); }
+    const [pr, sr] = await Promise.all([
+      fetch(`${SUPABASE_URL}/rest/v1/projects?select=*&limit=1000`, { headers:{...sbHeaders(),'Range':'0-999'} }),
+      fetch(`${SUPABASE_URL}/rest/v1/some_posts?select=*&limit=1000`, { headers:{...sbHeaders(),'Range':'0-999'} }),
+    ]);
+    if(pr.ok){ const rows = await pr.json(); state.projects = rows.map(parseRow).filter(Boolean); }
+    if(sr.ok){ const rows = await sr.json(); state.some = rows.map(parseSomeRow).filter(Boolean); }
+    localStorage.setItem('nooty_wall_cache', JSON.stringify(state));
   }catch(e){ toast('Ingen forbindelse'); }
-  renderDeadlines();
+  renderCurrentView();
 }
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(window._tt); window._tt=setTimeout(()=>t.classList.remove('show'),2200); }
-
-// ══════════════════════════ DEADLINES: UGE-BEREGNING ══════════════════════════
-function weekRange(offset){
-  const now = new Date();
-  const dow = now.getDay();
-  const monday = new Date(now); monday.setDate(now.getDate() - (dow===0?6:dow-1) + offset*7); monday.setHours(0,0,0,0);
-  const sunday = new Date(monday); sunday.setDate(monday.getDate()+6); sunday.setHours(23,59,59,999);
-  return { monday, sunday };
-}
-function dateStr(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 
 function toggleProjectDone(id){
   const p = state.projects.find(x=>x.id===id);
@@ -218,10 +312,10 @@ function toggleProjectDone(id){
   p.done = !p.done;
   p.doneAt = p.done ? new Date().toISOString() : null;
   sbUpsert(p);
-  renderDeadlines();
+  renderCurrentView();
 }
 
-// ══════════════════════════ RENDER: DEADLINES-PANEL ══════════════════════════
+// ══════════════════════════ SHELL / VIEW SWITCHING ══════════════════════════
 function renderShell(){
   const root = document.getElementById('root');
   document.getElementById('settings-btn').style.display = sbReady ? 'flex' : 'none';
@@ -238,115 +332,288 @@ function renderShell(){
 
   root.innerHTML = `
   <div id="app">
-    <div class="deadlines-panel">
-      <div class="dl-header">
-        <div>
-          <div class="dl-title" id="dl-title">Denne uge</div>
-          <div class="dl-range" id="dl-range"></div>
-        </div>
-        <div class="dl-dots">
-          <button class="dl-dot ${weekOffset===0?'active':''}" onclick="goToWeek(0)"></button>
-          <button class="dl-dot ${weekOffset===1?'active':''}" onclick="goToWeek(1)"></button>
-        </div>
+    <div class="wall-header">
+      <div class="wall-logo"><span class="wl-badge">N</span><span class="wl-word">nooty</span></div>
+      <div class="wall-tabs">
+        <button class="wall-tab" onclick="switchView('overview')">Oversigt</button>
+        <button class="wall-tab" onclick="switchView('calendar')">Kalender</button>
+        <button class="wall-tab" onclick="switchView('kanban')">Kanban</button>
       </div>
-      <div class="dl-swipe" id="dl-swipe">
-        <div class="dl-list" id="deadlines-list"></div>
-      </div>
+      <div class="wall-clock" id="wall-clock"></div>
     </div>
-    <div class="pomodoro-panel">
-      <div class="pm-label" id="pm-label">Fokus</div>
-      <div class="pm-focus-task" id="pm-focus-task">
-        <div class="pm-ft-label">Fokusopgave</div>
-        <div class="pm-ft-name" id="pm-ft-name"></div>
-        <div class="pm-ft-proj" id="pm-ft-proj"></div>
-        <div class="pm-ft-deadline" id="pm-ft-deadline"></div>
+    <div class="wall-content">
+      <div class="wall-view" id="view-overview">
+        <div class="wall-pills" id="wall-pills"></div>
+        <div class="wall-deck">
+          <div class="deck-head">
+            <span class="deck-pos" id="deck-pos"></span>
+            <div class="deck-dots" id="deck-dots"></div>
+          </div>
+          <div class="deck-swipe" id="deck-swipe">
+            <div class="deck-card" id="deck-card"></div>
+          </div>
+        </div>
+        <div class="wall-side">
+          <div class="wall-some-list">
+            <div class="wall-panel-title">SoMe – kommende opslag</div>
+            <div id="some-list-items"></div>
+          </div>
+          <div class="pomodoro-panel">
+            <div class="pm-label" id="pm-label">Fokus</div>
+            <div class="pm-focus-task" id="pm-focus-task">
+              <div class="pm-ft-label">Fokusopgave</div>
+              <div class="pm-ft-name" id="pm-ft-name"></div>
+              <div class="pm-ft-proj" id="pm-ft-proj"></div>
+              <div class="pm-ft-deadline" id="pm-ft-deadline"></div>
+            </div>
+            <div class="pm-display" id="pm-display">25:00</div>
+            <div class="pm-pressure-wrap" id="pm-pressure-wrap"><div class="pm-pressure-bar" id="pm-pressure-bar"></div></div>
+            <div class="pm-controls" id="pm-controls" style="display:none;">
+              <button class="pm-btn primary" id="pm-toggle-btn" onclick="toggleTimer()">▶ Start</button>
+              <button class="pm-btn" onclick="resetTimer()">↺ Nulstil</button>
+              <button class="pm-btn" onclick="closeTimerPanel()">✕ Luk</button>
+            </div>
+            <button class="pm-fab" id="pm-fab" onclick="startPomodoroPlus()" title="Start Pomodoro+">⚡</button>
+          </div>
+        </div>
       </div>
-      <div class="pm-display" id="pm-display">25:00</div>
-      <div class="pm-pressure-wrap" id="pm-pressure-wrap"><div class="pm-pressure-bar" id="pm-pressure-bar"></div></div>
-      <div class="pm-controls" id="pm-controls" style="display:none;">
-        <button class="pm-btn primary" id="pm-toggle-btn" onclick="toggleTimer()">▶ Start</button>
-        <button class="pm-btn" onclick="resetTimer()">↺ Nulstil</button>
-        <button class="pm-btn" onclick="closeTimerPanel()">✕ Luk</button>
+      <div class="wall-view" id="view-calendar">
+        <div class="cal-header">
+          <button class="cal-nav-btn" onclick="calPrev()">←</button>
+          <span class="cal-title" id="cal-title"></span>
+          <button class="cal-nav-btn" onclick="calNext()">→</button>
+        </div>
+        <div class="cal-grid" id="cal-headers"></div>
+        <div class="cal-grid cal-body" id="cal-body"></div>
       </div>
-      <button class="pm-fab" id="pm-fab" onclick="startPomodoroPlus()" title="Start Pomodoro+">⚡</button>
+      <div class="wall-view" id="view-kanban">
+        <div class="kanban-cols" id="kanban-cols"></div>
+      </div>
     </div>
   </div>`;
 
-  bindDrag();
-  renderDeadlines();
+  bindDeckDrag();
+  updateWallClock();
+  switchView(currentView);
 }
 
-function renderDeadlines(){
-  if(!sbReady) return;
-  const { monday, sunday } = weekRange(weekOffset);
-  const titleEl = document.getElementById('dl-title');
-  const rangeEl = document.getElementById('dl-range');
-  if(titleEl) titleEl.textContent = weekOffset===0 ? 'Denne uge' : 'Næste uge';
-  if(rangeEl) rangeEl.textContent = `${formatDate(dateStr(monday))} – ${formatDate(dateStr(sunday))}`;
-  document.querySelectorAll('.dl-dot').forEach((d,i)=>d.classList.toggle('active', i===weekOffset));
-
-  const from = dateStr(monday), to = dateStr(sunday);
-  const items = state.projects.filter(p => !p.done && p.deadline && p.deadline>=from && p.deadline<=to);
-  items.sort((a,b)=>{
-    if(a.deadline !== b.deadline) return a.deadline.localeCompare(b.deadline);
-    const prioOrder = { high:0, mid:1, low:2 };
-    return (prioOrder[a.prio]??1) - (prioOrder[b.prio]??1);
+function switchView(view){
+  currentView = view;
+  ['overview','calendar','kanban'].forEach(v=>{
+    const el = document.getElementById('view-'+v);
+    if(el) el.classList.toggle('active', v===view);
   });
+  document.querySelectorAll('.wall-tab').forEach((b,i)=>{
+    b.classList.toggle('active', ['overview','calendar','kanban'][i]===view);
+  });
+  renderCurrentView();
+}
+function renderCurrentView(){
+  if(!sbReady) return;
+  if(currentView==='overview') renderOverview();
+  else if(currentView==='calendar') renderCalendarView();
+  else if(currentView==='kanban') renderKanbanView();
+}
 
-  const list = document.getElementById('deadlines-list');
-  if(!list) return;
-  if(!items.length){
-    list.innerHTML = `<div class="dl-empty">Ingen deadlines ${weekOffset===0?'denne uge':'næste uge'} 🎉</div>`;
-    return;
-  }
+// ══════════════════════════ OVERVIEW: PILL-LISTE ══════════════════════════
+function renderPillList(){
+  const el = document.getElementById('wall-pills');
+  if(!el) return;
+  const today = dateStr(new Date());
+  const items = state.projects.filter(p=>!p.done && p.deadline).sort((a,b)=>a.deadline.localeCompare(b.deadline));
+  if(!items.length){ el.innerHTML = `<div class="wall-panel-title">Deadlines</div><div class="dl-empty">Ingen deadlines 🎉</div>`; return; }
 
-  let html = '';
+  let html = `<div class="wall-panel-title">Deadlines</div>`;
   let lastDate = null;
   const DAYS_DA=['Søndag','Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag'];
-  items.forEach(p => {
+  items.forEach(p=>{
     if(p.deadline !== lastDate){
       lastDate = p.deadline;
+      const overdue = p.deadline < today;
       const d = new Date(p.deadline+'T12:00:00');
-      html += `<div class="dl-day-header">${DAYS_DA[d.getDay()]} · ${formatDate(p.deadline)}</div>`;
+      const label = overdue ? `⚠️ Overskredet · ${formatDate(p.deadline)}` : `${DAYS_DA[d.getDay()]} · ${formatDate(p.deadline)}`;
+      html += `<div class="dl-day-header ${overdue?'overdue':''}">${label}</div>`;
     }
     const type = getOpgaveType(p.type);
-    const parent = p.parentId ? state.projects.find(x=>x.id===p.parentId) : null;
     const isHigh = p.prio === 'high';
     html += `<div class="dl-item ${isHigh?'high':''}" onclick="toggleProjectDone(${p.id})" title="Tryk for at markere som færdig">
-      <span class="dl-type-dot" style="background:${type.color};"></span>
+      ${type.icon}
       <div class="dl-item-body">
         <div class="dl-item-title">${esc(p.title)}</div>
-        <div class="dl-item-sub">${parent?'↳ '+esc(parent.title)+' · ':''}${esc(type.navn)}${p.underkat?' · '+esc(p.underkat):''}${p.procestrin?' · '+esc(p.procestrin):''}</div>
+        <div class="dl-item-sub">${esc(type.navn)}${p.underkat?' · '+esc(p.underkat):''}</div>
       </div>
-      ${isHigh?'<span class="dl-prio-badge">🔴 Høj</span>':''}
+      ${isHigh?'<span class="dl-prio-badge">Høj</span>':''}
     </div>`;
   });
-  list.innerHTML = html;
+  el.innerHTML = html;
 }
 
-function goToWeek(offset){ weekOffset = offset; drag = 0; updateListTransform(); renderDeadlines(); }
+// ══════════════════════════ OVERVIEW: SWIPEABLE DECK (næste 10) ══════════════════════════
+function deckItems(){
+  return state.projects.filter(p=>!p.done && p.deadline).sort((a,b)=>a.deadline.localeCompare(b.deadline)).slice(0,10);
+}
+function renderDeck(){
+  const items = deckItems();
+  const posEl = document.getElementById('deck-pos');
+  const dotsEl = document.getElementById('deck-dots');
+  const cardEl = document.getElementById('deck-card');
+  if(!posEl || !cardEl) return;
 
-// ══════════════════════════ SWIPE (uge-navigation) ══════════════════════════
-function bindDrag(){
-  const swipe = document.getElementById('dl-swipe');
+  if(!items.length){
+    posEl.textContent = '';
+    dotsEl.innerHTML = '';
+    cardEl.style.background = 'var(--surface)';
+    cardEl.innerHTML = `<div class="deck-empty">Ingen kommende deadlines 🎉</div>`;
+    return;
+  }
+  if(deckIndex >= items.length) deckIndex = items.length-1;
+  if(deckIndex < 0) deckIndex = 0;
+
+  posEl.textContent = `Opgave ${deckIndex+1} af ${items.length}`;
+  dotsEl.innerHTML = items.map((_,i)=>`<button class="deck-dot ${i===deckIndex?'active':''}" onclick="goToDeck(${i})"></button>`).join('');
+
+  const p = items[deckIndex];
+  const type = getOpgaveType(p.type);
+  const isHigh = p.prio === 'high';
+  const overdue = p.deadline < dateStr(new Date());
+  const parent = p.parentId ? state.projects.find(x=>x.id===p.parentId) : null;
+
+  cardEl.style.background = type.color;
+  cardEl.innerHTML = `
+    <div class="deck-card-top">
+      <span class="deck-chip">${type.icon} ${esc(p.underkat||type.navn)}</span>
+      ${p.procestrin?`<span class="deck-chip">${esc(p.procestrin)}</span>`:''}
+      ${isHigh?'<span class="deck-chip deck-chip-high">🔴 Høj</span>':''}
+      <span class="deck-date ${overdue?'late':''}">${overdue?'⚠️ ':''}${formatDate(p.deadline)}</span>
+    </div>
+    <div class="deck-title">${esc(p.title)}</div>
+    ${parent?`<div class="deck-parent">↳ ${esc(parent.title)}</div>`:''}
+    <button class="deck-done-btn" onclick="event.stopPropagation();toggleProjectDone(${p.id})">✓ Markér færdig</button>
+  `;
+}
+function goToDeck(i){ deckIndex=i; drag=0; updateDeckTransform(); renderDeck(); }
+function goDeck(delta){
+  const items = deckItems();
+  if(!items.length) return;
+  deckIndex = (deckIndex+delta+items.length)%items.length;
+  drag=0; updateDeckTransform(); renderDeck();
+}
+function bindDeckDrag(){
+  const swipe = document.getElementById('deck-swipe');
   if(!swipe) return;
-  swipe.onpointerdown = (e)=>{ dragStartX = e.clientX; dragging = true; drag = 0; updateListTransform(); };
-  swipe.onpointermove = (e)=>{ if(!dragging) return; drag = e.clientX - dragStartX; updateListTransform(); };
+  swipe.onpointerdown = (e)=>{ dragStartX=e.clientX; dragging=true; drag=0; updateDeckTransform(); };
+  swipe.onpointermove = (e)=>{ if(!dragging) return; drag = e.clientX-dragStartX; updateDeckTransform(); };
   swipe.onpointerup = swipe.onpointercancel = ()=>{
     if(!dragging) return;
-    dragging = false;
-    if(drag < -70 && weekOffset < 1) goToWeek(weekOffset+1);
-    else if(drag > 70 && weekOffset > 0) goToWeek(weekOffset-1);
-    else { drag = 0; updateListTransform(); }
+    dragging=false;
+    if(drag < -60) goDeck(1);
+    else if(drag > 60) goDeck(-1);
+    else { drag=0; updateDeckTransform(); }
   };
 }
-function updateListTransform(){
-  const list = document.getElementById('deadlines-list');
-  if(!list) return;
-  list.classList.toggle('dragging', dragging);
-  const dragX = Math.max(-120, Math.min(120, drag));
-  list.style.transform = `translateX(${dragX}px)`;
+function updateDeckTransform(){
+  const card = document.getElementById('deck-card');
+  if(!card) return;
+  card.classList.toggle('dragging', dragging);
+  const dragX = Math.max(-90,Math.min(90,drag));
+  card.style.transform = `translateX(${dragX}px) rotate(${(drag*0.02).toFixed(2)}deg)`;
 }
+
+// ══════════════════════════ OVERVIEW: SOME-LISTE ══════════════════════════
+function renderSomeList(){
+  const el = document.getElementById('some-list-items');
+  if(!el) return;
+  const today = dateStr(new Date());
+  const items = (state.some||[]).filter(s=>!s.finishedAt && s.postDato && s.postDato>=today)
+    .sort((a,b)=>a.postDato.localeCompare(b.postDato)).slice(0,8);
+  if(!items.length){ el.innerHTML = `<div class="dl-empty">Ingen planlagte opslag</div>`; return; }
+  el.innerHTML = items.map(s=>{
+    const pc = platColor(s.platform);
+    return `<div class="some-list-item">
+      <span class="some-dot" style="background:${pc.bg};"></span>
+      <div class="some-item-body">
+        <div class="some-item-title">${esc(s.emne||(s.content?s.content.substring(0,30):'Opslag'))}</div>
+        <div class="some-item-sub">${esc(s.platform||'')}${s.orgEnhed?' · '+(s.orgEnhed==='sport'?'Sport for Livet':'LVS'):''}</div>
+      </div>
+      <span class="some-item-date">${formatDate(s.postDato)}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderOverview(){
+  renderPillList();
+  renderDeck();
+  renderSomeList();
+}
+
+// ══════════════════════════ KALENDER-VIEW (fuld skærm) ══════════════════════════
+function calPrev(){ if(calMonth===0){calMonth=11;calYear--;}else calMonth--; renderCalendarView(); }
+function calNext(){ if(calMonth===11){calMonth=0;calYear++;}else calMonth++; renderCalendarView(); }
+function renderCalendarView(){
+  const y=calYear, m=calMonth;
+  const MONTHS_DA=['Januar','Februar','Marts','April','Maj','Juni','Juli','August','September','Oktober','November','December'];
+  const DAYS_DA=['Man','Tir','Ons','Tor','Fre','Lør','Søn'];
+  const titleEl = document.getElementById('cal-title');
+  if(!titleEl) return;
+  titleEl.textContent = `${MONTHS_DA[m]} ${y}`;
+  document.getElementById('cal-headers').innerHTML = DAYS_DA.map(d=>`<div class="cal-day-header">${d}</div>`).join('');
+
+  const first=new Date(y,m,1); let startDow=first.getDay(); startDow=startDow===0?6:startDow-1;
+  const daysInMonth=new Date(y,m+1,0).getDate(); const prevDays=new Date(y,m,0).getDate();
+  const today=new Date(); let cells=[];
+  for(let i=0;i<startDow;i++) cells.push({day:prevDays-startDow+1+i,other:true});
+  for(let i=1;i<=daysInMonth;i++) cells.push({day:i,other:false});
+  while(cells.length%7!==0) cells.push({day:cells.length-startDow-daysInMonth+1,other:true});
+
+  document.getElementById('cal-body').innerHTML = cells.map(c=>{
+    const ds = c.other ? '' : `${y}-${String(m+1).padStart(2,'0')}-${String(c.day).padStart(2,'0')}`;
+    const isToday = !c.other && today.getFullYear()===y && today.getMonth()===m && today.getDate()===c.day;
+    const tasks = c.other ? [] : state.projects.filter(p=>!p.done && p.deadline===ds);
+    return `<div class="cal-day ${isToday?'today':''} ${c.other?'other-month':''}">
+      <div class="cal-day-num">${c.day}</div>
+      ${tasks.slice(0,4).map(p=>{
+        const type = getOpgaveType(p.type);
+        return `<div class="cal-task-chip" style="background:${type.color};" onclick="toggleProjectDone(${p.id})" title="${esc(p.title)}">${esc(p.title)}</div>`;
+      }).join('')}
+      ${tasks.length>4?`<div class="cal-more">+${tasks.length-4} mere</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════ KANBAN-VIEW (fuld skærm) ══════════════════════════
+function renderKanbanView(){
+  const el = document.getElementById('kanban-cols');
+  if(!el) return;
+  const today = dateStr(new Date());
+  el.innerHTML = OPGAVE_TYPES.map(t=>{
+    const tasks = state.projects.filter(p=>!p.done && !p.parentId && p.type===t.id)
+      .sort((a,b)=>(a.deadline||'9999').localeCompare(b.deadline||'9999'));
+    return `<div class="kanban-col">
+      <div class="kanban-col-header" style="border-top:4px solid ${t.color};">${t.icon} ${t.navn} <span class="kanban-count">${tasks.length}</span></div>
+      <div class="kanban-col-body">
+        ${tasks.length===0?`<div class="kanban-empty">Ingen opgaver</div>`:tasks.map(p=>{
+          const isHigh = p.prio==='high';
+          const overdue = p.deadline && p.deadline < today;
+          return `<div class="kanban-card ${isHigh?'high':''}" onclick="toggleProjectDone(${p.id})">
+            <div class="kanban-card-title">${esc(p.title)}</div>
+            ${p.deadline?`<div class="kanban-card-date ${overdue?'late':''}">${overdue?'⚠️ ':''}${formatDate(p.deadline)}</div>`:''}
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════ UR ══════════════════════════
+function updateWallClock(){
+  const el = document.getElementById('wall-clock');
+  if(!el) return;
+  const now = new Date();
+  const DAYS_DA=['Søndag','Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag'];
+  const MONTHS_DA=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+  el.innerHTML = `<span class="wc-time">${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}</span><span class="wc-date">${DAYS_DA[now.getDay()]} ${now.getDate()}. ${MONTHS_DA[now.getMonth()]}</span>`;
+}
+setInterval(updateWallClock, 10000);
 
 // ══════════════════════════ POMODORO (delt logik med desktop-Nooty) ══════════════════════════
 let timerSecs = 25*60, timerMode = 'focus', timerRunning = false, timerInterval = null;
@@ -384,7 +651,6 @@ function startPomodoroPlus(){
   document.getElementById('pm-focus-task').style.display = 'block';
   document.getElementById('pm-ft-name').textContent = best.name;
   document.getElementById('pm-ft-proj').textContent = best.proj;
-  document.getElementById('pm-ft-name').style.borderLeft = '';
 
   const dlEl = document.getElementById('pm-ft-deadline');
   if(daysLeft <= 0){ dlEl.textContent = '🔴 Deadline OVERSKREDET'; dlEl.style.color = 'var(--danger)'; }
@@ -509,7 +775,7 @@ function saveSettings(){
   localStorage.setItem('fb_sb_key', key);
   sbReady = true;
   closeSettings();
-  toast('Forbundet – henter opgaver...');
+  toast('Forbundet – henter data...');
   renderShell();
   loadFromSupabase();
 }
@@ -558,7 +824,7 @@ setInterval(()=>{ if(sbReady) loadFromSupabase(); }, REFRESH_MS);
 // ══════════════════════════ INIT ══════════════════════════
 (function init(){
   const cached = localStorage.getItem('nooty_wall_cache');
-  if(cached){ try{ state = JSON.parse(cached); }catch(e){} }
+  if(cached){ try{ state = JSON.parse(cached); if(!state.some) state.some=[]; }catch(e){} }
   if(SUPABASE_URL && SUPABASE_KEY){ sbReady = true; renderShell(); loadFromSupabase(); }
   else { renderShell(); }
   syncFullscreenBtn();
