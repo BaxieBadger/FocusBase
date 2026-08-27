@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#3d472b">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Nooty – Væg</title>
+<link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f5ead8; --surface:#f9f4ed; --surface2:#ebddc5;
+    --border:rgba(32,30,29,.16);
+    --sidebar-bg:#3d472b; --sidebar-text:#c9d4b3;
+    --sage-200:#e1eecc; --sage-500:#8fa073; --sage-600:#728157; --sage-800:#3d472b; --sage-900:#272e1b;
+    --accent:#c67139; --accent-light:#ffe1d0;
+    --accent2:#7a8a5e; --accent2-light:#e1eecc;
+    --danger:#e44258; --danger-light:#fde8eb;
+    --warning:#f5a623; --warning-light:#fef3e0;
+    --text:#201e1d; --text-muted:#82796a; --text-dim:#a19786;
+    --radius:16px; --radius-lg:28px; --radius-pill:999px;
+    --font:'Figtree',sans-serif; --font-heading:'Caprasimo',serif;
+    --shadow-md:0 3px 10px rgba(46,43,37,.16);
+    --shadow-lg:0 12px 32px rgba(46,43,37,.22);
+    --safe-t: env(safe-area-inset-top, 0px); --safe-b: env(safe-area-inset-bottom, 0px);
+    --safe-l: env(safe-area-inset-left, 0px); --safe-r: env(safe-area-inset-right, 0px);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;height:100%;background:var(--sage-900);overflow:hidden;}
+  body{font-family:var(--font); color:var(--text); -webkit-font-smoothing:antialiased; overscroll-behavior:none;}
+  button{font-family:inherit; cursor:pointer;}
+  :focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+
+  #app{
+    width:100vw; height:100dvh; background:var(--bg);
+    display:flex; flex-direction:row; user-select:none;
+    padding-top:var(--safe-t); padding-bottom:var(--safe-b); padding-left:var(--safe-l); padding-right:var(--safe-r);
+  }
+  @media (max-aspect-ratio: 1/1){
+    #app{ flex-direction:column; }
+    .pomodoro-panel{ width:100% !important; height:42% !important; }
+    .deadlines-panel{ height:58%; }
+  }
+
+  /* ── DEADLINES PANEL ── */
+  .deadlines-panel{ flex:1.4; min-width:0; display:flex; flex-direction:column; padding:clamp(16px,2.4vw,32px); overflow:hidden; }
+  .dl-header{ display:flex; align-items:center; gap:14px; margin-bottom:clamp(10px,1.6vw,20px); flex:none; }
+  .dl-title{ font-family:var(--font-heading); font-weight:400; font-size:clamp(20px,2.6vw,32px); color:var(--text); }
+  .dl-range{ font-size:clamp(11px,1vw,14px); color:var(--text-muted); font-weight:600; }
+  .dl-dots{ margin-left:auto; display:flex; gap:6px; }
+  .dl-dot{ width:9px; height:9px; border-radius:999px; background:var(--surface2); border:none; padding:0; cursor:pointer; }
+  .dl-dot.active{ background:var(--accent); }
+
+  .dl-swipe{ flex:1; min-height:0; touch-action:pan-y; cursor:grab; overflow:hidden; position:relative; }
+  .dl-swipe:active{ cursor:grabbing; }
+  .dl-list{ height:100%; overflow-y:auto; padding-right:4px; transition:transform .22s ease; }
+  .dl-list.dragging{ transition:none; }
+  .dl-list::-webkit-scrollbar{ width:6px; }
+  .dl-list::-webkit-scrollbar-thumb{ background:var(--text-dim); border-radius:999px; }
+
+  .dl-day-header{ font-size:clamp(10px,0.9vw,12px); font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-muted); margin:16px 0 8px; }
+  .dl-day-header:first-child{ margin-top:0; }
+  .dl-item{ display:flex; align-items:center; gap:12px; padding:clamp(10px,1.2vw,14px) clamp(12px,1.4vw,16px);
+    border-radius:var(--radius); background:var(--surface); margin-bottom:8px; border-left:5px solid transparent; }
+  .dl-item.high{ background:var(--danger-light); border-left-color:var(--danger); }
+  .dl-type-dot{ width:10px; height:10px; border-radius:50%; flex:none; }
+  .dl-item-body{ flex:1; min-width:0; }
+  .dl-item-title{ font-size:clamp(13px,1.3vw,17px); font-weight:600; color:var(--text); line-height:1.3; }
+  .dl-item-sub{ font-size:clamp(10px,0.9vw,12px); color:var(--text-muted); margin-top:2px; }
+  .dl-prio-badge{ font-size:clamp(9px,0.85vw,11px); font-weight:700; padding:2px 9px; border-radius:999px; flex:none;
+    background:var(--danger-light); color:var(--danger); white-space:nowrap; }
+  .dl-empty{ font-size:clamp(12px,1.1vw,15px); color:var(--text-muted); padding:20px 0; text-align:center; }
+
+  /* ── POMODORO PANEL ── */
+  .pomodoro-panel{ width:38%; flex:none; background:var(--sage-800); color:#fff; position:relative;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:clamp(10px,1.6vw,18px);
+    padding:clamp(20px,3vw,40px); overflow:hidden; }
+  .pm-label{ font-size:clamp(14px,1.6vw,20px); font-weight:700; letter-spacing:0.04em; color:var(--sidebar-text); text-align:center; }
+  .pm-focus-task{ display:none; width:100%; max-width:420px; padding:12px 16px; background:rgba(255,255,255,0.08);
+    border-radius:var(--radius); border-left:4px solid var(--accent); }
+  .pm-focus-task .pm-ft-label{ font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--sidebar-text); margin-bottom:4px; }
+  .pm-focus-task .pm-ft-name{ font-size:clamp(13px,1.3vw,17px); font-weight:600; color:#fff; line-height:1.3; }
+  .pm-focus-task .pm-ft-proj{ font-size:clamp(11px,1vw,13px); color:var(--sidebar-text); margin-top:2px; }
+  .pm-focus-task .pm-ft-deadline{ font-size:clamp(11px,1vw,13px); font-weight:700; margin-top:4px; }
+  .pm-display{ font-family:var(--font-heading); font-weight:400; font-size:clamp(64px,10vw,160px); line-height:1;
+    font-variant-numeric:tabular-nums; color:#fff; }
+  .pm-pressure-wrap{ display:none; width:100%; max-width:420px; height:6px; background:rgba(255,255,255,0.14); border-radius:3px; overflow:hidden; }
+  .pm-pressure-bar{ height:100%; width:100%; background:var(--accent2); transition:width 1s linear,background 1s; }
+  .pm-controls{ display:flex; gap:10px; }
+  .pm-btn{ border:none; border-radius:var(--radius-pill); padding:12px 24px; font-size:clamp(13px,1.2vw,16px); font-weight:700;
+    background:rgba(255,255,255,0.12); color:#fff; }
+  .pm-btn:hover{ background:rgba(255,255,255,0.2); }
+  .pm-btn.primary{ background:var(--accent); }
+  .pm-btn.primary:hover{ background:#b2622d; }
+
+  .pm-fab{ position:absolute; bottom:calc(24px + var(--safe-b)); right:calc(24px + var(--safe-r));
+    width:64px; height:64px; border-radius:50%; border:none; background:var(--accent); color:#fff;
+    font-size:26px; display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow-lg); }
+  .pm-fab:hover{ background:#b2622d; }
+  .pm-fab.hidden{ display:none; }
+
+  /* ── connect / settings (delt mønster med cover.html) ── */
+  .connect{ width:100vw; height:100dvh; background:var(--bg); display:flex; align-items:center; justify-content:center; padding:24px; }
+  .connect-box{ max-width:340px; text-align:center; display:flex; flex-direction:column; gap:12px; align-items:center; }
+  .connect-box h2{ font-family:var(--font-heading); font-weight:400; margin:0; font-size:20px; }
+  .connect-box p{ font-size:13px; color:var(--text-muted); margin:0; line-height:1.5; }
+  .field{ width:100%; text-align:left; }
+  .field label{ display:block; font-size:11px; font-weight:700; color:var(--text-muted); margin-bottom:4px; }
+  .field input{ width:100%; padding:9px 12px; border:1.5px solid var(--border); border-radius:999px; background:var(--surface2);
+    font-size:13px; font-family:inherit; outline:none; }
+  .field input:focus-visible{ border-color:var(--accent); }
+  .btn{ border:none; border-radius:999px; padding:10px 22px; font-size:13px; font-weight:700; background:var(--accent); color:#fff; }
+  .btn:hover{ background:#b2622d; }
+  .corner-btns{ position:fixed; top:calc(10px + var(--safe-t)); right:calc(10px + var(--safe-r)); z-index:50; display:flex; gap:6px; }
+  .settings-btn, .fs-btn{ position:relative; width:30px; height:30px; border-radius:999px; border:none;
+    background:color-mix(in srgb, var(--sage-900) 55%, transparent); color:#fff; font-size:13px;
+    display:flex; align-items:center; justify-content:center; opacity:.55; }
+  .settings-btn:hover, .fs-btn:hover{ opacity:1; }
+  .sb-dot{ width:6px; height:6px; border-radius:999px; background:var(--danger); position:absolute; top:2px; right:2px; }
+  .sb-dot.ok{ background:var(--sage-500); }
+  .overlay{ position:fixed; inset:0; background:color-mix(in srgb, var(--sage-900) 40%, transparent); z-index:60;
+    display:flex; align-items:center; justify-content:center; }
+  .modal{ background:var(--bg); border-radius:24px; padding:24px 26px; width:min(360px,88vw); display:flex; flex-direction:column; gap:14px; box-shadow:var(--shadow-lg); }
+  .modal h3{ margin:0; font-family:var(--font-heading); font-weight:400; font-size:18px; }
+  .modal-actions{ display:flex; gap:8px; justify-content:flex-end; }
+  .btn-secondary{ background:transparent; border:1px solid var(--border); color:var(--text); }
+  .btn-secondary:hover{ background:var(--surface2); }
+  .toast{ position:fixed; bottom:calc(18px + var(--safe-b)); left:50%; transform:translateX(-50%);
+    background:var(--sage-900); color:#fff; padding:9px 16px; border-radius:999px; font-size:12px; font-weight:600;
+    z-index:200; opacity:0; pointer-events:none; transition:opacity .25s, transform .25s; }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(-6px); }
+</style>
+</head>
+<body>
+
+<div class="corner-btns">
+  <button class="fs-btn" id="fs-btn" onclick="toggleFullscreen()" title="Fuld skærm">⛶</button>
+  <button class="settings-btn" id="settings-btn" onclick="openSettings()" title="Forbindelse">⚙<span class="sb-dot" id="sb-dot"></span></button>
+</div>
+<div id="root"></div>
+<div class="toast" id="toast"></div>
+
+<div class="overlay" id="ov-settings" style="display:none" onclick="if(event.target===this) closeSettings()">
+  <div class="modal">
+    <h3>Forbindelse</h3>
+    <p style="font-size:12.5px;color:var(--text-muted);margin:0;">Væg-skærmen bruger samme Supabase-database som desktop og mobil. Samme URL og nøgle virker her.</p>
+    <div class="field"><label>Supabase URL</label><input type="text" id="set-url" placeholder="https://xxxx.supabase.co"></div>
+    <div class="field"><label>Supabase anon key</label><input type="text" id="set-key" placeholder="eyJ..."></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeSettings()">Luk</button>
+      <button class="btn" onclick="saveSettings()">Gem og forbind</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════ DATA MODEL (delt med desktop/mobil-Nooty) ══════════════════════════
+const OPGAVE_TYPES = [
+  { id:'vaeresteds',    navn:'Værestedsavisen', color:'#F0E175' },
+  { id:'projekt',       navn:'Projekt',         color:'#a9c692' },
+  { id:'aktivitet',     navn:'Aktivitet',       color:'#C5B7DC' },
+  { id:'kommunikation', navn:'Kommunikation',   color:'#f69d6c' },
+  { id:'andet',         navn:'Andet',           color:'#dbd4c4' },
+];
+function getOpgaveType(id){ return OPGAVE_TYPES.find(t=>t.id===id) || OPGAVE_TYPES[OPGAVE_TYPES.length-1]; }
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function formatDate(d){ if(!d) return ''; const dt=new Date(d+'T12:00:00'); const M=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec']; return `${dt.getDate()}. ${M[dt.getMonth()]}`; }
+
+// ══════════════════════════ STATE ══════════════════════════
+let state = { projects: [] };
+let SUPABASE_URL = localStorage.getItem('fb_sb_url') || '';
+let SUPABASE_KEY = localStorage.getItem('fb_sb_key') || '';
+let sbReady = false;
+let weekOffset = 0; // 0 = denne uge, 1 = næste uge
+let drag = 0, dragging = false, dragStartX = 0;
+
+function sbHeaders(){ return { 'Content-Type':'application/json', 'apikey':SUPABASE_KEY, 'Authorization':'Bearer '+SUPABASE_KEY, 'Prefer':'resolution=merge-duplicates' }; }
+async function sbUpsert(row){ if(!sbReady) return; try{ await fetch(`${SUPABASE_URL}/rest/v1/projects`, { method:'POST', headers:sbHeaders(), body: JSON.stringify({ id: row.id, data: row }) }); }catch(e){ console.warn('Supabase write error:', e); } }
+function parseRow(r){
+  if(!r || r.data===undefined || r.data===null) return null;
+  let obj = r.data;
+  if(typeof obj === 'string'){ try{ obj = JSON.parse(obj); }catch(e){ return null; } }
+  if(typeof obj !== 'object' || Array.isArray(obj)) return null;
+  obj.id = r.id;
+  if(!obj.title) return null;
+  if(obj.done === undefined) obj.done = false;
+  return obj;
+}
+async function loadFromSupabase(){
+  if(!sbReady) return;
+  try{
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/projects?select=*&limit=1000`, { headers:{...sbHeaders(),'Range':'0-999'} });
+    if(r.ok){
+      const rows = await r.json();
+      state.projects = rows.map(parseRow).filter(Boolean);
+      localStorage.setItem('nooty_wall_cache', JSON.stringify(state));
+    } else { toast('Kunne ikke hente data'); }
+  }catch(e){ toast('Ingen forbindelse'); }
+  renderDeadlines();
+}
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(window._tt); window._tt=setTimeout(()=>t.classList.remove('show'),2200); }
+
+// ══════════════════════════ DEADLINES: UGE-BEREGNING ══════════════════════════
+function weekRange(offset){
+  const now = new Date();
+  const dow = now.getDay();
+  const monday = new Date(now); monday.setDate(now.getDate() - (dow===0?6:dow-1) + offset*7); monday.setHours(0,0,0,0);
+  const sunday = new Date(monday); sunday.setDate(monday.getDate()+6); sunday.setHours(23,59,59,999);
+  return { monday, sunday };
+}
+function dateStr(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+
+function toggleProjectDone(id){
+  const p = state.projects.find(x=>x.id===id);
+  if(!p) return;
+  p.done = !p.done;
+  p.doneAt = p.done ? new Date().toISOString() : null;
+  sbUpsert(p);
+  renderDeadlines();
+}
+
+// ══════════════════════════ RENDER: DEADLINES-PANEL ══════════════════════════
+function renderShell(){
+  const root = document.getElementById('root');
+  document.getElementById('settings-btn').style.display = sbReady ? 'flex' : 'none';
+  document.getElementById('sb-dot').classList.toggle('ok', sbReady);
+
+  if(!sbReady){
+    root.innerHTML = `<div class="connect"><div class="connect-box">
+      <h2>Forbind Væg-skærmen</h2>
+      <p>Indtast din Supabase-adresse og nøgle for at hente opgaverne — samme oplysninger som i mobil- og desktop-udgaven.</p>
+      <button class="btn" onclick="openSettings()">Forbind nu</button>
+    </div></div>`;
+    return;
+  }
+
+  root.innerHTML = `
+  <div id="app">
+    <div class="deadlines-panel">
+      <div class="dl-header">
+        <div>
+          <div class="dl-title" id="dl-title">Denne uge</div>
+          <div class="dl-range" id="dl-range"></div>
+        </div>
+        <div class="dl-dots">
+          <button class="dl-dot ${weekOffset===0?'active':''}" onclick="goToWeek(0)"></button>
+          <button class="dl-dot ${weekOffset===1?'active':''}" onclick="goToWeek(1)"></button>
+        </div>
+      </div>
+      <div class="dl-swipe" id="dl-swipe">
+        <div class="dl-list" id="deadlines-list"></div>
+      </div>
+    </div>
+    <div class="pomodoro-panel">
+      <div class="pm-label" id="pm-label">Fokus</div>
+      <div class="pm-focus-task" id="pm-focus-task">
+        <div class="pm-ft-label">Fokusopgave</div>
+        <div class="pm-ft-name" id="pm-ft-name"></div>
+        <div class="pm-ft-proj" id="pm-ft-proj"></div>
+        <div class="pm-ft-deadline" id="pm-ft-deadline"></div>
+      </div>
+      <div class="pm-display" id="pm-display">25:00</div>
+      <div class="pm-pressure-wrap" id="pm-pressure-wrap"><div class="pm-pressure-bar" id="pm-pressure-bar"></div></div>
+      <div class="pm-controls" id="pm-controls" style="display:none;">
+        <button class="pm-btn primary" id="pm-toggle-btn" onclick="toggleTimer()">▶ Start</button>
+        <button class="pm-btn" onclick="resetTimer()">↺ Nulstil</button>
+        <button class="pm-btn" onclick="closeTimerPanel()">✕ Luk</button>
+      </div>
+      <button class="pm-fab" id="pm-fab" onclick="startPomodoroPlus()" title="Start Pomodoro+">⚡</button>
+    </div>
+  </div>`;
+
+  bindDrag();
+  renderDeadlines();
+}
+
+function renderDeadlines(){
+  if(!sbReady) return;
+  const { monday, sunday } = weekRange(weekOffset);
+  const titleEl = document.getElementById('dl-title');
+  const rangeEl = document.getElementById('dl-range');
+  if(titleEl) titleEl.textContent = weekOffset===0 ? 'Denne uge' : 'Næste uge';
+  if(rangeEl) rangeEl.textContent = `${formatDate(dateStr(monday))} – ${formatDate(dateStr(sunday))}`;
+  document.querySelectorAll('.dl-dot').forEach((d,i)=>d.classList.toggle('active', i===weekOffset));
+
+  const from = dateStr(monday), to = dateStr(sunday);
+  const items = state.projects.filter(p => !p.done && p.deadline && p.deadline>=from && p.deadline<=to);
+  items.sort((a,b)=>{
+    if(a.deadline !== b.deadline) return a.deadline.localeCompare(b.deadline);
+    const prioOrder = { high:0, mid:1, low:2 };
+    return (prioOrder[a.prio]??1) - (prioOrder[b.prio]??1);
+  });
+
+  const list = document.getElementById('deadlines-list');
+  if(!list) return;
+  if(!items.length){
+    list.innerHTML = `<div class="dl-empty">Ingen deadlines ${weekOffset===0?'denne uge':'næste uge'} 🎉</div>`;
+    return;
+  }
+
+  let html = '';
+  let lastDate = null;
+  const DAYS_DA=['Søndag','Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag'];
+  items.forEach(p => {
+    if(p.deadline !== lastDate){
+      lastDate = p.deadline;
+      const d = new Date(p.deadline+'T12:00:00');
+      html += `<div class="dl-day-header">${DAYS_DA[d.getDay()]} · ${formatDate(p.deadline)}</div>`;
+    }
+    const type = getOpgaveType(p.type);
+    const parent = p.parentId ? state.projects.find(x=>x.id===p.parentId) : null;
+    const isHigh = p.prio === 'high';
+    html += `<div class="dl-item ${isHigh?'high':''}" onclick="toggleProjectDone(${p.id})" title="Tryk for at markere som færdig">
+      <span class="dl-type-dot" style="background:${type.color};"></span>
+      <div class="dl-item-body">
+        <div class="dl-item-title">${esc(p.title)}</div>
+        <div class="dl-item-sub">${parent?'↳ '+esc(parent.title)+' · ':''}${esc(type.navn)}${p.underkat?' · '+esc(p.underkat):''}${p.procestrin?' · '+esc(p.procestrin):''}</div>
+      </div>
+      ${isHigh?'<span class="dl-prio-badge">🔴 Høj</span>':''}
+    </div>`;
+  });
+  list.innerHTML = html;
+}
+
+function goToWeek(offset){ weekOffset = offset; drag = 0; updateListTransform(); renderDeadlines(); }
+
+// ══════════════════════════ SWIPE (uge-navigation) ══════════════════════════
+function bindDrag(){
+  const swipe = document.getElementById('dl-swipe');
+  if(!swipe) return;
+  swipe.onpointerdown = (e)=>{ dragStartX = e.clientX; dragging = true; drag = 0; updateListTransform(); };
+  swipe.onpointermove = (e)=>{ if(!dragging) return; drag = e.clientX - dragStartX; updateListTransform(); };
+  swipe.onpointerup = swipe.onpointercancel = ()=>{
+    if(!dragging) return;
+    dragging = false;
+    if(drag < -70 && weekOffset < 1) goToWeek(weekOffset+1);
+    else if(drag > 70 && weekOffset > 0) goToWeek(weekOffset-1);
+    else { drag = 0; updateListTransform(); }
+  };
+}
+function updateListTransform(){
+  const list = document.getElementById('deadlines-list');
+  if(!list) return;
+  list.classList.toggle('dragging', dragging);
+  const dragX = Math.max(-120, Math.min(120, drag));
+  list.style.transform = `translateX(${dragX}px)`;
+}
+
+// ══════════════════════════ POMODORO (delt logik med desktop-Nooty) ══════════════════════════
+let timerSecs = 25*60, timerMode = 'focus', timerRunning = false, timerInterval = null;
+let timerStartedAt = null, timerSecsAtStart = 0;
+let pomodoroTask = null;
+let pomodoroTotalSecs = 25*60;
+
+function startPomodoroPlus(){
+  let best = null, bestDate = null;
+  state.projects.filter(p=>!p.done&&p.deadline).forEach(p=>{
+    const d = new Date(p.deadline+'T23:59:59');
+    if(!bestDate || d < bestDate){
+      bestDate = d;
+      const parent = p.parentId ? state.projects.find(x=>x.id===p.parentId) : null;
+      best = { name:p.title, proj: parent?parent.title:'Opgavedeadline', deadline:p.deadline, color:p.color||'#7A8088', projId:p.id };
+    }
+  });
+
+  document.getElementById('pm-fab').classList.add('hidden');
+  document.getElementById('pm-controls').style.display = 'flex';
+
+  if(!best){
+    toast('Ingen åbne opgaver med deadline fundet');
+    startPomodoro();
+    return;
+  }
+
+  pomodoroTask = best;
+  const daysLeft = Math.ceil((new Date(best.deadline+'T23:59:59') - new Date()) / 86400000);
+  let mins = daysLeft <= 0 ? 15 : daysLeft === 1 ? 20 : 25;
+  timerSecs = mins*60; pomodoroTotalSecs = mins*60;
+  timerMode = 'focus'; timerRunning = false;
+
+  document.getElementById('pm-label').textContent = `⚡ Pomodoro+ · ${mins} min`;
+  document.getElementById('pm-focus-task').style.display = 'block';
+  document.getElementById('pm-ft-name').textContent = best.name;
+  document.getElementById('pm-ft-proj').textContent = best.proj;
+  document.getElementById('pm-ft-name').style.borderLeft = '';
+
+  const dlEl = document.getElementById('pm-ft-deadline');
+  if(daysLeft <= 0){ dlEl.textContent = '🔴 Deadline OVERSKREDET'; dlEl.style.color = 'var(--danger)'; }
+  else if(daysLeft === 1){ dlEl.textContent = '🟠 Deadline I MORGEN'; dlEl.style.color = 'var(--warning)'; }
+  else { dlEl.textContent = `🟡 Deadline om ${daysLeft} dage`; dlEl.style.color = 'var(--sidebar-text)'; }
+
+  document.getElementById('pm-pressure-wrap').style.display = 'block';
+  document.getElementById('pm-pressure-bar').style.width = '100%';
+  document.getElementById('pm-pressure-bar').style.background = daysLeft<=0?'var(--danger)':daysLeft===1?'var(--warning)':'var(--accent2)';
+
+  document.getElementById('pm-toggle-btn').textContent = '▶ Start';
+  updateTimerDisplay();
+  toast(`⚡ Pomodoro+ – fokus på: ${best.name}`);
+}
+function startPomodoro(){
+  pomodoroTask = null;
+  document.getElementById('pm-fab').classList.add('hidden');
+  document.getElementById('pm-controls').style.display = 'flex';
+  document.getElementById('pm-focus-task').style.display = 'none';
+  document.getElementById('pm-pressure-wrap').style.display = 'none';
+  document.getElementById('pm-label').textContent = 'Fokus';
+  timerSecs = 25*60; pomodoroTotalSecs = 25*60; timerMode = 'focus'; timerRunning = false;
+  document.getElementById('pm-toggle-btn').textContent = '▶ Start';
+  updateTimerDisplay();
+}
+function updatePressureBar(){
+  if(!pomodoroTask) return;
+  const pct = timerSecs / pomodoroTotalSecs * 100;
+  const bar = document.getElementById('pm-pressure-bar');
+  bar.style.width = pct + '%';
+  if(pct > 50) bar.style.background = 'var(--accent2)';
+  else if(pct > 25) bar.style.background = 'var(--warning)';
+  else bar.style.background = 'var(--danger)';
+}
+function toggleTimer(){
+  timerRunning = !timerRunning;
+  document.getElementById('pm-toggle-btn').textContent = timerRunning ? '⏸ Pause' : '▶ Start';
+  if(timerRunning){
+    requestNotificationPermission();
+    timerStartedAt = Date.now(); timerSecsAtStart = timerSecs;
+    clearInterval(timerInterval);
+    timerInterval = setInterval(()=>{
+      const elapsed = Math.floor((Date.now()-timerStartedAt)/1000);
+      timerSecs = Math.max(0, timerSecsAtStart - elapsed);
+      updateTimerDisplay();
+      if(pomodoroTask) updatePressureBar();
+      if(timerSecs<=0){
+        clearInterval(timerInterval); timerRunning=false; timerStartedAt=null;
+        if(timerMode==='focus'){
+          if(pomodoroTask){
+            sendNotification('⚡ Fokus-session færdig!', `Tid til at markere "${pomodoroTask.name}" som færdig?`);
+            toast(`⚡ Session færdig! Markér "${pomodoroTask.name}" som færdig?`);
+            if(pomodoroTask.projId && confirm(`Markér "${pomodoroTask.name}" som færdig?`)) toggleProjectDone(pomodoroTask.projId);
+          } else {
+            sendNotification('⏱ Fokus-session færdig!', 'Tag en velfortjent pause 🎉');
+            toast('⏱ Fokus-session færdig! Tag en pause 🎉');
+          }
+          timerMode='break'; timerSecs=5*60; pomodoroTotalSecs=5*60;
+          document.getElementById('pm-label').textContent='Pause';
+          document.getElementById('pm-pressure-wrap').style.display='none';
+        } else {
+          sendNotification('☕ Pause slut!', 'Klar til en ny fokus-session? 💪');
+          toast('Pause slut – klar? 💪');
+          timerMode='focus'; timerSecs=25*60; pomodoroTotalSecs=25*60;
+          document.getElementById('pm-label').textContent='Fokus';
+        }
+        document.getElementById('pm-toggle-btn').textContent='▶ Start';
+        updateTimerDisplay();
+      }
+    }, 500);
+  } else {
+    clearInterval(timerInterval); timerStartedAt=null;
+  }
+}
+function resetTimer(){
+  clearInterval(timerInterval); timerRunning=false;
+  timerSecs = pomodoroTotalSecs||25*60; timerMode='focus';
+  document.getElementById('pm-label').textContent = pomodoroTask?'⚡ Pomodoro+':'Fokus';
+  document.getElementById('pm-toggle-btn').textContent='▶ Start';
+  if(pomodoroTask) document.getElementById('pm-pressure-bar').style.width='100%';
+  updateTimerDisplay();
+}
+function closeTimerPanel(){
+  clearInterval(timerInterval); timerRunning=false; pomodoroTask=null;
+  document.getElementById('pm-focus-task').style.display='none';
+  document.getElementById('pm-pressure-wrap').style.display='none';
+  document.getElementById('pm-controls').style.display='none';
+  document.getElementById('pm-fab').classList.remove('hidden');
+  document.getElementById('pm-label').textContent='Fokus';
+  document.getElementById('pm-display').textContent='25:00';
+}
+function updateTimerDisplay(){
+  const m=Math.floor(timerSecs/60), s=timerSecs%60;
+  document.getElementById('pm-display').textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+document.addEventListener('visibilitychange', ()=>{
+  if(!document.hidden && timerRunning && timerStartedAt){
+    const elapsed = Math.floor((Date.now()-timerStartedAt)/1000);
+    timerSecs = Math.max(0, timerSecsAtStart - elapsed);
+    updateTimerDisplay();
+    if(pomodoroTask) updatePressureBar();
+  }
+});
+
+// ══════════════════════════ NOTIFIKATIONER ══════════════════════════
+function requestNotificationPermission(){ if('Notification' in window && Notification.permission==='default') Notification.requestPermission(); }
+function sendNotification(title, body){ if('Notification' in window && Notification.permission==='granted') new Notification(title, { body }); }
+
+// ══════════════════════════ SETTINGS ══════════════════════════
+function openSettings(){
+  document.getElementById('set-url').value = SUPABASE_URL;
+  document.getElementById('set-key').value = SUPABASE_KEY;
+  document.getElementById('ov-settings').style.display = 'flex';
+}
+function closeSettings(){ document.getElementById('ov-settings').style.display = 'none'; }
+function saveSettings(){
+  const url = document.getElementById('set-url').value.trim().replace(/\/$/,'');
+  const key = document.getElementById('set-key').value.trim();
+  if(!url || !key){ toast('Udfyld begge felter'); return; }
+  SUPABASE_URL = url; SUPABASE_KEY = key;
+  localStorage.setItem('fb_sb_url', url);
+  localStorage.setItem('fb_sb_key', key);
+  sbReady = true;
+  closeSettings();
+  toast('Forbundet – henter opgaver...');
+  renderShell();
+  loadFromSupabase();
+}
+
+// ══════════════════════════ FULD SKÆRM ══════════════════════════
+function toggleFullscreen(){
+  document.documentElement.requestFullscreen().then(()=>{
+    if(screen.orientation && screen.orientation.lock){ screen.orientation.lock('landscape').catch(()=>{}); }
+  }).catch(()=>toast('Kunne ikke gå i fuld skærm her'));
+}
+function syncFullscreenBtn(){
+  const btn = document.getElementById('fs-btn');
+  if(btn) btn.style.display = document.fullscreenElement ? 'none' : 'flex';
+}
+document.addEventListener('fullscreenchange', syncFullscreenBtn);
+
+(function installManifest(){
+  const manifest = {
+    name: 'Nooty – Væg', short_name: 'Nooty Væg',
+    display: 'fullscreen', display_override: ['fullscreen', 'standalone'],
+    orientation: 'landscape', start_url: '.', scope: '.',
+    background_color: '#272e1b', theme_color: '#3d472b'
+  };
+  const blob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+  const link = document.createElement('link');
+  link.rel = 'manifest';
+  link.href = URL.createObjectURL(blob);
+  document.head.appendChild(link);
+})();
+
+// ══════════════════════════ HOLD SKÆRMEN TÆNDT ══════════════════════════
+let wakeLock = null;
+async function requestWakeLock(){
+  if(!('wakeLock' in navigator)) return;
+  try{ wakeLock = await navigator.wakeLock.request('screen'); }
+  catch(e){ console.warn('Wake Lock fejlede:', e); }
+}
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState === 'visible'){ requestWakeLock(); loadFromSupabase(); }
+});
+
+// ══════════════════════════ AUTO-OPDATERING ══════════════════════════
+const REFRESH_MS = 60000;
+setInterval(()=>{ if(sbReady) loadFromSupabase(); }, REFRESH_MS);
+
+// ══════════════════════════ INIT ══════════════════════════
+(function init(){
+  const cached = localStorage.getItem('nooty_wall_cache');
+  if(cached){ try{ state = JSON.parse(cached); }catch(e){} }
+  if(SUPABASE_URL && SUPABASE_KEY){ sbReady = true; renderShell(); loadFromSupabase(); }
+  else { renderShell(); }
+  syncFullscreenBtn();
+  requestWakeLock();
+})();
+</script>
+</body>
+</html>

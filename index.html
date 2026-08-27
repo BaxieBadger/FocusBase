@@ -239,7 +239,7 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); font-si
 /* ── DASHBOARD ── */
 .dash-stats {
   display: grid;
-  grid-template-columns: 1fr 1fr 0.9fr 0.9fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 12px;
   margin-bottom: 20px;
   align-items: stretch;
@@ -626,9 +626,8 @@ select { cursor:pointer; }
 .some-card-header { padding:12px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:8px; }
 .some-platform { font-size:11px; font-weight:600; color:var(--text); }
 .some-status { margin-left:auto; font-size:9px; font-weight:600; padding:2px 8px; border-radius:10px; text-transform:uppercase; }
-.some-status.draft  { background:var(--surface2); color:var(--text-muted); }
-.some-status.ready  { background:var(--accent2-light); color:var(--accent2); }
-.some-status.posted { background:var(--accent-light); color:var(--accent); }
+.some-status.afventer { background:var(--surface2); color:var(--text-muted); }
+.some-status.planlagt { background:var(--accent2-light); color:var(--accent2); }
 .some-card-body { padding:14px 16px; }
 .some-content { font-size:12px; line-height:1.6; color:var(--text-muted); margin-bottom:12px; }
 .some-checklist { border-top:1px solid var(--border); padding-top:10px; }
@@ -978,29 +977,6 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
           <div class="s-val" id="stat-proj">0</div>
           <div class="s-sub" id="sc-proj-sub"></div>
         </div>
-        <!-- 3: SoMe cirkeldiagram -->
-        <div class="stat-card" style="order:3;padding:10px;cursor:pointer;" onclick="nav('some')" title="Gå til SoMe">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:3px;">
-            <span class="s-label" style="margin:0;">◈ SoMe</span>
-            <div style="display:flex;gap:2px;">
-              <button class="filter-pill active" id="some-chart-btn-0" onclick="event.stopPropagation(); setSomeChartView(0,this)" style="font-size:8px;padding:1px 5px;">FB/LI</button>
-              <button class="filter-pill" id="some-chart-btn-1" onclick="event.stopPropagation(); setSomeChartView(1,this)" style="font-size:8px;padding:1px 5px;">FB</button>
-              <button class="filter-pill" id="some-chart-btn-2" onclick="event.stopPropagation(); setSomeChartView(2,this)" style="font-size:8px;padding:1px 5px;">LI</button>
-            </div>
-          </div>
-          <canvas id="some-pie" width="140" height="140" style="display:block;margin:0 auto;"></canvas>
-          <div id="some-pie-legend" style="margin-top:6px;display:flex;flex-direction:column;gap:2px;"></div>
-          <div style="margin-top:8px;padding-top:6px;border-top:1px solid var(--border);display:flex;gap:12px;">
-            <div style="text-align:center;flex:1;">
-              <div style="font-size:16px;font-weight:700;" id="stat-some-planned">0</div>
-              <div style="font-size:9px;color:var(--text-muted);">Planlagte</div>
-            </div>
-            <div style="text-align:center;flex:1;">
-              <div style="font-size:16px;font-weight:700;color:var(--warning);" id="stat-some">0</div>
-              <div style="font-size:9px;color:var(--text-muted);">Afventer</div>
-            </div>
-          </div>
-        </div>
         <!-- 4: Projekter cirkeldiagram -->
         <div class="stat-card" style="order:4;padding:10px;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
@@ -1009,6 +985,41 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
           </div>
           <canvas id="tema-pie" width="140" height="140" style="display:block;margin:0 auto;"></canvas>
           <div id="tema-pie-legend" style="margin-top:6px;display:flex;flex-direction:column;gap:2px;"></div>
+        </div>
+        <!-- 5: SoMe – cirkeldiagram + næste opslag pr. org-enhed -->
+        <div class="stat-card" style="order:5;grid-column:1/-1;padding:16px 18px;">
+          <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;">
+            <div style="width:200px;flex-shrink:0;cursor:pointer;" onclick="nav('some')" title="Gå til SoMe">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:3px;">
+                <span class="s-label" style="margin:0;">◈ SoMe</span>
+                <div style="display:flex;gap:2px;">
+                  <button class="filter-pill active" id="some-chart-btn-0" onclick="event.stopPropagation(); setSomeChartView(0,this)" style="font-size:8px;padding:1px 5px;">Platform</button>
+                  <button class="filter-pill" id="some-chart-btn-1" onclick="event.stopPropagation(); setSomeChartView(1,this)" style="font-size:8px;padding:1px 5px;">Sport</button>
+                  <button class="filter-pill" id="some-chart-btn-2" onclick="event.stopPropagation(); setSomeChartView(2,this)" style="font-size:8px;padding:1px 5px;">LVS</button>
+                </div>
+              </div>
+              <canvas id="some-pie" width="140" height="140" style="display:block;margin:0 auto;"></canvas>
+              <div id="some-pie-legend" style="margin-top:6px;display:flex;flex-direction:column;gap:2px;"></div>
+              <div style="margin-top:8px;padding-top:6px;border-top:1px solid var(--border);display:flex;gap:12px;">
+                <div style="text-align:center;flex:1;">
+                  <div style="font-size:16px;font-weight:700;" id="stat-some-planned">0</div>
+                  <div style="font-size:9px;color:var(--text-muted);">Planlagte</div>
+                </div>
+                <div style="text-align:center;flex:1;">
+                  <div style="font-size:16px;font-weight:700;color:var(--warning);" id="stat-some">0</div>
+                  <div style="font-size:9px;color:var(--text-muted);">Afventer</div>
+                </div>
+              </div>
+            </div>
+            <div style="flex:1;min-width:180px;">
+              <div class="s-label" style="margin:0 0 8px;">Næste – Sport for Livet</div>
+              <div id="some-upcoming-sport"></div>
+            </div>
+            <div style="flex:1;min-width:180px;">
+              <div class="s-label" style="margin:0 0 8px;">Næste – LVS</div>
+              <div id="some-upcoming-lvs"></div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1215,6 +1226,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   <button class="fab-option" onclick="startPomodoro(); closeFab();">⏱ Pomodoro</button>
   <button class="fab-option" onclick="startPomodoroPlus(); closeFab();" title="Start med den mest presserende opgave">⚡ Pomodoro+</button>
   <button class="fab-option" onclick="openTaskModal(); closeFab();">+ Ny opgave</button>
+  <button class="fab-option" onclick="openSomeModal(); closeFab();">+ Nyt SoMe-opslag</button>
   <button class="fab-main" id="fab-main-btn" onclick="toggleFab()" title="Genveje">+</button>
 </div>
 
@@ -1318,41 +1330,63 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
 <div class="modal-overlay" id="modal-some">
   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title">Nyt SoMe-opslag</div>
+      <div class="modal-title" id="modal-some-title">Nyt SoMe-opslag</div>
       <button class="modal-close" onclick="closeModal('modal-some')">✕</button>
     </div>
     <div class="modal-body">
-      <div class="field"><label>Platform</label>
-        <select id="s-platform" onchange="updateSomeCatFields()"><option>LinkedIn</option><option>Instagram</option><option>Facebook</option><option>Twitter/X</option><option>TikTok</option></select>
+      <div class="field">
+        <label>Emne *</label>
+        <input type="text" id="s-emne" placeholder="Kort titel/emne for opslaget">
       </div>
-      <div class="field" id="s-fb-emne-field" style="display:none;"><label>Facebook emne</label>
-        <select id="s-fb-emne">
-          <option value="">— Vælg emne —</option>
-          <option value="sport">Sport for livet</option>
-          <option value="feriecamp">FerieCamp</option>
-          <option value="temadage">Temadage</option>
-          <option value="fra_lvs">Fra LVS</option>
-          <option value="andet">Andet</option>
-        </select>
+      <div class="field">
+        <label>Org-enhed *</label>
+        <div style="display:flex;gap:4px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:3px;width:fit-content;">
+          <button type="button" class="view-toggle" id="s-org-sport" onclick="setSomeOrgEnhed('sport')">Sport for Livet</button>
+          <button type="button" class="view-toggle" id="s-org-lvs" onclick="setSomeOrgEnhed('lvs')">LVS</button>
+        </div>
+        <input type="hidden" id="s-orgenhed">
       </div>
-      <div class="field" id="s-li-type-field" style="display:none;"><label>LinkedIn posttype</label>
-        <select id="s-li-type">
-          <option value="">— Vælg type —</option>
-          <option value="processer">Processer & indsigt</option>
-          <option value="resultater">Resultater & impact</option>
-          <option value="historier">Menneskelige historier</option>
-          <option value="viden">Viden & fagligt</option>
-        </select>
-      </div>
-      <div class="field"><label>Tekst</label><textarea id="s-content" style="min-height:120px;"></textarea></div>
+      <div class="field"><label>Beskrivelse</label><textarea id="s-content" style="min-height:120px;"></textarea></div>
       <div class="row2">
-        <div class="field"><label>Planlagt dato</label><input type="date" id="s-date" style="width:100%;"></div>
+        <div class="field"><label>Platform</label>
+          <select id="s-platform"><option>LinkedIn</option><option>Facebook</option><option>Instagram</option></select>
+        </div>
         <div class="field"><label>Status</label>
-          <select id="s-status"><option value="draft">Kladde</option><option value="ready">Klar</option><option value="posted">Postet</option></select>
+          <select id="s-status"><option value="afventer">Afventer</option><option value="planlagt">Planlagt</option></select>
         </div>
       </div>
+      <div class="row2">
+        <div class="field">
+          <label>Arrangementstart <span style="font-size:10px;color:var(--text-muted);">(valgfrit)</span></label>
+          <input type="text" id="s-eventstart-smart" placeholder="fx 15/6" style="width:100%;"
+            oninput="previewSmartDate('s-eventstart-smart','s-eventstart-preview')">
+          <div id="s-eventstart-preview" style="font-size:11px;color:var(--accent);margin-top:4px;min-height:16px;"></div>
+          <input type="hidden" id="s-eventstart">
+        </div>
+        <div class="field">
+          <label>Post-dato</label>
+          <input type="text" id="s-postdato-smart" placeholder="fx 15/6" style="width:100%;"
+            oninput="previewSmartDate('s-postdato-smart','s-postdato-preview')">
+          <div id="s-postdato-preview" style="font-size:11px;color:var(--accent);margin-top:4px;min-height:16px;"></div>
+          <input type="hidden" id="s-postdato">
+        </div>
+      </div>
+      <div class="field">
+        <label>Links <span style="font-size:10px;color:var(--text-muted);">– tilføj URL og tryk Enter (valgfrit)</span></label>
+        <div style="display:flex;gap:6px;margin-bottom:6px;">
+          <input type="url" id="some-link-input" placeholder="https://..." style="flex:1;" onkeydown="if(event.key==='Enter'){event.preventDefault();addSomeLink();}">
+          <input type="text" id="some-link-label" placeholder="Navn (valgfrit)" style="width:120px;" onkeydown="if(event.key==='Enter'){event.preventDefault();addSomeLink();}">
+          <button class="btn sm" onclick="addSomeLink()">+</button>
+        </div>
+        <div id="some-links-list" style="display:flex;flex-direction:column;gap:4px;"></div>
+        <input type="hidden" id="some-links">
+      </div>
+      <div class="field">
+        <label>OneDrive / fil-reference <span style="font-size:10px;color:var(--text-muted);">(valgfrit)</span></label>
+        <input type="text" id="some-onedrive" placeholder="fx https://sharepoint.com/... eller mappenavn">
+      </div>
       <div class="flex gap8">
-        <button class="btn" onclick="saveSome()" style="flex:1;">Gem opslag</button>
+        <button class="btn" onclick="saveSomePost()" style="flex:1;">Gem opslag</button>
         <button class="btn secondary" onclick="closeModal('modal-some')">Annuller</button>
       </div>
     </div>
@@ -1589,29 +1623,24 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   </div>
 </div>
 
-<!-- SOME STATS MODAL -->
+<!-- AFSLUT SOME-OPSLAG MODAL -->
 <div class="modal-overlay" id="modal-some-stats">
   <div class="modal" style="width:480px;">
     <div class="modal-header">
-      <div class="modal-title">📊 SoMe-statistik</div>
+      <div class="modal-title">🏁 Afslut opslag</div>
       <button class="modal-close" onclick="closeModal('modal-some-stats')">✕</button>
     </div>
     <div class="modal-body">
       <div id="some-stats-platform-label" style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:4px;"></div>
       <div id="some-stats-content-preview" style="font-size:12px;color:var(--text-muted);border-left:3px solid var(--border);padding-left:10px;margin-bottom:16px;line-height:1.5;"></div>
       <div class="row3">
-        <div class="field"><label>👁 Reach / Visninger</label><input type="number" id="stat-reach" placeholder="0" min="0"></div>
-        <div class="field"><label>❤️ Likes / Reaktioner</label><input type="number" id="stat-likes" placeholder="0" min="0"></div>
+        <div class="field"><label>👁 Visninger</label><input type="number" id="stat-views" placeholder="0" min="0"></div>
+        <div class="field"><label>❤️ Reaktioner</label><input type="number" id="stat-reactions" placeholder="0" min="0"></div>
         <div class="field"><label>💬 Kommentarer</label><input type="number" id="stat-comments" placeholder="0" min="0"></div>
       </div>
-      <div class="row3">
-        <div class="field"><label>🔁 Delinger</label><input type="number" id="stat-shares" placeholder="0" min="0"></div>
-        <div class="field"><label>🔗 Klik på link</label><input type="number" id="stat-clicks" placeholder="0" min="0"></div>
-        <div class="field"><label>📅 Målt dato</label><input type="date" id="stat-date" style="width:100%;"></div>
-      </div>
-      <div class="field"><label>Note</label><textarea id="stat-note" placeholder="Hvad virkede? Hvad virkede ikke?" style="min-height:60px;"></textarea></div>
+      <div class="field"><label>Note <span style="font-size:10px;color:var(--text-muted);">(valgfrit)</span></label><textarea id="stat-note" placeholder="Hvad virkede? Hvad virkede ikke?" style="min-height:60px;"></textarea></div>
       <div class="flex gap8">
-        <button class="btn" onclick="saveSomeStats()" style="flex:1;">Gem statistik</button>
+        <button class="btn" onclick="finishSomePost()" style="flex:1;">Afslut opslag</button>
         <button class="btn secondary" onclick="closeModal('modal-some-stats')">Annuller</button>
       </div>
     </div>
@@ -2119,6 +2148,7 @@ async function initStorage() {
 
 function renderAll() {
   migrateColors();
+  migrateSomeData();
   checkMigrationNeeded();
   renderDashboard();
   renderCalendar();
@@ -2512,6 +2542,32 @@ function cleanEmailContent(text) {
 
 // ── FARVE MIGRATION ──
 // Opdaterer gamle farver til ny palette når data loades
+// ── SOME DATA MIGRATION ──
+// Migrerer gamle SoMe-opslag (date/draft/ready/posted/fbEmne/liType) til det nye felt-sæt
+// (postDato/afventer/planlagt/orgEnhed/emne/eventStart/links/onedrive).
+function migrateSomeData() {
+  let changed = false;
+  state.some.forEach(s => {
+    if(!s.postDato && s.date) { s.postDato = s.date; changed = true; }
+    if(s.status === 'ready')  { s.status = 'planlagt'; changed = true; }
+    else if(s.status === 'draft' || s.status === 'scheduled') { s.status = 'afventer'; changed = true; }
+    else if(s.status === 'posted') { s.status = 'planlagt'; changed = true; }
+    if(s.emne === undefined)      { s.emne = ''; changed = true; }
+    if(s.orgEnhed === undefined)  { s.orgEnhed = ''; changed = true; }
+    if(s.eventStart === undefined){ s.eventStart = ''; changed = true; }
+    if(s.links === undefined)     { s.links = []; changed = true; }
+    if(s.onedrive === undefined)  { s.onedrive = ''; changed = true; }
+    if(s.stats && (s.stats.views===undefined || s.stats.reactions===undefined)) {
+      s.stats.views     = s.stats.views     !== undefined ? s.stats.views     : (s.stats.reach || 0);
+      s.stats.reactions = s.stats.reactions !== undefined ? s.stats.reactions : (s.stats.likes || 0);
+      changed = true;
+    }
+    if(s.finishedAt === undefined){ s.finishedAt = s.stats ? (s.stats.date ? new Date(s.stats.date+'T12:00:00').toISOString() : s.createdAt) : null; changed = true; }
+    if(!s.checks) { s.checks = [false,false,false,false,false]; changed = true; }
+  });
+  if(changed) save();
+}
+
 function migrateColors() {
   const colorMap = {
     '#d4520a': '#B04A8A', // Event: gammel brændt rød → ny magenta (Event)
@@ -3574,13 +3630,14 @@ function renderDashboard() {
     styleStatCard('sc-dl', dominantDl, null, null);
   }
 
-  // SoMe: planlagte og afventer i SoMe-kortet
-  const pending  = state.some.filter(s=>s.status==='ready');
-  const planned  = state.some.filter(s=>s.status==='scheduled'||s.status==='draft');
+  // SoMe: planlagte og afventer i SoMe-kortet (afsluttede opslag tælles ikke med længere)
+  const pending  = state.some.filter(s=>s.status==='afventer' && !s.finishedAt);
+  const planned  = state.some.filter(s=>s.status==='planlagt' && !s.finishedAt);
   const somePlanned = document.getElementById('stat-some-planned');
   const somePending = document.getElementById('stat-some');
   if(somePlanned) somePlanned.textContent = planned.length;
   if(somePending) somePending.textContent = pending.length;
+  renderSomeUpcoming();
 
   if(dashView === 'agenda') renderAgenda(); else renderKanban();
 
@@ -3606,7 +3663,7 @@ function renderDashboard() {
     return `<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);">
       <span style="font-size:11px;font-weight:700;color:${pc.bg};">${esc(s.platform)}</span>
       <span style="font-size:11px;color:var(--text-muted);flex:1;">${esc(s.content).substring(0,50)}…</span>
-      <button class="btn sm success" onclick="markPosted(${s.id})" style="font-size:10px;padding:3px 8px;">✓ Postet</button>
+      <button class="btn sm success" onclick="markSomePlanlagt(${s.id})" style="font-size:10px;padding:3px 8px;">✓ Planlagt</button>
     </div>`;
   }).join('') : '<div class="empty" style="padding:16px 0;"><div class="emoji">✓</div>Ingen afventer</div>';
 }
@@ -3686,31 +3743,28 @@ function renderDashboardCharts() {
   let someData = [];
 
   if(someChartView === 0) {
-    // FB vs LinkedIn
-    const fb = allPosts.filter(s=>s.platform==='Facebook').length;
-    const li = allPosts.filter(s=>s.platform==='LinkedIn').length;
+    // Alle opslag fordelt på platform
     someData = [
-      { label:'Facebook', color:'#1877F2', value:fb },
-      { label:'LinkedIn', color:'#0A66C2', value:li },
+      { label:'Facebook',  color:'#1877F2', value: allPosts.filter(s=>s.platform==='Facebook').length },
+      { label:'LinkedIn',  color:'#0A66C2', value: allPosts.filter(s=>s.platform==='LinkedIn').length },
+      { label:'Instagram', color:'#C13584', value: allPosts.filter(s=>s.platform==='Instagram').length },
     ];
   } else if(someChartView === 1) {
-    // Facebook posts by emne
-    const fbPosts = allPosts.filter(s=>s.platform==='Facebook');
-    someData = FB_EMNER.map(e=>({
-      label: e.label, color: e.color,
-      value: fbPosts.filter(s=>s.fbEmne===e.id).length,
-    }));
-    const ucat = fbPosts.filter(s=>!s.fbEmne).length;
-    if(ucat) someData.push({ label:'Andet', color:'#7A8088', value:ucat });
+    // Sport for Livet-opslag fordelt på platform
+    const sportPosts = allPosts.filter(s=>s.orgEnhed==='sport');
+    someData = [
+      { label:'Facebook',  color:'#1877F2', value: sportPosts.filter(s=>s.platform==='Facebook').length },
+      { label:'LinkedIn',  color:'#0A66C2', value: sportPosts.filter(s=>s.platform==='LinkedIn').length },
+      { label:'Instagram', color:'#C13584', value: sportPosts.filter(s=>s.platform==='Instagram').length },
+    ];
   } else {
-    // LinkedIn posts by type
-    const liPosts = allPosts.filter(s=>s.platform==='LinkedIn');
-    someData = LI_POSTTYPER.map(t=>({
-      label: t.label, color: t.color,
-      value: liPosts.filter(s=>s.liType===t.id).length,
-    }));
-    const ucat = liPosts.filter(s=>!s.liType).length;
-    if(ucat) someData.push({ label:'Ukategoriseret', color:'#7A8088', value:ucat });
+    // LVS-opslag fordelt på platform
+    const lvsPosts = allPosts.filter(s=>s.orgEnhed==='lvs');
+    someData = [
+      { label:'Facebook',  color:'#1877F2', value: lvsPosts.filter(s=>s.platform==='Facebook').length },
+      { label:'LinkedIn',  color:'#0A66C2', value: lvsPosts.filter(s=>s.platform==='LinkedIn').length },
+      { label:'Instagram', color:'#C13584', value: lvsPosts.filter(s=>s.platform==='Instagram').length },
+    ];
   }
 
   const someTotal = someData.reduce((s,d)=>s+d.value,0);
@@ -3772,6 +3826,8 @@ function previewSmartDate(inputId, previewId) {
   if(inputId === 'p-deadline-smart')             hiddenId = 'p-deadline';
   else if(inputId === 'p-deadline-final-smart')  hiddenId = 'p-deadline-final';
   else if(inputId === 'flow-deadline-smart')      hiddenId = 'flow-deadline';
+  else if(inputId === 's-eventstart-smart')       hiddenId = 's-eventstart';
+  else if(inputId === 's-postdato-smart')         hiddenId = 's-postdato';
   else if(inputId === 'avis-tryk-input')     hiddenId = 'avis-tryk-hidden';
   else if(inputId === 'off-from')            hiddenId = 'off-from-hidden';
   else if(inputId === 'off-to')              hiddenId = 'off-to-hidden';
@@ -4022,24 +4078,49 @@ function renderReports() {
   const el = document.getElementById('reports-list');
   if(!el) return;
 
-  let projects = state.projects;
-  if(reportFilter==='some')       projects = projects.filter(p=>p.underkat==='SoMe');
+  // SoMe-filtret viser afsluttede SoMe-opslag (state.some), ikke opgaver — den gamle
+  // underkat==='SoMe' opgave-visning havde ingen reel statistik at vise.
+  let projects = reportFilter==='some' ? [] : state.projects;
   if(reportFilter==='newsletter') projects = projects.filter(p=>p.underkat==='Nyhedsbrev');
   if(reportFilter==='press')      projects = projects.filter(p=>p.underkat==='Presse'||isArtikelOpgave(p));
 
   // Only show projects with some data to report
   const reportable = projects.filter(p =>
-    p.nlStats || p.articleLinks?.length ||
-    state.some.some(s=>s.stats&&s.stats.reach) ||
-    (state.diaryEntries[p.id]||[]).length > 0
+    p.nlStats || p.articleLinks?.length || (state.diaryEntries[p.id]||[]).length > 0
   );
 
-  if(!reportable.length) {
-    el.innerHTML = '<div class="empty"><div class="emoji">📋</div>Ingen afrapporteringer endnu.<br>Tilføj statistik til en opgave for at se det her.</div>';
+  const someReportable = (reportFilter==='some'||reportFilter==='all')
+    ? state.some.filter(s=>s.finishedAt).sort((a,b)=>(b.finishedAt||'').localeCompare(a.finishedAt||''))
+    : [];
+
+  if(!reportable.length && !someReportable.length) {
+    el.innerHTML = '<div class="empty"><div class="emoji">📋</div>Ingen afrapporteringer endnu.<br>Tilføj statistik til en opgave eller afslut et SoMe-opslag for at se det her.</div>';
     return;
   }
 
-  el.innerHTML = reportable.map(p => {
+  const someCardsHtml = someReportable.map(s => {
+    const pc = platColor(s.platform);
+    const st = s.stats || {};
+    return `<div class="report-card" id="report-some-${s.id}">
+      <div class="report-card-header" style="border-top:3px solid ${pc.bg};">
+        <div class="kanban-dot" style="background:${pc.bg};width:10px;height:10px;border-radius:3px;"></div>
+        <div class="report-card-title">${esc(s.emne||s.content.substring(0,40)||'SoMe-opslag')}</div>
+        <span style="font-size:10px;font-weight:600;color:${pc.bg};">${esc(s.platform)}${s.orgEnhed?' · '+(s.orgEnhed==='sport'?'Sport for Livet':'LVS'):''}</span>
+        <span style="font-size:10px;color:var(--text-muted);">${s.postDato?formatDate(s.postDato):''}</span>
+        <button class="btn sm secondary" onclick="openFinishSomeModal(${s.id})" style="font-size:10px;">🏁 Rediger resultater</button>
+      </div>
+      <div class="report-card-body">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:${st.note?'10px':'0'};">
+          <div class="report-stat-box"><div class="rsb-val">${(st.views||0).toLocaleString('da-DK')}</div><div class="rsb-lbl">Visninger</div></div>
+          <div class="report-stat-box"><div class="rsb-val">${(st.reactions||0).toLocaleString('da-DK')}</div><div class="rsb-lbl">Reaktioner</div></div>
+          <div class="report-stat-box"><div class="rsb-val">${(st.comments||0).toLocaleString('da-DK')}</div><div class="rsb-lbl">Kommentarer</div></div>
+        </div>
+        ${st.note?`<div style="font-size:12px;color:var(--text-muted);line-height:1.6;">${esc(st.note)}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+
+  const projectCardsHtml = reportable.map(p => {
     const type = getOpgaveType(p.type);
     const hex = type.color||'#9099a8';
     const children = state.projects.filter(c=>c.parentId===p.id);
@@ -4092,6 +4173,8 @@ function renderReports() {
       </div>
     </div>`;
   }).join('');
+
+  el.innerHTML = projectCardsHtml + someCardsHtml;
 }
 
 function downloadReportsPDF() {
@@ -4408,40 +4491,38 @@ function deleteMediaItem(idx) {
   renderMediaListItems();
 }
 
-// ── SOME STATS ──
+// ── AFSLUT SOME-OPSLAG ──
+// "Afslutte" et opslag = registrere de endelige resultater (Visninger/Reaktioner/Kommentarer).
+// Opslaget forsvinder herefter fra de aktive Planlagte/Afventer-tal og "Næste opslag"-listerne
+// på dashboardet, og dukker i stedet op under SoMe i Afrapporteringsfanen.
 let editingSomeStatsId = null;
-function openSomeStatsModal(id) {
+function openFinishSomeModal(id) {
   editingSomeStatsId = id;
   const s = state.some.find(x=>x.id===id);
   if(!s) return;
   const pc = platColor(s.platform);
   document.getElementById('some-stats-platform-label').textContent = s.platform;
   document.getElementById('some-stats-platform-label').style.color = pc.bg;
-  document.getElementById('some-stats-content-preview').textContent = s.content.substring(0,120) + (s.content.length>120?'…':'');
+  document.getElementById('some-stats-content-preview').textContent = (s.emne||s.content).substring(0,120) + ((s.emne||s.content).length>120?'…':'');
   const st = s.stats || {};
-  document.getElementById('stat-reach').value    = st.reach    || '';
-  document.getElementById('stat-likes').value    = st.likes    || '';
-  document.getElementById('stat-comments').value = st.comments || '';
-  document.getElementById('stat-shares').value   = st.shares   || '';
-  document.getElementById('stat-clicks').value   = st.clicks   || '';
-  document.getElementById('stat-date').value     = st.date     || new Date().toISOString().split('T')[0];
-  document.getElementById('stat-note').value     = st.note     || '';
+  document.getElementById('stat-views').value     = st.views     || '';
+  document.getElementById('stat-reactions').value = st.reactions || '';
+  document.getElementById('stat-comments').value  = st.comments  || '';
+  document.getElementById('stat-note').value      = st.note      || '';
   document.getElementById('modal-some-stats').classList.add('open');
 }
-function saveSomeStats() {
+function finishSomePost() {
   const s = state.some.find(x=>x.id===editingSomeStatsId);
   if(!s) return;
   s.stats = {
-    reach:    parseInt(document.getElementById('stat-reach').value)    || 0,
-    likes:    parseInt(document.getElementById('stat-likes').value)    || 0,
-    comments: parseInt(document.getElementById('stat-comments').value) || 0,
-    shares:   parseInt(document.getElementById('stat-shares').value)   || 0,
-    clicks:   parseInt(document.getElementById('stat-clicks').value)   || 0,
-    date:     document.getElementById('stat-date').value,
-    note:     document.getElementById('stat-note').value,
+    views:     parseInt(document.getElementById('stat-views').value)     || 0,
+    reactions: parseInt(document.getElementById('stat-reactions').value) || 0,
+    comments:  parseInt(document.getElementById('stat-comments').value)  || 0,
+    note:      document.getElementById('stat-note').value,
   };
-  save(); closeModal('modal-some-stats'); renderSome();
-  toast('📊 Statistik gemt ✓');
+  if(!s.finishedAt) s.finishedAt = new Date().toISOString();
+  save(); closeModal('modal-some-stats'); renderSome(); renderDashboard();
+  toast('🏁 Opslag afsluttet ✓');
 }
 
 // ── ARTICLE LINKS ──
@@ -4518,7 +4599,7 @@ const PLATFORM_COLORS = {
 };
 function platColor(p) { return PLATFORM_COLORS[p] || { bg:'#6c63ff', light:'#ede9ff', text:'#fff' }; }
 
-const STATUS_DOT = { draft:'#9099a8', ready:'#F47920', posted:'#00c875' };
+const STATUS_DOT = { afventer:'#F47920', planlagt:'#00c875' };
 
 function setSomeView(v, el) {
   someView = v;
@@ -4540,6 +4621,28 @@ function renderSome() {
   else renderSomeKanban();
 }
 
+// Dashboard-kortets "Næste 3 opslag" pr. org-enhed, sorteret efter Post-dato
+function renderSomeUpcoming() {
+  const today = new Date().toISOString().split('T')[0];
+  const upcoming = state.some.filter(s=>s.postDato && s.postDato>=today && !s.finishedAt).sort((a,b)=>a.postDato.localeCompare(b.postDato));
+  const renderCol = (org, elId) => {
+    const el = document.getElementById(elId);
+    if(!el) return;
+    const items = upcoming.filter(s=>s.orgEnhed===org).slice(0,3);
+    el.innerHTML = items.length ? items.map(s=>{
+      const pc = platColor(s.platform);
+      const evTitle = s.eventStart ? `Arrangementstart: ${formatDate(s.eventStart)}` : '';
+      return `<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer;" onclick="nav('some');openSomeModal(${s.id})" title="${esc(evTitle)}">
+        <span style="width:6px;height:6px;border-radius:50%;background:${pc.bg};flex-shrink:0;"></span>
+        <span style="font-size:11px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(s.emne||s.content.substring(0,30))}</span>
+        <span style="font-size:9px;color:var(--text-muted);flex-shrink:0;">${formatDate(s.postDato)}</span>
+      </div>`;
+    }).join('') : '<div style="font-size:11px;color:var(--text-muted);padding:6px 0;">Ingen planlagte opslag</div>';
+  };
+  renderCol('sport', 'some-upcoming-sport');
+  renderCol('lvs', 'some-upcoming-lvs');
+}
+
 function renderSomeCal() {
   const y=someCalYear, m=someCalMonth;
   const MONTHS_DA=['Januar','Februar','Marts','April','Maj','Juni','Juli','August','September','Oktober','November','December'];
@@ -4557,16 +4660,17 @@ function renderSomeCal() {
   document.getElementById('some-cal-body').innerHTML = cells.map(c=>{
     const ds = c.other ? '' : `${y}-${String(m+1).padStart(2,'0')}-${String(c.day).padStart(2,'0')}`;
     const isToday = !c.other && today.getFullYear()===y && today.getMonth()===m && today.getDate()===c.day;
-    const posts = c.other ? [] : state.some.filter(s=>s.date===ds);
+    const posts = c.other ? [] : state.some.filter(s=>s.postDato===ds);
     return `<div class="some-cal-day ${isToday?'today':''} ${c.other?'other-month':''}" onclick="${c.other?'':'openSomeModal()'}">
       <div class="some-cal-day-num">${c.day}</div>
       ${posts.map(s => {
         const pc = platColor(s.platform);
-        return `<div class="some-post-thumb" onclick="event.stopPropagation();openSomeModal(${s.id})">
+        const evTitle = s.eventStart ? `Arrangementstart: ${formatDate(s.eventStart)}` : '';
+        return `<div class="some-post-thumb" onclick="event.stopPropagation();openSomeModal(${s.id})" title="${esc(evTitle)}">
           <div class="some-post-platform-bar" style="background:${pc.bg};"></div>
           <div class="some-post-inner">
-            <div class="some-post-platform-tag" style="color:${pc.bg};">${s.platform}</div>
-            <div class="some-post-text">${esc(s.content)}</div>
+            <div class="some-post-platform-tag" style="color:${pc.bg};">${s.platform}${s.orgEnhed?' · '+(s.orgEnhed==='sport'?'Sport for Livet':'LVS'):''}</div>
+            <div class="some-post-text">${esc(s.emne||s.content)}</div>
           </div>
           <div class="some-post-status-dot" style="background:${STATUS_DOT[s.status]||'#9099a8'};margin:4px 5px 0 0;"></div>
         </div>`;
@@ -4592,27 +4696,31 @@ function renderSomeKanban() {
           : posts.map(s=>`
             <div class="some-kanban-card" onclick="openSomeDetailModal(${s.id})">
               <div class="some-kanban-card-header">
-                <span class="some-status ${s.status}" style="margin:0;">${s.status==='draft'?'Kladde':s.status==='ready'?'Klar':'Postet'}</span>
-                ${s.date?`<span style="font-size:10px;color:var(--text-muted);margin-left:auto;">📅 ${formatDate(s.date)}</span>`:''}
+                <span class="some-status ${s.status}" style="margin:0;">${s.status==='planlagt'?'Planlagt':'Afventer'}</span>
+                ${s.postDato?`<span style="font-size:10px;color:var(--text-muted);margin-left:auto;">📅 ${formatDate(s.postDato)}</span>`:''}
               </div>
               <div class="some-kanban-card-body">
                 <div class="some-thumb-img">🖼</div>
+                ${s.orgEnhed?`<div style="font-size:9px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">${s.orgEnhed==='sport'?'Sport for Livet':'LVS'}</div>`:''}
+                <div class="some-kanban-card-text" style="font-weight:600;">${esc(s.emne||'')}</div>
                 <div class="some-kanban-card-text">${esc(s.content)}</div>
                 <div style="display:flex;gap:4px;flex-wrap:wrap;">
                   ${SOME_CHECKS.map((chk,i)=>{
                     const ok=s.checks&&s.checks[i];
-                    return `<span style="font-size:9px;padding:1px 5px;border-radius:8px;background:${ok?'var(--accent2-light)':'var(--surface2)'};color:${ok?'var(--accent2)':'var(--text-muted)'};">${ok?'✓ ':''} ${chk}</span>`;
+                    return `<span onclick="event.stopPropagation();toggleSomeCheck(${s.id},${i},${!ok})" style="cursor:pointer;font-size:9px;padding:1px 5px;border-radius:8px;background:${ok?'var(--accent2-light)':'var(--surface2)'};color:${ok?'var(--accent2)':'var(--text-muted)'};">${ok?'✓ ':''} ${chk}</span>`;
                   }).join('')}
                 </div>
                 <div class="flex gap8 mt8">
-                  ${s.status!=='posted'?`<button class="btn sm success" onclick="event.stopPropagation();markPosted(${s.id})" style="font-size:10px;padding:3px 8px;">✓ Postet</button>`:''}
-                  <button class="btn sm secondary" onclick="event.stopPropagation();openSomeStatsModal(${s.id})" style="font-size:10px;padding:3px 8px;">📊 ${s.stats?'Statistik':'Tilføj statistik'}</button>
+                  ${s.finishedAt ? `<span style="font-size:10px;font-weight:600;color:var(--accent2);">🏁 Afsluttet</span>` : `
+                    ${s.status!=='planlagt'?`<button class="btn sm success" onclick="event.stopPropagation();markSomePlanlagt(${s.id})" style="font-size:10px;padding:3px 8px;">✓ Planlagt</button>`:''}
+                    <button class="btn sm secondary" onclick="event.stopPropagation();openFinishSomeModal(${s.id})" style="font-size:10px;padding:3px 8px;">🏁 Afslut opslag</button>
+                  `}
                   <button class="btn sm secondary" onclick="event.stopPropagation();deleteSome(${s.id})" style="font-size:10px;padding:3px 8px;">Slet</button>
                 </div>
-                ${s.stats&&s.stats.reach ? `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
-                  <div style="text-align:center;"><div style="font-size:14px;font-weight:700;color:var(--text);">${s.stats.reach.toLocaleString('da-DK')}</div><div style="font-size:9px;color:var(--text-muted);">Reach</div></div>
-                  <div style="text-align:center;"><div style="font-size:14px;font-weight:700;color:var(--text);">${s.stats.likes.toLocaleString('da-DK')}</div><div style="font-size:9px;color:var(--text-muted);">Likes</div></div>
-                  <div style="text-align:center;"><div style="font-size:14px;font-weight:700;color:var(--text);">${s.stats.shares.toLocaleString('da-DK')}</div><div style="font-size:9px;color:var(--text-muted);">Delinger</div></div>
+                ${s.stats ? `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);cursor:pointer;" onclick="event.stopPropagation();openFinishSomeModal(${s.id})" title="Rediger resultater">
+                  <div style="text-align:center;"><div style="font-size:14px;font-weight:700;color:var(--text);">${(s.stats.views||0).toLocaleString('da-DK')}</div><div style="font-size:9px;color:var(--text-muted);">Visninger</div></div>
+                  <div style="text-align:center;"><div style="font-size:14px;font-weight:700;color:var(--text);">${(s.stats.reactions||0).toLocaleString('da-DK')}</div><div style="font-size:9px;color:var(--text-muted);">Reaktioner</div></div>
+                  <div style="text-align:center;"><div style="font-size:14px;font-weight:700;color:var(--text);">${(s.stats.comments||0).toLocaleString('da-DK')}</div><div style="font-size:9px;color:var(--text-muted);">Kommentarer</div></div>
                 </div>` : ''}
               </div>
             </div>`).join('')}
@@ -4623,45 +4731,102 @@ function renderSomeKanban() {
 
 function openSomeDetailModal(id) { openSomeModal(id); }
 
-function updateSomeCatFields() {
-  const plat = document.getElementById('s-platform')?.value;
-  const fbField = document.getElementById('s-fb-emne-field');
-  const liField = document.getElementById('s-li-type-field');
-  if(fbField) fbField.style.display = plat==='Facebook' ? 'block' : 'none';
-  if(liField) liField.style.display = plat==='LinkedIn' ? 'block' : 'none';
+function setSomeOrgEnhed(val) {
+  document.getElementById('s-orgenhed').value = val;
+  document.getElementById('s-org-sport').classList.toggle('active', val==='sport');
+  document.getElementById('s-org-lvs').classList.toggle('active', val==='lvs');
+}
+
+let _someLinks = [];
+function addSomeLink() {
+  const url   = document.getElementById('some-link-input')?.value.trim();
+  const label = document.getElementById('some-link-label')?.value.trim();
+  if(!url) return;
+  _someLinks.push({ url, label: label || url.replace(/^https?:\/\//, '').substring(0,40) });
+  document.getElementById('some-link-input').value = '';
+  document.getElementById('some-link-label').value = '';
+  renderSomeLinks();
+}
+function removeSomeLink(idx) {
+  _someLinks.splice(idx,1);
+  renderSomeLinks();
+}
+function renderSomeLinks() {
+  const el = document.getElementById('some-links-list');
+  if(!el) return;
+  el.innerHTML = _someLinks.map((l,i)=>`
+    <div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:var(--surface2);border-radius:var(--radius);border:1px solid var(--border);">
+      <a href="${l.url}" target="_blank" style="font-size:11px;flex:1;color:var(--accent);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🔗 ${esc(l.label)}</a>
+      <button class="icon-btn red" onclick="removeSomeLink(${i})" style="font-size:10px;">✕</button>
+    </div>`).join('');
+  const hidden = document.getElementById('some-links');
+  if(hidden) hidden.value = JSON.stringify(_someLinks);
 }
 
 function openSomeModal(id=null){
   const p=id?state.some.find(x=>x.id===id):null;
+  document.getElementById('modal-some-title').textContent = p ? 'Rediger SoMe-opslag' : 'Nyt SoMe-opslag';
+  document.getElementById('s-emne').value=p?.emne||'';
   document.getElementById('s-platform').value=p?.platform||'LinkedIn';
   document.getElementById('s-content').value=p?.content||'';
-  document.getElementById('s-date').value=p?.date||'';
-  document.getElementById('s-status').value=p?.status||'draft';
-  if(document.getElementById('s-fb-emne')) document.getElementById('s-fb-emne').value=p?.fbEmne||'';
-  if(document.getElementById('s-li-type')) document.getElementById('s-li-type').value=p?.liType||'';
-  updateSomeCatFields();
+  document.getElementById('s-status').value=p?.status||'afventer';
+  setSomeOrgEnhed(p?.orgEnhed||'sport');
+
+  document.getElementById('s-eventstart').value = p?.eventStart||'';
+  const esInp  = document.getElementById('s-eventstart-smart');
+  const esPrev = document.getElementById('s-eventstart-preview');
+  if(p?.eventStart) {
+    const d = new Date(p.eventStart+'T12:00:00');
+    esInp.value = `${d.getDate()}/${d.getMonth()+1}`;
+    esPrev.textContent = `→ ${d.getDate()}. ${DA_MONTHS_SHORT[d.getMonth()]} ${d.getFullYear()}`;
+    esPrev.style.color = 'var(--accent2)';
+  } else { esInp.value=''; esPrev.textContent=''; }
+
+  document.getElementById('s-postdato').value = p?.postDato||'';
+  const pdInp  = document.getElementById('s-postdato-smart');
+  const pdPrev = document.getElementById('s-postdato-preview');
+  if(p?.postDato) {
+    const d = new Date(p.postDato+'T12:00:00');
+    pdInp.value = `${d.getDate()}/${d.getMonth()+1}`;
+    pdPrev.textContent = `→ ${d.getDate()}. ${DA_MONTHS_SHORT[d.getMonth()]} ${d.getFullYear()}`;
+    pdPrev.style.color = 'var(--accent2)';
+  } else { pdInp.value=''; pdPrev.textContent=''; }
+
+  _someLinks = p?.links ? JSON.parse(JSON.stringify(p.links)) : [];
+  renderSomeLinks();
+  document.getElementById('some-onedrive').value = p?.onedrive || '';
+
   document.getElementById('modal-some').classList.add('open');
   document.getElementById('modal-some').dataset.editId=id||'';
 }
-function saveSome(){
-  const content=document.getElementById('s-content').value.trim();
-  if(!content){alert('Skriv indhold');return;}
-  const editId=parseInt(document.getElementById('modal-some').dataset.editId)||null;
-  const plat = document.getElementById('s-platform').value;
-  const fbEmne = plat==='Facebook' ? document.getElementById('s-fb-emne')?.value||'' : '';
-  const liType = plat==='LinkedIn' ? document.getElementById('s-li-type')?.value||'' : '';
-  if(editId){const s=state.some.find(x=>x.id===editId);if(s){s.platform=plat;s.content=content;s.date=document.getElementById('s-date').value;s.status=document.getElementById('s-status').value;s.fbEmne=fbEmne;s.liType=liType;}}
-  else{state.some.push({id:newId(),platform:plat,content,date:document.getElementById('s-date').value,status:document.getElementById('s-status').value,fbEmne,liType,checks:[false,false,false,false,false],createdAt:new Date().toISOString()});}
+function saveSomePost(){
+  const emne = document.getElementById('s-emne').value.trim();
+  if(!emne){alert('Giv opslaget et emne');return;}
+  const editId    = parseInt(document.getElementById('modal-some').dataset.editId)||null;
+  const plat      = document.getElementById('s-platform').value;
+  const orgEnhed  = document.getElementById('s-orgenhed').value || 'sport';
+  const content   = document.getElementById('s-content').value.trim();
+  const status    = document.getElementById('s-status').value;
+  const eventStart= document.getElementById('s-eventstart').value;
+  const postDato  = document.getElementById('s-postdato').value;
+  const links     = [..._someLinks];
+  const onedrive  = document.getElementById('some-onedrive').value.trim();
+  if(editId){
+    const s=state.some.find(x=>x.id===editId);
+    if(s){ s.emne=emne; s.platform=plat; s.orgEnhed=orgEnhed; s.content=content; s.status=status; s.eventStart=eventStart; s.postDato=postDato; s.links=links; s.onedrive=onedrive; }
+  } else {
+    state.some.push({id:newId(),emne,platform:plat,orgEnhed,content,status:status||'afventer',eventStart,postDato,links,onedrive,checks:[false,false,false,false,false],createdAt:new Date().toISOString()});
+  }
   save();closeModal('modal-some');renderSome();renderDashboard();
 }
 function toggleSomeCheck(id,idx,val){
   const s=state.some.find(x=>x.id===id);if(!s)return;
   if(!s.checks)s.checks=[false,false,false,false,false];
   s.checks[idx]=val;
-  if(s.checks.every(Boolean)&&s.status==='draft'){s.status='ready';toast('Alle tjek ok! Opslaget er klar 🎉');}
+  if(s.checks.every(Boolean)&&s.status==='afventer'){s.status='planlagt';toast('Alle tjek ok! Opslaget er planlagt 🎉');}
   save();renderSome();renderDashboard();
 }
-function markPosted(id){const s=state.some.find(x=>x.id===id);if(s){s.status='posted';save();renderSome();renderDashboard();toast('Opslaget er markeret som postet ✓');}}
+function markSomePlanlagt(id){const s=state.some.find(x=>x.id===id);if(s){s.status='planlagt';save();renderSome();renderDashboard();toast('Opslaget er markeret som planlagt ✓');}}
 function deleteSome(id){
   if(!confirm('Slet opslag?'))return;
   state.some=state.some.filter(x=>x.id!==id);
