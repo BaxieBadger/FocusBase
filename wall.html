@@ -52,7 +52,9 @@
     padding:7px 16px; border-radius:999px; }
   .wall-tab.active{ background:var(--sage-500); color:var(--sage-900); }
   .wall-header-right{ margin-left:auto; display:flex; align-items:center; gap:16px; }
-  .wall-clock{ text-align:right; }
+  .wall-clock{ position:fixed; bottom:calc(14px + var(--safe-b)); left:calc(14px + var(--safe-l)); z-index:70;
+    text-align:left; background:color-mix(in srgb, var(--sage-900) 80%, transparent); color:#fff;
+    padding:8px 16px; border-radius:14px; pointer-events:none; }
   .wc-time{ font-family:var(--font-heading); font-weight:900; font-size:clamp(16px,1.6vw,22px); display:block; line-height:1.1; }
   .wc-date{ font-size:clamp(9px,0.85vw,11px); color:var(--sidebar-text); text-transform:uppercase; letter-spacing:0.06em; }
 
@@ -112,10 +114,12 @@
   .legend-label{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .legend-n{ margin-left:auto; opacity:.75; flex:none; }
 
-  .rail-next{ margin-top:auto; display:flex; flex-direction:column; gap:6px; min-height:0; flex:none; }
-  .rail-next-title{ font-size:clamp(9px,0.85vw,10px); letter-spacing:0.08em; font-weight:700; opacity:.75; }
+  .rail-next{ margin-top:auto; display:flex; flex-direction:column; gap:6px; min-height:0; flex:1 1 auto; overflow-y:auto; }
+  .rail-next::-webkit-scrollbar{ width:5px; }
+  .rail-next::-webkit-scrollbar-thumb{ background:rgba(255,255,255,0.2); border-radius:999px; }
+  .rail-next-title{ font-size:clamp(9px,0.85vw,10px); letter-spacing:0.08em; font-weight:700; opacity:.75; flex:none; }
   .up-item{ display:flex; align-items:center; gap:8px; width:100%; text-align:left; border:none; border-radius:999px;
-    padding:8px 12px; font-size:clamp(11px,1vw,12px); font-weight:600; background:color-mix(in srgb, var(--sage-100) 11%, transparent); color:var(--sage-100); }
+    padding:8px 12px; font-size:clamp(11px,1vw,12px); font-weight:600; background:color-mix(in srgb, var(--sage-100) 11%, transparent); color:var(--sage-100); flex:none; }
   .up-item.active{ background:var(--sage-500); }
   .up-item .t{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; }
   .up-item .d{ font-size:clamp(9px,0.85vw,10.5px); opacity:.85; flex:none; }
@@ -131,7 +135,7 @@
   .deck-swipe{ flex:1; min-height:0; touch-action:pan-y; cursor:grab; overflow:hidden; }
   .deck-swipe:active{ cursor:grabbing; }
   .deck-card{ height:100%; border-radius:var(--radius-lg); box-shadow:var(--shadow-md); transition:transform .22s ease;
-    color:var(--text); overflow:hidden; display:flex; flex-direction:column; touch-action:none; }
+    color:var(--text); overflow:hidden; display:flex; flex-direction:column; }
   .deck-card.dragging{ transition:none; }
   .deck-card-inner{ flex:1; min-height:0; overflow-y:auto; padding:clamp(20px,3vw,40px) clamp(20px,3vw,40px) 0; display:flex; flex-direction:column; gap:12px; }
   .deck-card-top{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; flex:none; }
@@ -278,6 +282,7 @@
   <button class="fs-btn" id="fs-btn" onclick="toggleFullscreen()" title="Fuld skærm">⛶</button>
   <button class="settings-btn" id="settings-btn" onclick="openSettings()" title="Forbindelse">⚙<span class="sb-dot" id="sb-dot"></span></button>
 </div>
+<div class="wall-clock" id="wall-clock"></div>
 <div id="root"></div>
 <div class="toast" id="toast"></div>
 
@@ -449,7 +454,6 @@ function renderShell(){
           </div>
         </div>
         <button class="sp-connect-btn" id="sp-connect-btn" onclick="spotifyLogin()">🎵 Forbind Spotify</button>
-        <div class="wall-clock" id="wall-clock"></div>
       </div>
     </div>
     <div class="wall-content">
@@ -542,7 +546,7 @@ function renderPillList(){
   const donutBg = stops.length ? `conic-gradient(${stops.join(', ')})` : 'conic-gradient(var(--neutral-400) 0 100%)';
 
   const items = deckItems();
-  const upNext = items.slice(0,2);
+  const upNext = items.slice(0,10);
   const activeTask = items[deckIndex];
 
   el.innerHTML = `
@@ -558,7 +562,7 @@ function renderPillList(){
     <div class="rail-donut">
       <div class="donut" style="background:${donutBg}"><div class="donut-hole">${open.length}</div></div>
       <div class="legend">
-        ${Object.keys(counts).map(k=>{ const t=getOpgaveType(k); return `<div class="legend-row"><span class="legend-dot" style="background:${t.color};"></span><span class="legend-label">${t.icon} ${t.navn}</span><span class="legend-n">${counts[k]}</span></div>`; }).join('') || '<div class="legend-row"><span class="empty-hint">Intet at vise</span></div>'}
+        ${Object.keys(counts).map(k=>{ const t=getOpgaveType(k); return `<div class="legend-row"><span class="legend-dot" style="background:${t.color};"></span><span class="legend-label">${t.navn}</span><span class="legend-n">${counts[k]}</span></div>`; }).join('') || '<div class="legend-row"><span class="empty-hint">Intet at vise</span></div>'}
       </div>
     </div>
     <div class="rail-next">
@@ -631,19 +635,28 @@ function goDeck(delta){
 function bindDeckDrag(){
   const swipe = document.getElementById('deck-swipe');
   if(!swipe) return;
-  swipe.onpointerdown = (e)=>{
-    dragStartX=e.clientX; dragging=true; drag=0; updateDeckTransform();
-    try{ swipe.setPointerCapture(e.pointerId); }catch(err){}
-  };
-  swipe.onpointermove = (e)=>{ if(!dragging) return; drag = e.clientX-dragStartX; updateDeckTransform(); };
-  swipe.onpointerup = swipe.onpointercancel = (e)=>{
+
+  function onMove(e){
     if(!dragging) return;
-    dragging=false;
-    if(e && e.pointerId!==undefined){ try{ swipe.releasePointerCapture(e.pointerId); }catch(err){} }
+    drag = e.clientX - dragStartX;
+    updateDeckTransform();
+  }
+  function onUp(){
+    if(!dragging) return;
+    dragging = false;
+    window.removeEventListener('pointermove', onMove);
+    window.removeEventListener('pointerup', onUp);
+    window.removeEventListener('pointercancel', onUp);
     if(drag < -60) goDeck(1);
     else if(drag > 60) goDeck(-1);
     else { drag=0; updateDeckTransform(); }
-  };
+  }
+  swipe.addEventListener('pointerdown', (e)=>{
+    dragStartX = e.clientX; dragging = true; drag = 0; updateDeckTransform();
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+  });
 }
 function updateDeckTransform(){
   const card = document.getElementById('deck-card');
