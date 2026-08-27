@@ -7,7 +7,7 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='18' fill='%231a5228'/><ellipse cx='50' cy='44' rx='22' ry='28' stroke='white' stroke-width='7' fill='none'/><polyline points='36,46 46,57 70,30' stroke='white' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'/></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700;900&family=Nunito:wght@400;500;600;700;800&family=Caveat:wght@600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&family=Fraunces:wght@900&display=swap" rel="stylesheet">
 <style>
 :root {
   /* ── Ny designpalette: varm, rundet, terracotta/salvie ── */
@@ -108,6 +108,8 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); font-si
 }
 .sidebar-icon-btn:hover { color:#fff; background:rgba(255,255,255,0.14); }
 .sidebar-icon-btn.ok { color:#39D98A; }
+.sidebar-icon-btn.spinning svg { animation:spin 0.8s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
 .focus-bar-label { font-size:10px; color:var(--sidebar-text); margin-bottom:4px; }
 .focus-bar { height:3px; background:rgba(255,255,255,0.1); border-radius:2px; }
 .focus-bar-fill { height:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); border-radius:2px; transition:width 0.4s; }
@@ -909,7 +911,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   <div class="sidebar-logo">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
       <div style="width:36px;height:36px;min-width:36px;border-radius:50%;background:var(--sage-200);display:flex;align-items:center;justify-content:center;">
-        <span style="font-family:var(--font-heading);font-size:18px;color:var(--sage-900);line-height:1;">n</span>
+        <span style="font-family:'Fraunces',serif;font-weight:900;font-size:18px;color:var(--sage-900);line-height:1;">N</span>
       </div>
       <h1 class="sidebar-label-text" style="font-size:22px;font-weight:400;color:#fff;font-family:var(--font-heading);letter-spacing:-0.01em;">nooty</h1>
     </div>
@@ -918,28 +920,28 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
   </div>
   <div class="nav">
     <div class="sidebar-section-label">Overblik</div>
-    <div class="nav-item active" data-label="Dashboard" onclick="nav('dashboard')"><span class="ni-icon">⊞</span><span class="sidebar-label-text"> Dashboard</span></div>
+    <div class="nav-item active" data-label="Dashboard" onclick="nav('dashboard')"><span class="ni-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"></rect><rect width="7" height="5" x="14" y="3" rx="1"></rect><rect width="7" height="9" x="14" y="12" rx="1"></rect><rect width="7" height="5" x="3" y="16" rx="1"></rect></svg></span><span class="sidebar-label-text"> Dashboard</span></div>
     <div class="sidebar-section-label">Arbejde</div>
     <div class="nav-item" data-label="Opgaver" onclick="nav('projects')" id="nav-projects">
-      <span class="ni-icon">◫</span><span class="sidebar-label-text"> Opgaver</span>
+      <span class="ni-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="m3 17 2 2 4-4"></path><path d="m3 7 2 2 4-4"></path><path d="M13 6h8"></path><path d="M13 12h8"></path><path d="M13 18h8"></path></svg></span><span class="sidebar-label-text"> Opgaver</span>
       <span class="ni-badge" id="proj-badge" style="display:none">0</span>
     </div>
-    <div class="nav-item" data-label="Kalender" onclick="nav('calendar')"><span class="ni-icon">◷</span><span class="sidebar-label-text"> Kalender</span></div>
-    <div class="nav-item" data-label="SoMe" onclick="nav('some')"><span class="ni-icon">◈</span><span class="sidebar-label-text"> SoMe</span></div>
+    <div class="nav-item" data-label="Kalender" onclick="nav('calendar')"><span class="ni-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"></path><path d="M16 2v4"></path><rect width="18" height="18" x="3" y="4" rx="2"></rect><path d="M3 10h18"></path><path d="M8 14h.01"></path><path d="M12 14h.01"></path><path d="M16 14h.01"></path><path d="M8 18h.01"></path><path d="M12 18h.01"></path><path d="M16 18h.01"></path></svg></span><span class="sidebar-label-text"> Kalender</span></div>
+    <div class="nav-item" data-label="SoMe" onclick="nav('some')"><span class="ni-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"></line><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"></line></svg></span><span class="sidebar-label-text"> SoMe</span></div>
     <div class="sidebar-section-label">Arkiv</div>
     <div class="nav-item" data-label="Notater" onclick="nav('notes')" style="display:none;"><span class="ni-icon">◱</span><span class="sidebar-label-text"> Notater</span></div>
     <div class="nav-item" data-label="Dagbog" onclick="nav('diary')" style="display:none;"><span class="ni-icon">◎</span><span class="sidebar-label-text"> Dagbog</span></div>
-    <div class="nav-item" data-label="Kilder" onclick="nav('kilder')"><span class="ni-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="sidebar-label-text"> Kilder</span></div>
-    <div class="nav-item" data-label="Afrapportering" onclick="nav('reports')"><span class="ni-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6"/><path d="M9 17h6"/></svg></span><span class="sidebar-label-text"> Afrapportering</span></div>
-    <div class="nav-item" data-label="Ugerapport" onclick="event.stopPropagation(); generateWeekReport();"><span class="ni-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/></svg></span><span class="sidebar-label-text"> Ugerapport</span></div>
+    <div class="nav-item" data-label="Kilder" onclick="nav('kilder')"><span class="ni-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M18 21a8 8 0 0 0-16 0"></path><circle cx="10" cy="8" r="5"></circle><path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"></path></svg></span><span class="sidebar-label-text"> Kilder</span></div>
+    <div class="nav-item" data-label="Afrapportering" onclick="nav('reports')"><span class="ni-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h20"></path><path d="M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3"></path><path d="m7 21 5-5 5 5"></path></svg></span><span class="sidebar-label-text"> Afrapportering</span></div>
+    <div class="nav-item" data-label="Ugerapport" onclick="event.stopPropagation(); generateWeekReport();"><span class="ni-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M16 22h2a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v3"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><circle cx="8" cy="16" r="6"></circle><path d="M9.5 17.5 8 16.25V14"></path></svg></span><span class="sidebar-label-text"> Ugerapport</span></div>
   </div>
   <div class="sidebar-footer">
     <div class="sidebar-clock" id="sidebar-clock-wrap" title="Klokken">
       <span id="clock">--:--</span>
     </div>
     <div class="sidebar-icon-grid">
-      <button class="sidebar-icon-btn" onclick="event.stopPropagation(); handleSyncButtonClick();" id="sync-btn" title="Supabase: ikke forbundet">⟳</button>
-      <button class="sidebar-icon-btn" onclick="event.stopPropagation(); openMigrationWizard();" id="migration-btn" title="Konvertér opgaver"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 21l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></button>
+      <button class="sidebar-icon-btn" onclick="event.stopPropagation(); handleSyncButtonClick();" id="sync-btn" title="Supabase: ikke forbundet"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path><path d="M3 21v-5h5"></path></svg></button>
+      <button class="sidebar-icon-btn" onclick="event.stopPropagation(); openMigrationWizard();" id="migration-btn" title="Konvertér opgaver"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 21l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></button>
       <button class="sidebar-icon-btn feature-hidden" onclick="event.stopPropagation(); openThemeModal();" title="Skift design">🎨</button>
     </div>
     <div class="feature-hidden">
@@ -1056,7 +1058,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
             <div class="card-header">🎙 Interviews
               <button onclick="archiveAllInterviews()" id="avis-btn"
                 style="margin-left:auto;font-size:10px;padding:3px 10px;background:#265E3A;color:#fff;border:none;border-radius:var(--radius);cursor:pointer;font-family:var(--font);white-space:nowrap;display:none;">
-                📰 Avis udgivet
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;vertical-align:-0.15em"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"></path><path d="M18 14h-8"></path><path d="M15 18h-5"></path><path d="M10 6h8v4h-8V6Z"></path></svg> Avis udgivet
               </button>
             </div>
             <div class="card-body" id="dash-interviews"></div>
@@ -1260,7 +1262,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
       <!-- EVENT FIELDS – vises når Opgave = Aktivitet -->
       <div id="event-fields" style="display:none;">
         <hr class="divider">
-        <div style="font-size:11px;font-weight:600;color:#D4520A;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">🎪 Event-detaljer</div>
+        <div style="font-size:11px;font-weight:600;color:#D4520A;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;vertical-align:-0.15em"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"></path></svg> Event-detaljer</div>
         <div class="field"><label>Adresse / Sted</label><input type="text" id="ev-address" placeholder="fx Rådhuspladsen 1, København"></div>
         <div class="row2">
           <div class="field"><label>Start-tidspunkt</label><input type="time" id="ev-start" style="width:100%;"></div>
@@ -1620,7 +1622,7 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
 <div class="modal-overlay" id="modal-article-links">
   <div class="modal" style="width:520px;">
     <div class="modal-header">
-      <div class="modal-title">📰 Artikellinks – evaluering</div>
+      <div class="modal-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;vertical-align:-0.15em"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"></path><path d="M18 14h-8"></path><path d="M15 18h-5"></path><path d="M10 6h8v4h-8V6Z"></path></svg> Artikellinks – evaluering</div>
       <button class="modal-close" onclick="closeModal('modal-article-links')">✕</button>
     </div>
     <div class="modal-body">
@@ -1776,14 +1778,19 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
 // Hver type har sin egen liste af underkategorier at vælge imellem.
 const OPGAVE_TYPES = [
   { id:'vaeresteds',     navn:'Værestedsavisen', emoji:'📰', color:'#F0E175',
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;vertical-align:-0.15em;flex-shrink:0"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"></path><path d="M18 14h-8"></path><path d="M15 18h-5"></path><path d="M10 6h8v4h-8V6Z"></path></svg>',
     underkategorier:['Artikel','Administrativt','Andet'] },
   { id:'projekt',        navn:'Projekt',         emoji:'🧩', color:'#a9c692',
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;vertical-align:-0.15em;flex-shrink:0"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"></path><path d="M8 10v4"></path><path d="M12 10v2"></path><path d="M16 10v6"></path></svg>',
     underkategorier:['Craft','Sundhed','Natur','Det Digitale Værested','Andet'] },
   { id:'aktivitet',      navn:'Aktivitet',       emoji:'🎪', color:'#C5B7DC',
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;vertical-align:-0.15em;flex-shrink:0"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"></path></svg>',
     underkategorier:['Sport for Livet','Ferie Camp','Royal Side Run','Landsmøde','Den Nationale Værestedsdag','Temadage','Andet'] },
   { id:'kommunikation',  navn:'Kommunikation',   emoji:'📢', color:'#f69d6c',
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;vertical-align:-0.15em;flex-shrink:0"><path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z"></path><path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"></path></svg>',
     underkategorier:['Website','Nyhedsbrev','Presse','Intern','SoMe'] },
   { id:'andet',          navn:'Andet',           emoji:'🗂', color:'#dbd4c4',
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;vertical-align:-0.15em;flex-shrink:0"><rect width="20" height="5" x="2" y="3" rx="1"></rect><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"></path><path d="M10 12h4"></path></svg>',
     underkategorier:['Andet'] },
 ];
 function getOpgaveType(id) { return OPGAVE_TYPES.find(t=>t.id===id) || OPGAVE_TYPES[OPGAVE_TYPES.length-1]; }
@@ -2532,7 +2539,13 @@ function migrateColors() {
   // fx når Værestedsavisen/Aktivitet/Kommunikation bytter farve indbyrdes).
   // Rammer kun opgaver hvis farve stadig er en af typernes tidligere/nuværende palette-farver,
   // så en evt. manuelt valgt afvigende farve ikke overskrives.
-  const typeColorPalette = new Set(OPGAVE_TYPES.map(t => t.color).concat(['#265E3A','#C15A1A','#C9A800','#1B8BB0','#7A8088']).map(c=>c.toUpperCase()));
+  // Alle tidligere palette-generationer opgavetype-farver har haft, så ingen "mellemliggende"
+  // opgave-farve overlever en resync når typens farve ændres i OPGAVE_TYPES.
+  const KNOWN_OLD_TYPE_COLORS = [
+    '#265E3A','#C15A1A','#C9A800','#1B8BB0','#7A8088',       // 1. generation
+    '#F6A06B','#AEBF92','#EEE7DB','#CCDBB2','#DCD3C4',       // 2. generation (mellemliggende palette)
+  ];
+  const typeColorPalette = new Set(OPGAVE_TYPES.map(t => t.color).concat(KNOWN_OLD_TYPE_COLORS).map(c=>c.toUpperCase()));
   state.projects.forEach(p => {
     if(!p.type || p.cat === 'Kommunikationsflow' || !p.color) return;
     const currentTypeColor = getOpgaveType(p.type).color;
@@ -2689,7 +2702,7 @@ function renderAgenda() {
               </div>
               <span style="font-size:9px;font-weight:600;padding:2px 7px;border-radius:10px;background:rgba(0,0,0,0.15);color:${tc};white-space:nowrap;">⏰ ${formatDate(p.deadline)}</span>
               ${children.length ? `<button onclick="toggleAgendaSubtasks(${p.id}, event)" style="cursor:pointer;display:flex;align-items:center;gap:6px;background:rgba(0,0,0,0.14);border:none;border-radius:var(--radius-pill);padding:4px 10px 4px 10px;color:${tc};font-size:10px;font-weight:600;white-space:nowrap;" title="Vis/skjul delopgaver">${children.filter(c=>c.done).length}/${children.length} delopgaver<span style="font-size:11px;display:inline-block;transition:transform 0.2s;transform:${expanded?'rotate(90deg)':'rotate(0deg)'};">▶</span></button>` : ''}
-            <span style="font-size:9px;font-weight:600;padding:2px 7px;border-radius:10px;background:rgba(0,0,0,0.15);color:${tc};">${type.emoji} ${esc(p.underkat||type.navn)}</span>
+            <span style="font-size:9px;font-weight:600;padding:2px 7px;border-radius:10px;background:rgba(0,0,0,0.15);color:${tc};">${type.icon} ${esc(p.underkat||type.navn)}</span>
             <button onclick="toggleProjectDone(${p.id})" style="${getBtnStyle(p.color)}border-radius:50%;width:26px;height:26px;min-width:26px;padding:0;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">✓</button>
             </div>
             ${expanded ? `<div style="background:var(--surface2);border:1px solid ${p.color};border-top:none;border-radius:0 0 var(--radius) var(--radius);padding:6px 12px;margin-bottom:5px;">
@@ -2729,7 +2742,7 @@ function renderAgenda() {
                 ${notePreview}
               </div>
               ${children.length ? `<button onclick="toggleAgendaSubtasks(${p.id}, event)" style="cursor:pointer;display:flex;align-items:center;gap:6px;background:rgba(0,0,0,0.14);border:none;border-radius:var(--radius-pill);padding:4px 10px 4px 10px;color:${tc};font-size:10px;font-weight:600;white-space:nowrap;" title="Vis/skjul delopgaver">${children.filter(c=>c.done).length}/${children.length} delopgaver<span style="font-size:11px;display:inline-block;transition:transform 0.2s;transform:${expanded?'rotate(90deg)':'rotate(0deg)'};">▶</span></button>` : ''}
-            <span style="font-size:9px;font-weight:600;padding:2px 7px;border-radius:10px;background:rgba(0,0,0,0.15);color:${tc};">${type.emoji} ${esc(p.underkat||type.navn)}</span>
+            <span style="font-size:9px;font-weight:600;padding:2px 7px;border-radius:10px;background:rgba(0,0,0,0.15);color:${tc};">${type.icon} ${esc(p.underkat||type.navn)}</span>
             <button onclick="toggleProjectDone(${p.id})" style="${getBtnStyle(p.color)}border-radius:50%;width:26px;height:26px;min-width:26px;padding:0;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">✓</button>
             </div>
             ${expanded ? `<div style="background:var(--surface2);border:1px solid ${p.color};border-top:none;border-radius:0 0 var(--radius) var(--radius);padding:6px 12px;margin-bottom:5px;">
@@ -2834,7 +2847,7 @@ function renderKanban() {
 
     return `<div class="kanban-col">
       <div class="kanban-col-header" style="border-top:3px solid ${type.color};">
-        ${type.emoji||''} ${type.navn}
+        ${type.icon||''} ${type.navn}
         <span class="col-count">${open.length}</span>
       </div>
       <div class="kanban-col-body">
@@ -3175,7 +3188,7 @@ function renderProjects() {
 
     const groups = [
       ...OPGAVE_TYPES.map(t => ({
-        id: t.id, navn: t.navn, emoji: t.emoji, color: t.color,
+        id: t.id, navn: t.navn, emoji: t.emoji, icon: t.icon, color: t.color,
         projs: activeProjects.filter(p=>p.type===t.id).sort(deadlineSortFn)
       })).filter(g=>g.projs.length),
       { id:'_none', navn:'Ikke planlagt', emoji:'📥', color:'#7A8088',
@@ -3200,7 +3213,7 @@ function renderProjects() {
         <div onclick="toggleTemaSection('${g.id}')"
           style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:${g.color};border-radius:var(--radius);cursor:pointer;margin-bottom:4px;">
           <span id="tema-arrow-${g.id}" style="color:${tc};font-size:11px;transition:transform 0.2s;${isOpen?'transform:rotate(90deg)':''}">▶</span>
-          <span style="color:${tc};font-size:13px;font-weight:600;">${g.emoji} ${g.navn}</span>
+          <span style="color:${tc};font-size:13px;font-weight:600;">${g.icon||g.emoji} ${g.navn}</span>
           <span style="font-size:10px;background:rgba(0,0,0,0.18);color:${tc};padding:1px 7px;border-radius:10px;margin-left:2px;">${open} åbne</span>
           ${overdue?`<span style="font-size:10px;background:rgba(228,66,88,0.85);color:#fff;padding:2px 7px;border-radius:10px;">⚠ ${overdue}</span>`:''}
           ${urgent&&!overdue?`<span style="font-size:10px;background:rgba(245,158,11,0.85);color:#fff;padding:2px 7px;border-radius:10px;">⏰ ${urgent} snart</span>`:''}
@@ -3223,7 +3236,7 @@ function renderProjects() {
       return `<div style="margin-bottom:8px;">
         <div onclick="toggleTemaSection('${t.id}')" style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:${t.color};border-radius:var(--radius);cursor:pointer;margin-bottom:4px;">
           <span id="tema-arrow-${t.id}" style="color:${tc};font-size:11px;transition:transform 0.2s;${isOpen?'transform:rotate(90deg)':''}">▶</span>
-          <span style="color:${tc};font-size:13px;font-weight:600;">${t.emoji} ${t.navn}</span>
+          <span style="color:${tc};font-size:13px;font-weight:600;">${t.icon} ${t.navn}</span>
           <span style="font-size:10px;background:rgba(0,0,0,0.18);color:${tc};padding:1px 7px;border-radius:10px;margin-left:2px;">${typeProjs.length} åbne</span>
           ${t.id==='vaeresteds'&&state.avisTryk?`<span style="margin-left:auto;font-size:10px;color:${tc};opacity:0.8;">🖨 ${formatDate(state.avisTryk)}</span>`:''}
         </div>
@@ -3272,7 +3285,7 @@ function renderChildrenPanel(p) {
       const ct = getOpgaveType(c.type);
       return `<div onclick="event.stopPropagation();openProjectModal(${c.id})" style="display:flex;align-items:center;gap:8px;padding:5px 0;border-top:1px solid rgba(0,0,0,0.06);cursor:pointer;">
         <div onclick="event.stopPropagation();toggleProjectDone(${c.id})" style="width:16px;height:16px;border-radius:3px;border:1.5px solid ${c.done?'transparent':'rgba(255,255,255,0.4)'};background:${c.done?'rgba(255,255,255,0.3)':'transparent'};cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:${tc};">${c.done?'✓':''}</div>
-        <span style="font-size:9px;padding:1px 6px;border-radius:6px;background:rgba(0,0,0,0.15);color:${tc};flex-shrink:0;white-space:nowrap;">${ct.emoji} ${esc(c.underkat||'')}</span>
+        <span style="font-size:9px;padding:1px 6px;border-radius:6px;background:rgba(0,0,0,0.15);color:${tc};flex-shrink:0;white-space:nowrap;">${ct.icon} ${esc(c.underkat||'')}</span>
         <span style="flex:1;font-size:12px;color:${tc};${c.done?'text-decoration:line-through;opacity:0.6;':''}">${esc(c.title)}</span>
         ${c.procestrin?`<span style="font-size:9px;color:${mc};font-style:italic;white-space:nowrap;">${esc(c.procestrin)}</span>`:''}
         ${c.deadline?`<span style="font-size:9px;color:${mc};white-space:nowrap;">⏰ ${formatDate(c.deadline)}</span>`:''}
@@ -3360,7 +3373,7 @@ function renderProjectCard(p) {
   const notePreview = lastNoteClean ? `<div style="font-size:10px;color:${mc};margin-top:4px;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(lastNoteClean)}</div>` : '';
 
   // Type › underkategori-pill, med procestrin som "pill i en pill"
-  const catPill = `<span style="font-size:9px;padding:1px 7px;border-radius:8px;background:rgba(0,0,0,0.15);color:${tc};white-space:nowrap;">${type.emoji} ${esc(p.underkat||type.navn)}${p.procestrin?` <span style="background:rgba(0,0,0,0.28);padding:1px 6px;border-radius:7px;margin-left:3px;">${esc(p.procestrin)}</span>`:''}</span>`;
+  const catPill = `<span style="font-size:9px;padding:1px 7px;border-radius:8px;background:rgba(0,0,0,0.15);color:${tc};white-space:nowrap;">${type.icon} ${esc(p.underkat||type.navn)}${p.procestrin?` <span style="background:rgba(0,0,0,0.28);padding:1px 6px;border-radius:7px;margin-left:3px;">${esc(p.procestrin)}</span>`:''}</span>`;
 
   return `<div class="project-card" id="pcard-${p.id}" style="background:${bg};border-color:${p.done?'var(--border)':bg};">
     <div class="project-header" onclick="toggleProjectExpand(${p.id})" style="color:${tc};">
@@ -3714,7 +3727,7 @@ function renderDashboardAvis() {
     const ukProjs = avisProjs.filter(p=>p.underkat===uk);
     if(!ukProjs.length) return '';
     return `<div style="margin-bottom:8px;">
-      <div style="font-size:10px;font-weight:600;color:${type.color};text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">${type.emoji} ${uk}</div>
+      <div style="font-size:10px;font-weight:600;color:${type.color};text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">${type.icon} ${uk}</div>
       ${ukProjs.slice(0,3).map(p=>{
         const isOverdue = p.deadline && p.deadline < today;
         const isSoon = p.deadline && p.deadline <= weekEndStr;
@@ -4033,7 +4046,7 @@ function renderReports() {
 
     // Article links
     if(links.length) {
-      statsHtml += `<div style="margin-bottom:10px;"><div style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">📰 Artikler (${links.length})</div>`;
+      statsHtml += `<div style="margin-bottom:10px;"><div style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">${getOpgaveType('vaeresteds').icon} Artikler (${links.length})</div>`;
       statsHtml += links.map(l=>`<a href="${esc(l.url||'#')}" target="_blank" class="article-link-chip">📄 ${esc(l.title||l.medie||'Artikel')}${l.medie?' · '+esc(l.medie):''}</a>`).join('');
       statsHtml += '</div>';
     }
@@ -4053,7 +4066,7 @@ function renderReports() {
         <span style="font-size:10px;color:var(--text-muted);">${p.deadline?formatDate(p.deadline):''}</span>
         ${total?progressPill(total,done):''}
         ${p.underkat==='Nyhedsbrev'?`<button class="btn sm secondary" onclick="openNewsletterStatsModal(${p.id})" style="font-size:10px;">📧 Statistik</button>`:''}
-        ${links.length||p.underkat==='Presse'||isArtikelOpgave(p)?`<button class="btn sm secondary" onclick="openArticleLinksModal(${p.id})" style="font-size:10px;">📰 Artikler</button>`:''}
+        ${links.length||p.underkat==='Presse'||isArtikelOpgave(p)?`<button class="btn sm secondary" onclick="openArticleLinksModal(${p.id})" style="font-size:10px;">${getOpgaveType('vaeresteds').icon} Artikler</button>`:''}
       </div>
       <div class="report-card-body">
         ${statsHtml||'<div style="font-size:12px;color:var(--text-muted);">Ingen statistik registreret endnu.</div>'}
@@ -4290,7 +4303,7 @@ function renderDashboardInterviews() {
         ${showArchived ? `<div style="opacity:0.55;">
           ${archived.map(({iv,projTitle})=>`
             <div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-top:1px solid var(--border);">
-              <span style="font-size:9px;">📰</span>
+              <span style="font-size:9px;">${getOpgaveType('vaeresteds').icon}</span>
               <div style="flex:1;">
                 <div style="font-size:10px;text-decoration:line-through;">${esc(iv.person||'Unavngivet')}</div>
                 <div style="font-size:9px;color:var(--text-muted);">${esc(projTitle)}</div>
@@ -4431,7 +4444,7 @@ function renderArticleLinksList(projId) {
   const links = p?.articleLinks || [];
   const el = document.getElementById('article-links-list');
   if(!links.length) {
-    el.innerHTML = '<div class="empty" style="padding:16px 0;"><div class="emoji">📰</div>Ingen artikler tilføjet endnu</div>';
+    el.innerHTML = `<div class="empty" style="padding:16px 0;"><div class="emoji">${getOpgaveType('vaeresteds').icon}</div>Ingen artikler tilføjet endnu</div>`;
     return;
   }
   el.innerHTML = links.map((l,i) => `
@@ -4950,7 +4963,7 @@ function formatDatetime(s){try{return new Date(s).toLocaleString('da-DK',{day:'n
 async function forceRefreshFromSupabase() {
   if(!sbReady) { toast('Supabase er ikke forbundet'); return; }
   const btn = document.getElementById('sync-btn');
-  if(btn) { btn.textContent = '⏳'; btn.title = 'Opdaterer...'; }
+  if(btn) { btn.classList.add('spinning'); btn.title = 'Opdaterer...'; }
   const loaded = await loadFromSupabase();
   if(loaded) {
     localStorage.setItem('focusbase_v2', JSON.stringify(state));
@@ -4959,7 +4972,7 @@ async function forceRefreshFromSupabase() {
   } else {
     toast('Kunne ikke hente data');
   }
-  if(btn) { btn.textContent = '⟳'; btn.title = sbReady ? 'Supabase: forbundet ✓ (klik for at opdatere)' : 'Supabase: ikke forbundet'; }
+  if(btn) { btn.classList.remove('spinning'); btn.title = sbReady ? 'Supabase: forbundet ✓ (klik for at opdatere)' : 'Supabase: ikke forbundet'; }
 }
 
 // Fælles knap: hvis ikke forbundet -> åbn opsætning, ellers -> opdatér data

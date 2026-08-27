@@ -217,14 +217,19 @@
 // ══════════════════════════ DATA MODEL (delt med desktop + mobil-Nooty) ══════════════════════════
 const OPGAVE_TYPES = [
   { id:'vaeresteds',    navn:'Værestedsavisen', emoji:'📰', underkategorier:['Artikel','Administrativt','Andet'],
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;vertical-align:-0.15em;flex-shrink:0"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"></path><path d="M18 14h-8"></path><path d="M15 18h-5"></path><path d="M10 6h8v4h-8V6Z"></path></svg>',
     fill:'#F0E175', text:'var(--text)', chip:'color-mix(in srgb, var(--text) 12%, transparent)', dot:'#F0E175' },
   { id:'projekt',       navn:'Projekt',         emoji:'🧩', underkategorier:['Craft','Sundhed','Natur','Det Digitale Værested','Andet'],
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;vertical-align:-0.15em;flex-shrink:0"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"></path><path d="M8 10v4"></path><path d="M12 10v2"></path><path d="M16 10v6"></path></svg>',
     fill:'#a9c692', text:'var(--text)', chip:'color-mix(in srgb, var(--text) 12%, transparent)', dot:'#a9c692' },
   { id:'aktivitet',     navn:'Aktivitet',       emoji:'🎪', underkategorier:['Sport for Livet','Ferie Camp','Royal Side Run','Landsmøde','Den Nationale Værestedsdag','Temadage','Andet'],
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;vertical-align:-0.15em;flex-shrink:0"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"></path></svg>',
     fill:'#C5B7DC', text:'var(--text)', chip:'color-mix(in srgb, var(--text) 12%, transparent)', dot:'#C5B7DC' },
   { id:'kommunikation', navn:'Kommunikation',   emoji:'📢', underkategorier:['Website','Nyhedsbrev','Presse','Intern','SoMe'],
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;vertical-align:-0.15em;flex-shrink:0"><path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z"></path><path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"></path></svg>',
     fill:'#f69d6c', text:'var(--text)', chip:'color-mix(in srgb, var(--text) 12%, transparent)', dot:'#f69d6c' },
   { id:'andet',         navn:'Andet',           emoji:'🗂', underkategorier:['Andet'],
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;vertical-align:-0.15em;flex-shrink:0"><rect width="20" height="5" x="2" y="3" rx="1"></rect><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"></path><path d="M10 12h4"></path></svg>',
     fill:'#dbd4c4', text:'var(--text)', chip:'color-mix(in srgb, var(--text) 12%, transparent)', dot:'#dbd4c4' },
 ];
 function getOpgaveType(id){ return OPGAVE_TYPES.find(t=>t.id===id) || OPGAVE_TYPES[OPGAVE_TYPES.length-1]; }
@@ -409,7 +414,7 @@ function render(){
       <div class="rail-donut">
         <div class="donut" style="background:${donutBg}"><div class="donut-hole">${open.length}</div></div>
         <div class="legend">
-          ${Object.keys(counts).map(k=>{ const t=getOpgaveType(k); return `<div class="legend-row"><span class="legend-dot" style="background:${t.dot}"></span><span class="legend-label">${t.emoji} ${t.navn}</span><span class="legend-n">${counts[k]}</span></div>`; }).join('') || '<div class="legend-row"><span class="empty-hint">Intet at vise</span></div>'}
+          ${Object.keys(counts).map(k=>{ const t=getOpgaveType(k); return `<div class="legend-row"><span class="legend-dot" style="background:${t.dot}"></span><span class="legend-label">${t.icon} ${t.navn}</span><span class="legend-n">${counts[k]}</span></div>`; }).join('') || '<div class="legend-row"><span class="empty-hint">Intet at vise</span></div>'}
         </div>
       </div>
       <div class="rail-next">
@@ -427,7 +432,7 @@ function render(){
       </div>
       <div class="card ${dragging?'dragging':''}" id="card" onclick="onCardTap()" style="background:${task.done?'var(--neutral-200)':type.fill}; color:${task.done?'var(--neutral-700)':type.text}; transform:translateX(${dragX}px) rotate(${(drag*0.012).toFixed(2)}deg); opacity:${task.done?0.75:1}">
         <div class="card-top">
-          <span class="chip" style="background:${type.chip}">${type.emoji} ${esc(task.underkat||type.navn)}</span>
+          <span class="chip" style="background:${type.chip}">${type.icon} ${esc(task.underkat||type.navn)}</span>
           ${task.procestrin ? `<span class="chip" style="background:${type.chip}">${esc(task.procestrin)}</span>` : ''}
           <span class="card-date ${isLate?'late':''}">${formatDate(task.deadline)}</span>
         </div>
