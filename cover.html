@@ -150,6 +150,9 @@
   .sub-add{display:flex; gap:6px;}
   .sub-add input{flex:1; padding:8px 11px; border:1.5px solid var(--divider); border-radius:999px; background:var(--bg); font-size:12.5px; font-family:inherit; outline:none;}
   .sub-add button{border:none; border-radius:999px; padding:0 12px; background:var(--sage-600); color:var(--sage-100); font-weight:700; font-size:11.5px;}
+  .sub-note-btn{border:none; background:none; color:var(--neutral-600); cursor:pointer; font-size:12px; padding:2px 6px; flex:none;}
+  .sub-note-btn:hover{color:var(--text);}
+  .sub-notes-panel{padding:2px 12px 10px 30px; display:flex; flex-direction:column; gap:6px;}
 
   .note-card{background:var(--bg); border-radius:16px; padding:10px 12px; display:flex; flex-direction:column; gap:2px;}
   .note-meta{display:flex; align-items:center; gap:7px; font-size:10px; color:var(--neutral-600);}
@@ -314,6 +317,8 @@ window.addEventListener('keydown', (e)=>{
 function onCardTap(){ if(!wasDragged) toggleNotesDrawer(); }
 function toggleNotesDrawer(){ notesOpen = !notesOpen; render(); }
 function closeNotesDrawer(){ notesOpen = false; render(); }
+let subNotesOpen = new Set();
+function toggleSubNotes(id){ if(subNotesOpen.has(id)) subNotesOpen.delete(id); else subNotesOpen.add(id); render(); }
 
 // ══════════════════════════ ACTIONS ══════════════════════════
 function toggleDone(id){
@@ -462,8 +467,19 @@ function render(){
       <button class="notes-close" onclick="closeNotesDrawer()">✕</button>
     </div>
     <div class="scrollpane">
-      ${kids.map(k=>`<div class="sub-row ${k.done?'done':''}" onclick="toggleDone(${k.id})">
-        <span class="sub-dot ${k.done?'on':''}"></span>${esc(k.title)}
+      ${kids.map(k=>`<div>
+        <div class="sub-row ${k.done?'done':''}">
+          <span class="sub-dot ${k.done?'on':''}" onclick="toggleDone(${k.id})"></span>
+          <span style="flex:1;" onclick="toggleDone(${k.id})">${esc(k.title)}</span>
+          <button class="sub-note-btn" onclick="event.stopPropagation();toggleSubNotes(${k.id})" title="Noter">🗒${k.notes?'•':''}</button>
+        </div>
+        ${subNotesOpen.has(k.id) ? `<div class="sub-notes-panel">
+          ${notesList(k.notes)}
+          <div class="sub-add">
+            <input type="text" id="subnote-input-${k.id}" placeholder="Skriv en note…" onkeydown="if(event.key==='Enter'){addNote(${k.id}, this.value); this.value='';}">
+            <button onclick="const el=document.getElementById('subnote-input-${k.id}'); addNote(${k.id}, el.value); el.value='';">＋ Note</button>
+          </div>
+        </div>` : ''}
       </div>`).join('')}
       <div class="sub-add">
         <input type="text" id="sub-input" placeholder="Ny delopgave…" onkeydown="if(event.key==='Enter'){addSub(${task.id}, this.value); this.value='';}">
