@@ -216,16 +216,16 @@
 <script>
 // ══════════════════════════ DATA MODEL (delt med desktop + mobil-Nooty) ══════════════════════════
 const OPGAVE_TYPES = [
-  { id:'vaeresteds',    navn:'Værestedsavisen', underkategorier:['Artikel','Administrativt','Andet'],
-    fill:'var(--sage-700)', text:'var(--sage-100)', chip:'color-mix(in srgb, var(--sage-100) 22%, transparent)', dot:'var(--sage-600)' },
-  { id:'projekt',       navn:'Projekt',         underkategorier:['Craft','Sundhed','Natur','Det Digitale Værested','Andet'],
-    fill:'var(--accent-300)', text:'var(--accent-900)', chip:'color-mix(in srgb, var(--accent-900) 14%, transparent)', dot:'var(--accent-500)' },
-  { id:'aktivitet',     navn:'Aktivitet',       underkategorier:['Sport for Livet','Ferie Camp','Royal Side Run','Landsmøde','Den Nationale Værestedsdag','Temadage','Andet'],
-    fill:'var(--surface)', text:'var(--text)', chip:'color-mix(in srgb, var(--text) 10%, transparent)', dot:'var(--neutral-500)' },
-  { id:'kommunikation', navn:'Kommunikation',   underkategorier:['Website','Nyhedsbrev','Presse','Intern','SoMe'],
-    fill:'var(--sage-300)', text:'var(--sage-900)', chip:'color-mix(in srgb, var(--sage-900) 14%, transparent)', dot:'var(--sage-500)' },
-  { id:'andet',         navn:'Andet',           underkategorier:['Andet'],
-    fill:'var(--neutral-300)', text:'var(--neutral-800)', chip:'color-mix(in srgb, var(--text) 8%, transparent)', dot:'var(--neutral-600)' },
+  { id:'vaeresteds',    navn:'Værestedsavisen', emoji:'📰', underkategorier:['Artikel','Administrativt','Andet'],
+    fill:'#F0E175', text:'var(--text)', chip:'color-mix(in srgb, var(--text) 12%, transparent)', dot:'#F0E175' },
+  { id:'projekt',       navn:'Projekt',         emoji:'🧩', underkategorier:['Craft','Sundhed','Natur','Det Digitale Værested','Andet'],
+    fill:'#a9c692', text:'var(--text)', chip:'color-mix(in srgb, var(--text) 12%, transparent)', dot:'#a9c692' },
+  { id:'aktivitet',     navn:'Aktivitet',       emoji:'🎪', underkategorier:['Sport for Livet','Ferie Camp','Royal Side Run','Landsmøde','Den Nationale Værestedsdag','Temadage','Andet'],
+    fill:'#C5B7DC', text:'var(--text)', chip:'color-mix(in srgb, var(--text) 12%, transparent)', dot:'#C5B7DC' },
+  { id:'kommunikation', navn:'Kommunikation',   emoji:'📢', underkategorier:['Website','Nyhedsbrev','Presse','Intern','SoMe'],
+    fill:'#f69d6c', text:'var(--text)', chip:'color-mix(in srgb, var(--text) 12%, transparent)', dot:'#f69d6c' },
+  { id:'andet',         navn:'Andet',           emoji:'🗂', underkategorier:['Andet'],
+    fill:'#dbd4c4', text:'var(--text)', chip:'color-mix(in srgb, var(--text) 12%, transparent)', dot:'#dbd4c4' },
 ];
 function getOpgaveType(id){ return OPGAVE_TYPES.find(t=>t.id===id) || OPGAVE_TYPES[OPGAVE_TYPES.length-1]; }
 function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -409,7 +409,7 @@ function render(){
       <div class="rail-donut">
         <div class="donut" style="background:${donutBg}"><div class="donut-hole">${open.length}</div></div>
         <div class="legend">
-          ${Object.keys(counts).map(k=>{ const t=getOpgaveType(k); return `<div class="legend-row"><span class="legend-dot" style="background:${t.dot}"></span><span class="legend-label">${t.navn}</span><span class="legend-n">${counts[k]}</span></div>`; }).join('') || '<div class="legend-row"><span class="empty-hint">Intet at vise</span></div>'}
+          ${Object.keys(counts).map(k=>{ const t=getOpgaveType(k); return `<div class="legend-row"><span class="legend-dot" style="background:${t.dot}"></span><span class="legend-label">${t.emoji} ${t.navn}</span><span class="legend-n">${counts[k]}</span></div>`; }).join('') || '<div class="legend-row"><span class="empty-hint">Intet at vise</span></div>'}
         </div>
       </div>
       <div class="rail-next">
@@ -427,7 +427,7 @@ function render(){
       </div>
       <div class="card ${dragging?'dragging':''}" id="card" onclick="onCardTap()" style="background:${task.done?'var(--neutral-200)':type.fill}; color:${task.done?'var(--neutral-700)':type.text}; transform:translateX(${dragX}px) rotate(${(drag*0.012).toFixed(2)}deg); opacity:${task.done?0.75:1}">
         <div class="card-top">
-          <span class="chip" style="background:${type.chip}">${esc(task.underkat||type.navn)}</span>
+          <span class="chip" style="background:${type.chip}">${type.emoji} ${esc(task.underkat||type.navn)}</span>
           ${task.procestrin ? `<span class="chip" style="background:${type.chip}">${esc(task.procestrin)}</span>` : ''}
           <span class="card-date ${isLate?'late':''}">${formatDate(task.deadline)}</span>
         </div>

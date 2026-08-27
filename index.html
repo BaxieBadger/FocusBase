@@ -1775,15 +1775,15 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
 // Top-niveau (tidl. "Projekter"/Temaer) → 5 faste Opgave-typer.
 // Hver type har sin egen liste af underkategorier at vælge imellem.
 const OPGAVE_TYPES = [
-  { id:'vaeresteds',     navn:'Værestedsavisen', emoji:'📰', color:'#F6A06B',
+  { id:'vaeresteds',     navn:'Værestedsavisen', emoji:'📰', color:'#F0E175',
     underkategorier:['Artikel','Administrativt','Andet'] },
-  { id:'projekt',        navn:'Projekt',         emoji:'🧩', color:'#AEBF92',
+  { id:'projekt',        navn:'Projekt',         emoji:'🧩', color:'#a9c692',
     underkategorier:['Craft','Sundhed','Natur','Det Digitale Værested','Andet'] },
-  { id:'aktivitet',      navn:'Aktivitet',       emoji:'🎪', color:'#EEE7DB',
+  { id:'aktivitet',      navn:'Aktivitet',       emoji:'🎪', color:'#C5B7DC',
     underkategorier:['Sport for Livet','Ferie Camp','Royal Side Run','Landsmøde','Den Nationale Værestedsdag','Temadage','Andet'] },
-  { id:'kommunikation',  navn:'Kommunikation',   emoji:'📢', color:'#CCDBB2',
+  { id:'kommunikation',  navn:'Kommunikation',   emoji:'📢', color:'#f69d6c',
     underkategorier:['Website','Nyhedsbrev','Presse','Intern','SoMe'] },
-  { id:'andet',          navn:'Andet',           emoji:'🗂', color:'#DCD3C4',
+  { id:'andet',          navn:'Andet',           emoji:'🗂', color:'#dbd4c4',
     underkategorier:['Andet'] },
 ];
 function getOpgaveType(id) { return OPGAVE_TYPES.find(t=>t.id===id) || OPGAVE_TYPES[OPGAVE_TYPES.length-1]; }
