@@ -239,7 +239,7 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); font-si
 /* ── DASHBOARD ── */
 .dash-stats {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr 3fr;
   gap: 12px;
   margin-bottom: 20px;
   align-items: stretch;
@@ -965,20 +965,24 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
     <!-- DASHBOARD -->
     <div class="view active" id="view-dashboard">
       <div class="dash-stats" id="dash-stats-grid">
-        <!-- 1: Deadlines denne uge -->
-        <div class="stat-card" id="sc-dl" style="transition:background 0.5s,border-color 0.5s;order:1;">
-          <div class="s-label">Deadlines denne uge</div>
-          <div class="s-val" id="stat-deadlines">0</div>
-          <div class="s-sub" id="sc-dl-sub" style="white-space:normal;line-height:1.4;"></div>
+        <!-- 1: Åbne opgaver + Deadlines denne uge (samlet kort) -->
+        <div class="stat-card" id="sc-proj" style="transition:background 0.5s,border-color 0.5s;order:1;">
+          <div class="s-label" id="sc-proj-label">Opgaver</div>
+          <div style="display:flex;gap:16px;">
+            <div style="flex:1;min-width:0;">
+              <div class="s-val" id="stat-proj">0</div>
+              <div class="s-sub" style="opacity:0.85;">Åbne opgaver</div>
+              <div class="s-sub" id="sc-proj-sub"></div>
+            </div>
+            <div id="dl-half" style="flex:1;min-width:0;border-left:1px solid rgba(0,0,0,0.12);padding-left:16px;transition:color 0.3s;">
+              <div class="s-val" id="stat-deadlines">0</div>
+              <div class="s-sub" style="opacity:0.85;">Deadlines denne uge</div>
+              <div class="s-sub" id="sc-dl-sub" style="white-space:normal;line-height:1.4;"></div>
+            </div>
+          </div>
         </div>
-        <!-- 2: Åbne opgaver -->
-        <div class="stat-card" id="sc-proj" style="transition:background 0.5s,border-color 0.5s;order:2;">
-          <div class="s-label" id="sc-proj-label">Åbne opgaver</div>
-          <div class="s-val" id="stat-proj">0</div>
-          <div class="s-sub" id="sc-proj-sub"></div>
-        </div>
-        <!-- 4: Projekter cirkeldiagram -->
-        <div class="stat-card" style="order:4;padding:10px;">
+        <!-- 2: Projekter cirkeldiagram -->
+        <div class="stat-card" style="order:2;padding:10px;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
             <span class="s-label" style="margin:0;">◈ Projekter</span>
             <span id="tema-chart-count" style="font-size:9px;color:var(--text-muted);"></span>
@@ -986,8 +990,8 @@ hr.divider { border:none; border-top:1px solid var(--border); margin:16px 0; }
           <canvas id="tema-pie" width="140" height="140" style="display:block;margin:0 auto;"></canvas>
           <div id="tema-pie-legend" style="margin-top:6px;display:flex;flex-direction:column;gap:2px;"></div>
         </div>
-        <!-- 5: SoMe – cirkeldiagram + næste opslag pr. org-enhed -->
-        <div class="stat-card" style="order:5;grid-column:1/-1;padding:16px 18px;">
+        <!-- 3: SoMe – cirkeldiagram + næste opslag pr. org-enhed -->
+        <div class="stat-card" style="order:3;padding:16px 18px;">
           <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;">
             <div style="width:200px;flex-shrink:0;cursor:pointer;" onclick="nav('some')" title="Gå til SoMe">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:3px;">
@@ -3580,7 +3584,7 @@ function renderDashboard() {
     updateTopbarColor();
   }
 
-  // Stat 1: Åbne opgaver
+  // Åbne opgaver + Deadlines denne uge — samlet kort, altid stylet som "Åbne opgaver" (fast grøn)
   const dominantProj = dominantCatAmong(openProjects);
   document.getElementById('stat-proj').textContent = openProjects.length;
   document.getElementById('sc-proj-sub').innerHTML = dominantProj
@@ -3591,19 +3595,16 @@ function renderDashboard() {
     const fixedGreen = '#1a5228';
     projCard.style.background  = hexToRgba(fixedGreen, 0.08);
     projCard.style.borderColor = hexToRgba(fixedGreen, 0.35);
-    projCard.querySelector('.s-label').style.color = fixedGreen;
-    projCard.querySelector('.s-val').style.color   = fixedGreen;
-    if(projCard.querySelector('.s-sub')) projCard.querySelector('.s-sub').style.color = fixedGreen;
+    projCard.style.color = fixedGreen;
   }
 
-  // Stat 3: Deadlines denne uge + overskredte
+  // Deadlines denne uge + overskredte — kun højre halvdel af kortet farves rød ved overskredne
   const dlSoon = openProjects.filter(p=>p.deadline&&new Date(p.deadline+'T23:59:59')<=weekEnd);
-  const dominantDl = dominantCatAmong(dlSoon);
   const totalDl = dlSoon.length + overdue.length;
   document.getElementById('stat-deadlines').textContent = totalDl;
 
   const dlSubEl = document.getElementById('sc-dl-sub');
-  const scDl = document.getElementById('sc-dl');
+  const dlHalf  = document.getElementById('dl-half');
 
   if(hasOverdue) {
     const overdueHtml = `<span style="color:#e44258;">⚠️ ${overdue.length} overskredet${dlSoon.length?` · ${dlSoon.length} denne uge`:''}</span>
@@ -3618,16 +3619,11 @@ function renderDashboard() {
       </div>`;
     dlSubEl.innerHTML = overdueHtml;
     dlSubEl.style.whiteSpace = 'normal';
-    scDl.style.background  = hexToRgba('#e44258', 0.08);
-    scDl.style.borderColor = '#e44258';
-    scDl.querySelector('.s-label').style.color = '#e44258';
-    scDl.querySelector('.s-val').style.color   = '#e44258';
-    scDl.classList.add('overdue');
+    dlHalf.style.color = '#e44258';
   } else {
-    dlSubEl.innerHTML = dominantDl||'';
+    dlSubEl.innerHTML = '';
     dlSubEl.style.whiteSpace = '';
-    scDl.classList.remove('overdue');
-    styleStatCard('sc-dl', dominantDl, null, null);
+    dlHalf.style.color = '';
   }
 
   // SoMe: planlagte og afventer i SoMe-kortet (afsluttede opslag tælles ikke med længere)
